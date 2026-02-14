@@ -1,0 +1,44 @@
+{
+  "name": "teams",
+  "version": "1.0.0",
+  "description": "CLI for scaffolding Teams applications",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "teams": "./dist/index.js"
+  },
+  "scripts": {
+    "dev": "tsx src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js"
+  },
+  "keywords": [
+    "teams",
+    "cli",
+    "scaffolding"
+  ],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.29.3",
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@azure/msal-node-extensions",
+      "@azure/msal-node-runtime",
+      "esbuild",
+      "keytar"
+    ]
+  },
+  "dependencies": {
+    "@azure/msal-node": "^5.0.4",
+    "@azure/msal-node-extensions": "^5.0.4",
+    "@inquirer/prompts": "^7.2.1",
+    "commander": "^12.1.0",
+    "env-paths": "^4.0.0",
+    "picocolors": "^1.1.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0"
+  }
+}

@@ -1,0 +1,52 @@
+import { Command } from "commander";
+import { search } from "@inquirer/prompts";
+import pc from "picocolors";
+import { getAccount, getTokenSilent, teamsDevPortalScopes } from "../../auth/index.js";
+import { fetchApps, showAppHome } from "../../apps/index.js";
+
+export async function runAppList(): Promise<void> {
+  const account = await getAccount();
+  if (!account) {
+    console.log(pc.red("Not logged in.") + ` Run ${pc.cyan("teams login")} first.`);
+    process.exit(1);
+  }
+
+  const token = await getTokenSilent(teamsDevPortalScopes);
+  if (!token) {
+    console.log(pc.red("Failed to get token.") + ` Try ${pc.cyan("teams login")} again.`);
+    process.exit(1);
+  }
+
+  try {
+    const apps = await fetchApps(token);
+
+    if (apps.length === 0) {
+      console.log(pc.dim("No apps found."));
+      return;
+    }
+
+    const selected = await search({
+      message: "Select an app",
+      source: (term) => {
+        const filtered = term
+          ? apps.filter((app) =>
+              (app.appName ?? "").toLowerCase().includes(term.toLowerCase())
+            )
+          : apps;
+        return filtered.map((app) => ({
+          name: `${app.appName ?? "Unnamed"} ${pc.dim(`(${app.teamsAppId})`)}`,
+          value: app,
+        }));
+      },
+    });
+
+    await showAppHome(selected, token);
+  } catch (error) {
+    console.log(pc.red(error instanceof Error ? error.message : "Failed to fetch apps"));
+    process.exit(1);
+  }
+}
+
+export const appListCommand = new Command("list")
+  .description("List your Teams apps")
+  .action(runAppList);
