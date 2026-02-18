@@ -13,3 +13,11 @@ Use picocolors for terminal styling.
 ## Dates
 
 Use `Intl.DateTimeFormat` via `formatDate()` from `src/utils/date.ts`.
+
+## Logging
+
+Use `logger` from `src/utils/logger.ts`. `--verbose` enables `logger.debug()`.
+
+## Spinners
+
+Use `nanospinner` for async operations. Always include descriptive text.

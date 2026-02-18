@@ -1,4 +1,5 @@
 import { Command } from "commander";
+import { createSpinner } from "nanospinner";
 import { login, getAccount } from "../../auth/index.js";
 
 export const loginCommand = new Command("login")
@@ -12,14 +13,14 @@ export const loginCommand = new Command("login")
       return;
     }
 
+    const spinner = createSpinner("Authenticating...").start();
     try {
       const account = await login();
-      console.log(`\nLogged in as ${account.username}`);
+      spinner.success({ text: `Logged in as ${account.username}` });
     } catch (error) {
+      spinner.error({ text: "Login failed" });
       if (error instanceof Error) {
-        console.error(`Login failed: ${error.message}`);
-      } else {
-        console.error("Login failed");
+        console.error(error.message);
       }
       process.exit(1);
     }

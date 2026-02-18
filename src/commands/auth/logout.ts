@@ -1,4 +1,5 @@
 import { Command } from "commander";
+import { createSpinner } from "nanospinner";
 import { logout, getAccount } from "../../auth/index.js";
 
 export const logoutCommand = new Command("logout")
@@ -11,6 +12,7 @@ export const logoutCommand = new Command("logout")
       return;
     }
 
+    const spinner = createSpinner("Logging out...").start();
     await logout();
-    console.log(`Logged out of ${account.username}`);
+    spinner.success({ text: `Logged out of ${account.username}` });
   });

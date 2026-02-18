@@ -1,5 +1,6 @@
 import { Command } from "commander";
 import { search } from "@inquirer/prompts";
+import { createSpinner } from "nanospinner";
 import pc from "picocolors";
 import { getAccount, getTokenSilent, teamsDevPortalScopes } from "../../auth/index.js";
 import { fetchApps, showAppHome } from "../../apps/index.js";
@@ -17,8 +18,10 @@ export async function runAppList(): Promise<void> {
     process.exit(1);
   }
 
+  const spinner = createSpinner("Fetching apps...").start();
   try {
     const apps = await fetchApps(token);
+    spinner.stop();
 
     if (apps.length === 0) {
       console.log(pc.dim("No apps found."));
@@ -42,7 +45,8 @@ export async function runAppList(): Promise<void> {
 
     await showAppHome(selected, token);
   } catch (error) {
-    console.log(pc.red(error instanceof Error ? error.message : "Failed to fetch apps"));
+    spinner.error({ text: "Failed to fetch apps" });
+    console.log(pc.red(error instanceof Error ? error.message : "Unknown error"));
     process.exit(1);
   }
 }
