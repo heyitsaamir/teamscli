@@ -2,6 +2,7 @@ import { Command } from "commander";
 import pc from "picocolors";
 import AdmZip from "adm-zip";
 import { writeFile } from "node:fs/promises";
+import { createSpinner } from "nanospinner";
 import { appListCommand, runAppList } from "./list.js";
 import { appCreateCommand } from "./create.js";
 import { manifestCommand } from "./manifest/index.js";
@@ -34,7 +35,9 @@ export const appCommand = new Command("app")
       const app = await fetchApp(token, options.id);
 
       if (options.downloadManifest !== undefined) {
+        const spinner = createSpinner("Downloading package...").start();
         const packageBuffer = await downloadAppPackage(token, app.appId);
+        spinner.stop();
         const zip = new AdmZip(packageBuffer);
         const manifestEntry = zip.getEntry("manifest.json");
 
@@ -56,7 +59,9 @@ export const appCommand = new Command("app")
       }
 
       if (options.downloadPackage) {
+        const spinner = createSpinner("Downloading package...").start();
         const packageBuffer = await downloadAppPackage(token, app.appId);
+        spinner.stop();
         await writeFile(options.downloadPackage, packageBuffer);
         console.log(pc.green(`Package saved to ${options.downloadPackage}`));
         return;

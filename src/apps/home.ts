@@ -2,6 +2,7 @@ import { select, input } from "@inquirer/prompts";
 import pc from "picocolors";
 import AdmZip from "adm-zip";
 import { writeFile } from "node:fs/promises";
+import { createSpinner } from "nanospinner";
 import type { AppSummary } from "./types.js";
 import { formatDate } from "../utils/date.js";
 import { downloadAppPackage } from "./api.js";
@@ -32,7 +33,9 @@ export async function showAppHome(app: AppSummary, _token: string): Promise<void
       message: "Enter path to save manifest (leave empty to display):",
     });
 
+    const spinner = createSpinner("Downloading package...").start();
     const packageBuffer = await downloadAppPackage(_token, app.appId);
+    spinner.stop();
     const zip = new AdmZip(packageBuffer);
     const manifestEntry = zip.getEntry("manifest.json");
 
@@ -61,7 +64,9 @@ export async function showAppHome(app: AppSummary, _token: string): Promise<void
       default: defaultName,
     });
 
+    const spinner = createSpinner("Downloading package...").start();
     const packageBuffer = await downloadAppPackage(_token, app.appId);
+    spinner.stop();
     await writeFile(savePath.trim(), packageBuffer);
     console.log(pc.green(`\nPackage saved to ${savePath.trim()}`));
     return;
