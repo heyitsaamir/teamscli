@@ -1,5 +1,9 @@
 # Conventions
 
+## Git
+
+Do not commit or push unless explicitly asked.
+
 ## Colors
 
 Use picocolors for terminal styling.
