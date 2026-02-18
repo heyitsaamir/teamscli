@@ -25,3 +25,17 @@ export async function fetchApp(token: string, id: string): Promise<AppSummary> {
 
   return response.json();
 }
+
+export async function downloadAppPackage(token: string, appId: string): Promise<Buffer> {
+  const response = await fetch(`${TDP_BASE_URL}/appdefinitions/${appId}/manifest`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to download app package: ${response.status} ${response.statusText}`);
+  }
+
+  // Response is a JSON-encoded base64 string (with quotes)
+  const base64String = await response.json();
+  return Buffer.from(base64String, "base64");
+}
