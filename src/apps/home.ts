@@ -6,6 +6,7 @@ import { createSpinner } from "nanospinner";
 import type { AppSummary } from "./types.js";
 import { formatDate } from "../utils/date.js";
 import { downloadAppPackage } from "./api.js";
+import { fetchBot, updateBot } from "./tdp.js";
 
 export async function showAppHome(app: AppSummary, _token: string): Promise<void> {
   console.log(`\n${pc.bold(app.appName ?? "Unnamed")}`);
@@ -25,6 +26,35 @@ export async function showAppHome(app: AppSummary, _token: string): Promise<void
   });
 
   if (action === "back") {
+    return;
+  }
+
+  if (action === "edit-endpoint") {
+    if (!app.bots || app.bots.length === 0) {
+      console.log(pc.red("\nThis app has no bots."));
+      return;
+    }
+
+    const botId = app.bots[0].botId;
+    const spinner = createSpinner("Fetching bot details...").start();
+    const bot = await fetchBot(_token, botId);
+    spinner.stop();
+
+    console.log(`${pc.dim("Current endpoint:")} ${bot.messagingEndpoint || pc.dim("(not set)")}`);
+
+    const newEndpoint = await input({
+      message: "Enter new messaging endpoint URL:",
+      default: bot.messagingEndpoint,
+    });
+
+    if (newEndpoint.trim() === bot.messagingEndpoint) {
+      console.log(pc.dim("\nNo changes made."));
+      return;
+    }
+
+    const updateSpinner = createSpinner("Updating endpoint...").start();
+    await updateBot(_token, { ...bot, messagingEndpoint: newEndpoint.trim() });
+    updateSpinner.success({ text: "Endpoint updated successfully" });
     return;
   }
 

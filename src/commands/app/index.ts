@@ -7,13 +7,14 @@ import { appListCommand, runAppList } from "./list.js";
 import { appCreateCommand } from "./create.js";
 import { manifestCommand } from "./manifest/index.js";
 import { getAccount, getTokenSilent, teamsDevPortalScopes } from "../../auth/index.js";
-import { fetchApp, showAppHome, downloadAppPackage } from "../../apps/index.js";
+import { fetchApp, showAppHome, downloadAppPackage, fetchBot, updateBot } from "../../apps/index.js";
 
 export const appCommand = new Command("app")
   .description("Manage Teams apps")
   .option("--id <appId>", "Go directly to app details by ID")
   .option("--download-manifest [path]", "Download manifest (displays to stdout if no path)")
   .option("--download-package <path>", "Download full app package to file")
+  .option("--set-endpoint <url>", "Set the bot messaging endpoint URL")
   .action(async (options) => {
     if (!options.id) {
       return;
@@ -64,6 +65,26 @@ export const appCommand = new Command("app")
         spinner.stop();
         await writeFile(options.downloadPackage, packageBuffer);
         console.log(pc.green(`Package saved to ${options.downloadPackage}`));
+        return;
+      }
+
+      if (options.setEndpoint) {
+        if (!app.bots || app.bots.length === 0) {
+          console.log(pc.red("This app has no bots."));
+          process.exit(1);
+        }
+
+        const botId = app.bots[0].botId;
+        const spinner = createSpinner("Fetching bot details...").start();
+        const bot = await fetchBot(token, botId);
+        spinner.stop();
+
+        console.log(`${pc.dim("Current endpoint:")} ${bot.messagingEndpoint || pc.dim("(not set)")}`);
+
+        const updateSpinner = createSpinner("Updating endpoint...").start();
+        await updateBot(token, { ...bot, messagingEndpoint: options.setEndpoint });
+        updateSpinner.success({ text: "Endpoint updated successfully" });
+        console.log(`${pc.dim("New endpoint:")} ${options.setEndpoint}`);
         return;
       }
 
