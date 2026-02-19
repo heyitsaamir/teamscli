@@ -7,16 +7,26 @@ import { appListCommand, runAppList } from "./list.js";
 import { appCreateCommand } from "./create.js";
 import { manifestCommand } from "./manifest/index.js";
 import { getAccount, getTokenSilent, teamsDevPortalScopes } from "../../auth/index.js";
-import { fetchApp, showAppHome, downloadAppPackage, fetchBot, updateBot } from "../../apps/index.js";
+import { fetchApp, showAppHome, downloadAppPackage, fetchBot, updateBot, updateAppDetails } from "../../apps/index.js";
 
 export const appCommand = new Command("app")
   .description("Manage Teams apps")
-  .option("--id <appId>", "Go directly to app details by ID")
-  .option("--download-manifest [path]", "Download manifest (displays to stdout if no path)")
-  .option("--download-package <path>", "Download full app package to file")
-  .option("--set-endpoint <url>", "Set the bot messaging endpoint URL")
-  .action(async (options) => {
+  .option("--id <appId>", "[OPTIONAL] Go directly to app details by ID")
+  .option("--download-manifest [path]", "[OPTIONAL] Download manifest (displays to stdout if no path)")
+  .option("--download-package <path>", "[OPTIONAL] Download full app package to file")
+  .option("--set-endpoint <url>", "[OPTIONAL] Set the bot messaging endpoint URL")
+  .option("--set-name <name>", "[OPTIONAL] Set the app short name (max 30 chars)")
+  .option("--set-long-name <name>", "[OPTIONAL] Set the app long name (max 100 chars)")
+  .option("--set-short-description <desc>", "[OPTIONAL] Set the short description (max 80 chars)")
+  .option("--set-long-description <desc>", "[OPTIONAL] Set the long description (max 4000 chars)")
+  .option("--set-version <version>", "[OPTIONAL] Set the app version")
+  .option("--set-developer <name>", "[OPTIONAL] Set the developer name")
+  .option("--set-website <url>", "[OPTIONAL] Set the website URL (HTTPS required)")
+  .option("--set-privacy-url <url>", "[OPTIONAL] Set the privacy policy URL (HTTPS required)")
+  .option("--set-terms-url <url>", "[OPTIONAL] Set the terms of use URL (HTTPS required)")
+  .action(async (options, command) => {
     if (!options.id) {
+      command.help();
       return;
     }
 
@@ -85,6 +95,87 @@ export const appCommand = new Command("app")
         await updateBot(token, { ...bot, messagingEndpoint: options.setEndpoint });
         updateSpinner.success({ text: "Endpoint updated successfully" });
         console.log(`${pc.dim("New endpoint:")} ${options.setEndpoint}`);
+        return;
+      }
+
+      // Handle basic info field updates
+      const basicInfoUpdates: Record<string, unknown> = {};
+
+      if (options.setName !== undefined) {
+        if (options.setName.length > 30) {
+          console.log(pc.red("Short name must be 30 characters or less."));
+          process.exit(1);
+        }
+        basicInfoUpdates.shortName = options.setName;
+      }
+
+      if (options.setLongName !== undefined) {
+        if (options.setLongName.length > 100) {
+          console.log(pc.red("Long name must be 100 characters or less."));
+          process.exit(1);
+        }
+        basicInfoUpdates.longName = options.setLongName;
+      }
+
+      if (options.setShortDescription !== undefined) {
+        if (options.setShortDescription.length > 80) {
+          console.log(pc.red("Short description must be 80 characters or less."));
+          process.exit(1);
+        }
+        basicInfoUpdates.shortDescription = options.setShortDescription;
+      }
+
+      if (options.setLongDescription !== undefined) {
+        if (options.setLongDescription.length > 4000) {
+          console.log(pc.red("Long description must be 4000 characters or less."));
+          process.exit(1);
+        }
+        basicInfoUpdates.longDescription = options.setLongDescription;
+      }
+
+      if (options.setVersion !== undefined) {
+        basicInfoUpdates.version = options.setVersion;
+      }
+
+      if (options.setDeveloper !== undefined) {
+        basicInfoUpdates.developerName = options.setDeveloper;
+      }
+
+      if (options.setWebsite !== undefined) {
+        if (!options.setWebsite.startsWith("https://")) {
+          console.log(pc.red("Website URL must start with https://"));
+          process.exit(1);
+        }
+        basicInfoUpdates.websiteUrl = options.setWebsite;
+      }
+
+      if (options.setPrivacyUrl !== undefined) {
+        if (!options.setPrivacyUrl.startsWith("https://")) {
+          console.log(pc.red("Privacy URL must start with https://"));
+          process.exit(1);
+        }
+        basicInfoUpdates.privacyUrl = options.setPrivacyUrl;
+      }
+
+      if (options.setTermsUrl !== undefined) {
+        if (!options.setTermsUrl.startsWith("https://")) {
+          console.log(pc.red("Terms of use URL must start with https://"));
+          process.exit(1);
+        }
+        basicInfoUpdates.termsOfUseUrl = options.setTermsUrl;
+      }
+
+      // If any basic info updates were specified, apply them
+      if (Object.keys(basicInfoUpdates).length > 0) {
+        const spinner = createSpinner("Updating app details...").start();
+        const updated = await updateAppDetails(token, options.id, basicInfoUpdates);
+        spinner.success({ text: "App details updated successfully" });
+
+        // Show what was updated
+        for (const [key, value] of Object.entries(basicInfoUpdates)) {
+          const label = key.replace(/([A-Z])/g, " $1").toLowerCase().trim();
+          console.log(`${pc.dim(label + ":")} ${value}`);
+        }
         return;
       }
 

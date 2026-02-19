@@ -5,7 +5,7 @@ import { getAccount, paths } from "../auth/index.js";
 
 export const statusCommand = new Command("status")
     .description("Show current CLI status")
-    .option("-v, --verbose", "Show additional details")
+    .option("-v, --verbose", "[OPTIONAL] Show additional details")
     .action(async (options: { verbose?: boolean }) => {
         const spinner = createSpinner("Checking status...").start();
         const account = await getAccount();
