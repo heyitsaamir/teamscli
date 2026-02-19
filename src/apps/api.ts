@@ -85,5 +85,5 @@ export async function updateAppDetails(
     throw new Error(`Failed to update app details: ${response.status} ${response.statusText}`);
   }
 
-  return updatedDetails;
+  return response.json();
 }

@@ -141,25 +141,27 @@ export const appCommand = new Command("app")
         basicInfoUpdates.developerName = options.setDeveloper;
       }
 
+      const httpsUrlRegex = /^https:\/\/.+/i;
+
       if (options.setWebsite !== undefined) {
-        if (!options.setWebsite.startsWith("https://")) {
-          console.log(pc.red("Website URL must start with https://"));
+        if (!httpsUrlRegex.test(options.setWebsite)) {
+          console.log(pc.red("Website URL must start with https:// and include a domain"));
           process.exit(1);
         }
         basicInfoUpdates.websiteUrl = options.setWebsite;
       }
 
       if (options.setPrivacyUrl !== undefined) {
-        if (!options.setPrivacyUrl.startsWith("https://")) {
-          console.log(pc.red("Privacy URL must start with https://"));
+        if (!httpsUrlRegex.test(options.setPrivacyUrl)) {
+          console.log(pc.red("Privacy URL must start with https:// and include a domain"));
           process.exit(1);
         }
         basicInfoUpdates.privacyUrl = options.setPrivacyUrl;
       }
 
       if (options.setTermsUrl !== undefined) {
-        if (!options.setTermsUrl.startsWith("https://")) {
-          console.log(pc.red("Terms of use URL must start with https://"));
+        if (!httpsUrlRegex.test(options.setTermsUrl)) {
+          console.log(pc.red("Terms of use URL must start with https:// and include a domain"));
           process.exit(1);
         }
         basicInfoUpdates.termsOfUseUrl = options.setTermsUrl;
@@ -168,13 +170,18 @@ export const appCommand = new Command("app")
       // If any basic info updates were specified, apply them
       if (Object.keys(basicInfoUpdates).length > 0) {
         const spinner = createSpinner("Updating app details...").start();
-        const updated = await updateAppDetails(token, options.id, basicInfoUpdates);
-        spinner.success({ text: "App details updated successfully" });
+        try {
+          await updateAppDetails(token, options.id, basicInfoUpdates);
+          spinner.success({ text: "App details updated successfully" });
 
-        // Show what was updated
-        for (const [key, value] of Object.entries(basicInfoUpdates)) {
-          const label = key.replace(/([A-Z])/g, " $1").toLowerCase().trim();
-          console.log(`${pc.dim(label + ":")} ${value}`);
+          // Show what was updated
+          for (const [key, value] of Object.entries(basicInfoUpdates)) {
+            const label = key.replace(/([A-Z])/g, " $1").toLowerCase().trim();
+            console.log(`${pc.dim(label + ":")} ${value}`);
+          }
+        } catch (error) {
+          spinner.error({ text: "Failed to update app details" });
+          throw error;
         }
         return;
       }
