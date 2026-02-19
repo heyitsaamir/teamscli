@@ -19,35 +19,46 @@ export async function runAppList(): Promise<void> {
   }
 
   const spinner = createSpinner("Fetching apps...").start();
+  let apps;
   try {
-    const apps = await fetchApps(token);
+    apps = await fetchApps(token);
     spinner.stop();
-
-    if (apps.length === 0) {
-      console.log(pc.dim("No apps found."));
-      return;
-    }
-
-    const selected = await search({
-      message: "Select an app",
-      source: (term) => {
-        const filtered = term
-          ? apps.filter((app) =>
-              (app.appName ?? "").toLowerCase().includes(term.toLowerCase())
-            )
-          : apps;
-        return filtered.map((app) => ({
-          name: `${app.appName ?? "Unnamed"} ${pc.dim(`(${app.teamsAppId})`)}`,
-          value: app,
-        }));
-      },
-    });
-
-    await showAppHome(selected, token);
   } catch (error) {
     spinner.error({ text: "Failed to fetch apps" });
     console.log(pc.red(error instanceof Error ? error.message : "Unknown error"));
     process.exit(1);
+  }
+
+  if (apps.length === 0) {
+    console.log(pc.dim("No apps found."));
+    return;
+  }
+
+  while (true) {
+    try {
+      const selected = await search({
+        message: "Select an app",
+        source: (term) => {
+          const filtered = term
+            ? apps.filter((app) =>
+                (app.appName ?? "").toLowerCase().includes(term.toLowerCase())
+              )
+            : apps;
+          return filtered.map((app) => ({
+            name: `${app.appName ?? "Unnamed"} ${pc.dim(`(${app.teamsAppId})`)}`,
+            value: app,
+          }));
+        },
+      });
+
+      await showAppHome(selected, token);
+    } catch (error) {
+      // User cancelled prompt (Escape/Ctrl+C), exit gracefully
+      if (error instanceof Error && error.name === "ExitPromptError") {
+        return;
+      }
+      throw error;
+    }
   }
 }
 
