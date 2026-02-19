@@ -1,18 +1,17 @@
 import { Command } from "commander";
 import pc from "picocolors";
-import AdmZip from "adm-zip";
 import { writeFile } from "node:fs/promises";
 import { createSpinner } from "nanospinner";
 import { appListCommand, runAppList } from "./list.js";
 import { appCreateCommand } from "./create.js";
 import { manifestCommand } from "./manifest/index.js";
+import { appContext } from "./context.js";
 import { getAccount, getTokenSilent, teamsDevPortalScopes } from "../../auth/index.js";
 import { fetchApp, showAppHome, downloadAppPackage, fetchBot, updateBot, updateAppDetails } from "../../apps/index.js";
 
 export const appCommand = new Command("app")
   .description("Manage Teams apps")
   .option("--id <appId>", "[OPTIONAL] Go directly to app details by ID")
-  .option("--download-manifest [path]", "[OPTIONAL] Download manifest (displays to stdout if no path)")
   .option("--download-package <path>", "[OPTIONAL] Download full app package to file")
   .option("--set-endpoint <url>", "[OPTIONAL] Set the bot messaging endpoint URL")
   .option("--set-name <name>", "[OPTIONAL] Set the app short name (max 30 chars)")
@@ -44,30 +43,6 @@ export const appCommand = new Command("app")
 
     try {
       const app = await fetchApp(token, options.id);
-
-      if (options.downloadManifest !== undefined) {
-        const spinner = createSpinner("Downloading package...").start();
-        const packageBuffer = await downloadAppPackage(token, app.appId);
-        spinner.stop();
-        const zip = new AdmZip(packageBuffer);
-        const manifestEntry = zip.getEntry("manifest.json");
-
-        if (!manifestEntry) {
-          console.log(pc.red("manifest.json not found in package"));
-          process.exit(1);
-        }
-
-        const manifestContent = manifestEntry.getData().toString("utf-8");
-        const manifestJson = JSON.parse(manifestContent);
-
-        if (typeof options.downloadManifest === "string") {
-          await writeFile(options.downloadManifest, JSON.stringify(manifestJson, null, 2));
-          console.log(pc.green(`Manifest saved to ${options.downloadManifest}`));
-        } else {
-          console.log(JSON.stringify(manifestJson, null, 2));
-        }
-        return;
-      }
 
       if (options.downloadPackage) {
         const spinner = createSpinner("Downloading package...").start();
@@ -198,6 +173,14 @@ export const appsCommand = new Command("apps")
   .action(async () => {
     await runAppList();
   });
+
+// Populate context before subcommands run
+appCommand.hook("preSubcommand", async (thisCommand) => {
+  const opts = thisCommand.opts();
+  if (opts.id) {
+    appContext.appId = opts.id;
+  }
+});
 
 appCommand.addCommand(appListCommand);
 appCommand.addCommand(appCreateCommand);
