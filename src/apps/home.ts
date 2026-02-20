@@ -108,109 +108,113 @@ export async function showAppHome(appSummary: AppSummary, token: string): Promis
     }
 
     if (action === "manifest") {
-      const manifestAction = await select({
-        message: "Manifest:",
-        choices: [
-          { name: "Download", value: "download" },
-          { name: "Upload", value: "upload" },
-          { name: "Back", value: "back" },
-        ],
-      });
-
-      if (manifestAction === "back") {
-        continue;
-      }
-
-      if (manifestAction === "download") {
-        const downloadAction = await select({
-          message: "Download manifest:",
+      // Manifest submenu loop - stay here until user selects Back
+      while (true) {
+        const manifestAction = await select({
+          message: "Manifest:",
           choices: [
-            { name: "Display to stdout", value: "display" },
-            { name: "Save to file", value: "save" },
+            { name: "Download", value: "download" },
+            { name: "Upload", value: "upload" },
             { name: "Back", value: "back" },
           ],
         });
 
-        if (downloadAction === "back") {
-          continue;
+        if (manifestAction === "back") {
+          break;
         }
 
-        let savePath = "";
-        if (downloadAction === "save") {
-          savePath = await input({
-            message: "Enter path to save manifest:",
-            default: "manifest.json",
+        if (manifestAction === "download") {
+          const downloadAction = await select({
+            message: "Download manifest:",
+            choices: [
+              { name: "Display to console", value: "display" },
+              { name: "Save to file", value: "save" },
+              { name: "Back", value: "back" },
+            ],
           });
-        }
 
-        const dlSpinner = createSpinner("Downloading manifest...").start();
-        const packageBuffer = await downloadAppPackage(token, appDetails.appId);
-        dlSpinner.stop();
-        const zip = new AdmZip(packageBuffer);
-        const manifestEntry = zip.getEntry("manifest.json");
+          if (downloadAction === "back") {
+            continue;
+          }
 
-        if (!manifestEntry) {
-          console.log(pc.red("\nmanifest.json not found in package"));
-          continue;
-        }
+          let savePath = "";
+          if (downloadAction === "save") {
+            savePath = await input({
+              message: "Enter path to save manifest:",
+              default: "manifest.json",
+            });
+          }
 
-        const manifestContent = manifestEntry.getData().toString("utf-8");
-        const manifestJson = JSON.parse(manifestContent);
+          const dlSpinner = createSpinner("Downloading manifest...").start();
+          const packageBuffer = await downloadAppPackage(token, appDetails.appId);
+          dlSpinner.stop();
+          const zip = new AdmZip(packageBuffer);
+          const manifestEntry = zip.getEntry("manifest.json");
 
-        if (savePath) {
-          await writeFile(savePath, JSON.stringify(manifestJson, null, 2));
-          console.log(pc.green(`\nManifest saved to ${savePath}`));
-        } else {
-          console.log(pc.dim("\n--- manifest.json ---"));
-          console.log(JSON.stringify(manifestJson, null, 2));
-        }
-        continue;
-      }
+          if (!manifestEntry) {
+            console.log(pc.red("\nmanifest.json not found in package"));
+            continue;
+          }
 
-      if (manifestAction === "upload") {
-        const filePath = await input({
-          message: "Enter path to manifest.json:",
-          default: "manifest.json",
-        });
+          const manifestContent = manifestEntry.getData().toString("utf-8");
+          const manifestJson = JSON.parse(manifestContent);
 
-        // Read and parse manifest file
-        let manifest: TeamsManifest;
-        try {
-          const content = await readFile(filePath, "utf-8");
-          manifest = JSON.parse(content) as TeamsManifest;
-        } catch (error) {
-          if ((error as NodeJS.ErrnoException).code === "ENOENT") {
-            console.log(pc.red(`\nFile not found: ${filePath}`));
-          } else if (error instanceof SyntaxError) {
-            console.log(pc.red(`\nInvalid JSON in ${filePath}: ${error.message}`));
+          if (savePath) {
+            await writeFile(savePath, JSON.stringify(manifestJson, null, 2));
+            console.log(pc.green(`\nManifest saved to ${savePath}`));
           } else {
-            console.log(pc.red(`\nFailed to read ${filePath}: ${error instanceof Error ? error.message : "Unknown error"}`));
+            console.log(pc.dim("\n--- manifest.json ---"));
+            console.log(JSON.stringify(manifestJson, null, 2));
           }
           continue;
         }
 
-        // Basic validation
-        if (!manifest.name?.short) {
-          console.log(pc.red("\nInvalid manifest: missing name.short"));
-          continue;
-        }
-        if (!manifest.version) {
-          console.log(pc.red("\nInvalid manifest: missing version"));
-          continue;
-        }
+        if (manifestAction === "upload") {
+          const filePath = await input({
+            message: "Enter path to manifest.json:",
+            default: "manifest.json",
+          });
 
-        const uploadSpinner = createSpinner("Uploading manifest...").start();
-        try {
-          const result = await uploadManifest(token, appDetails.teamsAppId, manifest);
-          uploadSpinner.success({ text: "Manifest uploaded successfully" });
-          // Update local appDetails with new values
-          appDetails = { ...appDetails, ...result };
-        } catch (error) {
-          uploadSpinner.error({ text: "Failed to upload manifest" });
-          console.log(pc.red(error instanceof Error ? error.message : "Unknown error"));
+          // Read and parse manifest file
+          let manifest: TeamsManifest;
+          try {
+            const content = await readFile(filePath, "utf-8");
+            manifest = JSON.parse(content) as TeamsManifest;
+          } catch (error) {
+            if ((error as NodeJS.ErrnoException).code === "ENOENT") {
+              console.log(pc.red(`\nFile not found: ${filePath}`));
+            } else if (error instanceof SyntaxError) {
+              console.log(pc.red(`\nInvalid JSON in ${filePath}: ${error.message}`));
+            } else {
+              console.log(pc.red(`\nFailed to read ${filePath}: ${error instanceof Error ? error.message : "Unknown error"}`));
+            }
+            continue;
+          }
+
+          // Basic validation
+          if (!manifest.name?.short) {
+            console.log(pc.red("\nInvalid manifest: missing name.short"));
+            continue;
+          }
+          if (!manifest.version) {
+            console.log(pc.red("\nInvalid manifest: missing version"));
+            continue;
+          }
+
+          const uploadSpinner = createSpinner("Uploading manifest...").start();
+          try {
+            const result = await uploadManifest(token, appDetails.teamsAppId, manifest);
+            uploadSpinner.success({ text: "Manifest uploaded successfully" });
+            // Update local appDetails with new values
+            appDetails = { ...appDetails, ...result };
+          } catch (error) {
+            uploadSpinner.error({ text: "Failed to upload manifest" });
+            console.log(pc.red(error instanceof Error ? error.message : "Unknown error"));
+          }
+          continue;
         }
-        continue;
       }
+      continue;
     }
 
     if (action === "download-package") {
