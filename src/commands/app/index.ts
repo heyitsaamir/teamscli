@@ -116,7 +116,7 @@ export const appCommand = new Command("app")
         basicInfoUpdates.developerName = options.setDeveloper;
       }
 
-      const httpsUrlRegex = /^https:\/\/.+/i;
+      const httpsUrlRegex = /^https:\/\/\S+$/i;
 
       if (options.setWebsite !== undefined) {
         if (!httpsUrlRegex.test(options.setWebsite)) {
