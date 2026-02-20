@@ -20,11 +20,11 @@ interface ManifestCreateOptions {
 
 export const manifestCreateCommand = new Command("create")
   .description("Create a Teams app manifest.json file")
-  .option("-p, --path <path>", "Output directory (default: current directory)")
+  .option("-p, --path <path>", "[OPTIONAL] Output directory (default: current directory)")
   .option("-n, --name <name>", "App name")
-  .option("-d, --domain <domain>", "Valid domain for the manifest")
-  .option("-b, --bot-id <id>", "Bot ID (uses placeholder if not provided)")
-  .option("-i, --interactive", "Force interactive mode even when args provided")
+  .option("-d, --domain <domain>", "[OPTIONAL] Valid domain for the manifest")
+  .option("-b, --bot-id <id>", "[OPTIONAL] Bot ID (uses placeholder if not provided)")
+  .option("-i, --interactive", "[OPTIONAL] Force interactive mode even when args provided")
   .action(async (options: ManifestCreateOptions) => {
     const outputDir = options.path ?? process.cwd();
 

@@ -36,9 +36,9 @@ export const appCreateCommand = new Command("create")
   .description("Create a new Teams app with bot")
   .option("-n, --name <name>", "App/bot name")
   .option("-e, --endpoint <url>", "Bot messaging endpoint URL")
-  .option("-m, --manifest <path>", "Path to manifest.json")
-  .option("-p, --package <path>", "Path to app package zip")
-  .option("--env <path>", "Path to .env file to write credentials")
+  .option("-m, --manifest <path>", "[OPTIONAL] Path to manifest.json")
+  .option("-p, --package <path>", "[OPTIONAL] Path to app package zip")
+  .option("--env <path>", "[OPTIONAL] Path to .env file to write credentials")
   .action(async (options: CreateOptions) => {
     const account = await getAccount();
     if (!account) {

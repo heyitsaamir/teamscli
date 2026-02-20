@@ -9,7 +9,7 @@ program
   .name("teams")
   .description("CLI for scaffolding Teams applications")
   .version("1.0.0")
-  .option("-v, --verbose", "Enable verbose logging")
+  .option("-v, --verbose", "[OPTIONAL] Enable verbose logging")
   .hook("preAction", (thisCommand) => {
     const opts = thisCommand.optsWithGlobals();
     if (opts.verbose) {

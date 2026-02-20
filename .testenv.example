@@ -1,0 +1,6 @@
+# Copy this file to .testenv and fill in values
+# .testenv is git-ignored
+
+# A Teams app ID to use for integration tests
+# This app will be modified during tests (values are restored after each test)
+TEST_APP_ID=your-app-id-here

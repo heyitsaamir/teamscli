@@ -5,3 +5,4 @@ export * from "./graph.js";
 export * from "./manifest.js";
 export * from "./manifest-builder.js";
 export * from "./tdp.js";
+export * from "./basic-info.js";
