@@ -43,3 +43,58 @@ export interface AppDetails {
   // Allow pass-through of unknown fields from the API
   [key: string]: unknown;
 }
+
+/**
+ * OAuth configuration for custom identity providers.
+ */
+export interface OAuthConfigurationCustom {
+  oAuthConfigId: string;
+  description: string;
+  identityProvider: "Custom";
+  applicableToApps: "SpecificApp" | "AnyApp";
+  m365AppId?: string;
+  targetAudience: "HomeTenant" | "AnyTenant";
+  tenantId?: string;
+  clientId: string;
+  clientSecret: string;
+  scopes: string[];
+  targetUrlsShouldStartWith: string[];
+  authorizationEndpoint: string;
+  tokenExchangeEndpoint: string;
+  tokenRefreshEndpoint?: string;
+  isPKCEEnabled?: boolean;
+  tokenExchangeMethodType?: "BasicAuthorizationHeader" | "PostRequestBody";
+  useSingleSignOn?: boolean;
+  createdDateTime?: string;
+  resourceIdentifierUri?: string;
+}
+
+/**
+ * OAuth configuration for Microsoft Entra identity provider.
+ */
+export interface OAuthConfigurationEntra {
+  oAuthConfigId: string;
+  description: string;
+  identityProvider: "MicrosoftEntra";
+  applicableToApps: "SpecificApp" | "AnyApp";
+  m365AppId?: string;
+  targetAudience: "HomeTenant" | "AnyTenant";
+  tenantId?: string;
+  clientId: string;
+  scopes: string[];
+  targetUrlsShouldStartWith: string[];
+  createdDateTime?: string;
+  resourceIdentifierUri?: string;
+}
+
+export type OAuthConfiguration = OAuthConfigurationCustom | OAuthConfigurationEntra;
+
+/**
+ * Response from creating an OAuth configuration.
+ */
+export interface OAuthConfigurationCreateResponse {
+  configurationRegistrationId: {
+    oAuthConfigId: string;
+  };
+  resourceIdentifierUri: string;
+}

@@ -6,3 +6,4 @@ export * from "./manifest.js";
 export * from "./manifest-builder.js";
 export * from "./tdp.js";
 export * from "./basic-info.js";
+export * from "./oauth.js";
