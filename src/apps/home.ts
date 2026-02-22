@@ -8,6 +8,8 @@ import { formatDate } from "../utils/date.js";
 import { fetchApp, downloadAppPackage, fetchAppDetailsV2, uploadManifest, type TeamsManifest } from "./api.js";
 import { fetchBot, updateBot, type BotDetails } from "./tdp.js";
 import { showBasicInfoEditor } from "./basic-info.js";
+import { fetchOAuthConfigurations, fetchOAuthConfiguration, deleteOAuthConfiguration } from "./oauth.js";
+import type { OAuthConfiguration } from "./types.js";
 
 export async function showAppHome(appSummary: AppSummary, token: string): Promise<void> {
   const spinner = createSpinner("Fetching details...").start();
@@ -70,6 +72,7 @@ export async function showAppHome(appSummary: AppSummary, token: string): Promis
         { name: "Edit basic info", value: "edit-basic-info" },
         { name: "Edit endpoint", value: "edit-endpoint" },
         { name: "Manifest", value: "manifest" },
+        { name: "OAuth", value: "oauth" },
         { name: "Download package", value: "download-package" },
         { name: "Back", value: "back" },
       ],
@@ -217,6 +220,11 @@ export async function showAppHome(appSummary: AppSummary, token: string): Promis
       continue;
     }
 
+    if (action === "oauth") {
+      await showOAuthMenu(token);
+      continue;
+    }
+
     if (action === "download-package") {
       const defaultName = `${appDetails.shortName || "app"}.zip`;
       const packageAction = await select({
@@ -246,6 +254,115 @@ export async function showAppHome(appSummary: AppSummary, token: string): Promis
       await writeFile(savePath, packageBuffer);
       console.log(pc.green(`\nPackage saved to ${savePath}`));
       continue;
+    }
+  }
+}
+
+async function showOAuthMenu(token: string): Promise<void> {
+  while (true) {
+    // Fetch OAuth configurations
+    const spinner = createSpinner("Fetching OAuth configurations...").start();
+    let configs: OAuthConfiguration[];
+    try {
+      configs = await fetchOAuthConfigurations(token);
+      spinner.stop();
+    } catch (error) {
+      spinner.error({ text: "Failed to fetch OAuth configurations" });
+      console.log(pc.red(error instanceof Error ? error.message : "Unknown error"));
+      return;
+    }
+
+    if (configs.length === 0) {
+      console.log(pc.yellow("\nNo OAuth configurations found."));
+      console.log(pc.dim(`Use ${pc.cyan("teams app oauth create")} to create one.`));
+      return;
+    }
+
+    // Build choices from configs
+    const choices = [
+      ...configs.map((config) => ({
+        name: `${config.description} (${config.clientId})`,
+        value: config.oAuthConfigId,
+      })),
+      { name: "Back", value: "back" },
+    ];
+
+    const selected = await select({
+      message: `OAuth Configurations (${configs.length}):`,
+      choices,
+    });
+
+    if (selected === "back") {
+      return;
+    }
+
+    // Show details for selected config
+    await showOAuthConfigDetails(token, selected);
+  }
+}
+
+async function showOAuthConfigDetails(token: string, configId: string): Promise<void> {
+  const spinner = createSpinner("Fetching OAuth configuration...").start();
+  let config: OAuthConfiguration;
+  try {
+    config = await fetchOAuthConfiguration(token, configId);
+    spinner.stop();
+  } catch (error) {
+    spinner.error({ text: "Failed to fetch OAuth configuration" });
+    console.log(pc.red(error instanceof Error ? error.message : "Unknown error"));
+    return;
+  }
+
+  while (true) {
+    // Display config details
+    console.log(`\n${pc.bold(pc.green(config.description))}`);
+    console.log(`${pc.dim("ID:")} ${config.oAuthConfigId}`);
+    console.log(`${pc.dim("Provider:")} ${config.identityProvider}`);
+    console.log(`${pc.dim("Client ID:")} ${config.clientId}`);
+    console.log(`${pc.dim("Applicable to:")} ${config.applicableToApps}`);
+    if (config.m365AppId) {
+      console.log(`${pc.dim("M365 App ID:")} ${config.m365AppId}`);
+    }
+    console.log(`${pc.dim("Target audience:")} ${config.targetAudience}`);
+    console.log(`${pc.dim("Scopes:")} ${config.scopes.join(", ") || "(none)"}`);
+    if (config.resourceIdentifierUri) {
+      console.log(`${pc.dim("Resource URI:")} ${config.resourceIdentifierUri}`);
+    }
+
+    const action = await select({
+      message: "What would you like to do?",
+      choices: [
+        { name: "Delete", value: "delete" },
+        { name: "Back", value: "back" },
+      ],
+    });
+
+    if (action === "back") {
+      return;
+    }
+
+    if (action === "delete") {
+      const confirmChoice = await select({
+        message: `Delete "${config.description}"?`,
+        choices: [
+          { name: "Yes, delete", value: "yes" },
+          { name: "No, cancel", value: "no" },
+        ],
+      });
+
+      if (confirmChoice === "yes") {
+        const deleteSpinner = createSpinner("Deleting OAuth configuration...").start();
+        try {
+          await deleteOAuthConfiguration(token, configId);
+          deleteSpinner.success({ text: "OAuth configuration deleted" });
+          return;
+        } catch (error) {
+          deleteSpinner.error({ text: "Failed to delete OAuth configuration" });
+          console.log(pc.red(error instanceof Error ? error.message : "Unknown error"));
+        }
+      } else {
+        console.log(pc.yellow("Deletion cancelled."));
+      }
     }
   }
 }
