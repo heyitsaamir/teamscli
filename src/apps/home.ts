@@ -274,8 +274,20 @@ async function showOAuthMenu(token: string): Promise<void> {
 
     if (configs.length === 0) {
       console.log(pc.yellow("\nNo OAuth configurations found."));
-      console.log(pc.dim(`Use ${pc.cyan("teams app oauth create")} to create one.`));
-      return;
+
+      const action = await select({
+        message: "OAuth:",
+        choices: [
+          { name: `Create new (${pc.dim("teams app oauth create")})`, value: "info" },
+          { name: "Back", value: "back" },
+        ],
+      });
+
+      if (action === "back") {
+        return;
+      }
+      // "info" just loops back to refresh and check again
+      continue;
     }
 
     // Build choices from configs
