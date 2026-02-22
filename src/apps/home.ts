@@ -8,7 +8,7 @@ import { formatDate } from "../utils/date.js";
 import { fetchApp, downloadAppPackage, fetchAppDetailsV2, uploadManifest, type TeamsManifest } from "./api.js";
 import { fetchBot, updateBot, type BotDetails } from "./tdp.js";
 import { showBasicInfoEditor } from "./basic-info.js";
-import { fetchOAuthConfigurations, fetchOAuthConfiguration, deleteOAuthConfiguration } from "./oauth.js";
+import { fetchOAuthConfigurations, fetchOAuthConfiguration, deleteOAuthConfiguration, createOAuthConfiguration } from "./oauth.js";
 import type { OAuthConfiguration } from "./types.js";
 
 export async function showAppHome(appSummary: AppSummary, token: string): Promise<void> {
@@ -221,7 +221,7 @@ export async function showAppHome(appSummary: AppSummary, token: string): Promis
     }
 
     if (action === "oauth") {
-      await showOAuthMenu(token);
+      await showOAuthMenu(token, appDetails);
       continue;
     }
 
@@ -258,7 +258,7 @@ export async function showAppHome(appSummary: AppSummary, token: string): Promis
   }
 }
 
-async function showOAuthMenu(token: string): Promise<void> {
+async function showOAuthMenu(token: string, appDetails: AppDetails): Promise<void> {
   while (true) {
     // Fetch OAuth configurations
     const spinner = createSpinner("Fetching OAuth configurations...").start();
@@ -272,35 +272,22 @@ async function showOAuthMenu(token: string): Promise<void> {
       return;
     }
 
-    if (configs.length === 0) {
-      console.log(pc.yellow("\nNo OAuth configurations found."));
-
-      const action = await select({
-        message: "OAuth:",
-        choices: [
-          { name: `Create new (${pc.dim("teams app oauth create")})`, value: "info" },
-          { name: "Back", value: "back" },
-        ],
-      });
-
-      if (action === "back") {
-        return;
-      }
-      // "info" just loops back to refresh and check again
-      continue;
-    }
-
-    // Build choices from configs
+    // Build choices - always include Create option
     const choices = [
       ...configs.map((config) => ({
         name: `${config.description} (${config.clientId})`,
         value: config.oAuthConfigId,
       })),
+      { name: "Create new", value: "create" },
       { name: "Back", value: "back" },
     ];
 
+    if (configs.length === 0) {
+      console.log(pc.yellow("\nNo OAuth configurations found."));
+    }
+
     const selected = await select({
-      message: `OAuth Configurations (${configs.length}):`,
+      message: configs.length > 0 ? `OAuth Configurations (${configs.length}):` : "OAuth:",
       choices,
     });
 
@@ -308,8 +295,122 @@ async function showOAuthMenu(token: string): Promise<void> {
       return;
     }
 
+    if (selected === "create") {
+      await createOAuthConfigInteractive(token, appDetails);
+      continue;
+    }
+
     // Show details for selected config
     await showOAuthConfigDetails(token, selected);
+  }
+}
+
+const httpsUrlRegex = /^https:\/\/\S+$/i;
+
+async function createOAuthConfigInteractive(token: string, appDetails: AppDetails): Promise<void> {
+  console.log(`\n${pc.bold("Create OAuth Configuration")}`);
+  console.log(`${pc.dim("App:")} ${appDetails.shortName} (${appDetails.teamsAppId})\n`);
+
+  try {
+    const description = await input({
+      message: "Description:",
+      validate: (val) => (val.trim().length > 0 && val.length <= 126) || "Required, max 126 characters",
+    });
+
+    const clientId = await input({
+      message: "Client ID:",
+      validate: (val) => (val.trim().length > 0 && val.length <= 126) || "Required, max 126 characters",
+    });
+
+    const clientSecret = await input({
+      message: "Client Secret:",
+      validate: (val) => (val.length >= 10 && val.length <= 2048) || "Required, 10-2048 characters",
+    });
+
+    const authorizationEndpoint = await input({
+      message: "Authorization endpoint URL:",
+      validate: (val) => httpsUrlRegex.test(val) || "Must be a valid HTTPS URL",
+    });
+
+    const tokenExchangeEndpoint = await input({
+      message: "Token exchange endpoint URL:",
+      validate: (val) => httpsUrlRegex.test(val) || "Must be a valid HTTPS URL",
+    });
+
+    const tokenRefreshEndpointInput = await input({
+      message: "Token refresh endpoint URL (leave empty to skip):",
+      validate: (val) => val === "" || httpsUrlRegex.test(val) || "Must be a valid HTTPS URL",
+    });
+    const tokenRefreshEndpoint = tokenRefreshEndpointInput || undefined;
+
+    const scopesInput = await input({
+      message: "Scopes (comma-separated, leave empty to skip):",
+    });
+    const scopes = scopesInput ? scopesInput.split(",").map((s) => s.trim()).filter(Boolean) : [];
+
+    const targetUrlsInput = await input({
+      message: "Target URLs (comma-separated HTTPS URLs, leave empty to skip):",
+    });
+    const targetUrlsShouldStartWith = targetUrlsInput
+      ? targetUrlsInput.split(",").map((s) => s.trim()).filter(Boolean)
+      : [];
+
+    const targetAudience = await select({
+      message: "Target audience:",
+      choices: [
+        { name: "Home Tenant", value: "HomeTenant" as const },
+        { name: "Any Tenant", value: "AnyTenant" as const },
+      ],
+    });
+
+    const isPKCEEnabled = await select({
+      message: "Enable PKCE?",
+      choices: [
+        { name: "No", value: false },
+        { name: "Yes", value: true },
+      ],
+    });
+
+    const tokenExchangeMethodType = await select({
+      message: "Token exchange method:",
+      choices: [
+        { name: "POST Request Body", value: "PostRequestBody" as const },
+        { name: "Basic Authorization Header", value: "BasicAuthorizationHeader" as const },
+      ],
+    });
+
+    const config = {
+      description,
+      identityProvider: "Custom" as const,
+      applicableToApps: "SpecificApp" as const,
+      m365AppId: appDetails.teamsAppId,
+      targetAudience,
+      clientId,
+      clientSecret,
+      scopes,
+      targetUrlsShouldStartWith,
+      authorizationEndpoint,
+      tokenExchangeEndpoint,
+      ...(tokenRefreshEndpoint && { tokenRefreshEndpoint }),
+      isPKCEEnabled,
+      tokenExchangeMethodType,
+    };
+
+    const createSpinnerInstance = createSpinner("Creating OAuth configuration...").start();
+    const created = await createOAuthConfiguration(token, config);
+    createSpinnerInstance.success({ text: "OAuth configuration created" });
+
+    console.log(`\n${pc.dim("ID:")} ${pc.bold(pc.green(created.oAuthConfigId))}`);
+    if (created.resourceIdentifierUri) {
+      console.log(`${pc.dim("Resource URI:")} ${created.resourceIdentifierUri}`);
+    }
+    console.log();
+  } catch (error) {
+    if (error instanceof Error && error.name === "ExitPromptError") {
+      console.log(pc.yellow("\nCancelled."));
+      return;
+    }
+    console.log(pc.red(error instanceof Error ? error.message : "Unknown error"));
   }
 }
 
