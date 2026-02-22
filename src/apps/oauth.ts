@@ -3,8 +3,7 @@ import type {
   OAuthConfigurationCustom,
   OAuthConfigurationCreateResponse,
 } from "./types.js";
-
-const TDP_BASE_URL = "https://dev.teams.microsoft.com/api";
+import { TDP_BASE_URL } from "./tdp.js";
 
 /**
  * Fetch all OAuth configurations, optionally filtered by identity provider.
