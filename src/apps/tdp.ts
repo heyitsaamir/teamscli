@@ -1,4 +1,4 @@
-const TDP_BASE_URL = "https://dev.teams.microsoft.com/api";
+export const TDP_BASE_URL = "https://dev.teams.microsoft.com/api";
 
 export interface ImportedApp {
   teamsAppId: string;
