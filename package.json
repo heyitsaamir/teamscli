@@ -5,7 +5,7 @@
   "type": "module",
   "main": "dist/index.js",
   "bin": {
-    "teams": "./dist/index.js"
+    "teams2": "./dist/index.js"
   },
   "scripts": {
     "dev": "tsx src/index.ts",

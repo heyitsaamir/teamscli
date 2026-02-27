@@ -6,7 +6,7 @@ import { appCommand, appsCommand } from "./commands/app/index.js";
 import { setVerbose } from "./utils/logger.js";
 
 program
-  .name("teams")
+  .name("teams2")
   .description("CLI for scaffolding Teams applications")
   .version("1.0.0")
   .option("-v, --verbose", "[OPTIONAL] Enable verbose logging")
