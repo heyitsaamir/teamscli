@@ -5,7 +5,7 @@ CLI for scaffolding Teams applications.
 ## Install
 
 ```bash
-npm install -g github:heyitsaamir/teamscli
+npm install -g https://github.com/heyitsaamir/teamscli/releases/latest/download/teamscli.tgz
 ```
 
 ## Usage
