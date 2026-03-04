@@ -41,7 +41,7 @@ function run(command: string): { stdout: string; exitCode: number } {
 }
 
 function getManifest(appId: string): Record<string, unknown> {
-  const { stdout } = run(`${CLI} app manifest download --id "${appId}"`);
+  const { stdout } = run(`${CLI} app manifest download "${appId}"`);
   // Find the JSON object in the output (starts with { and ends with })
   const jsonMatch = stdout.match(/\{[\s\S]*\}/);
   if (!jsonMatch) {
@@ -72,7 +72,7 @@ describe("CLI Validation Tests", () => {
   it("rejects short name over 30 characters", () => {
     const longName = "x".repeat(31);
     const { stdout, exitCode } = run(
-      `${CLI} app view --id "${appId}" --set-name "${longName}"`
+      `${CLI} app edit "${appId}" --name "${longName}"`
     );
     expect(exitCode).toBe(1);
     expect(stdout).toMatch(/30 characters or less/);
@@ -81,7 +81,7 @@ describe("CLI Validation Tests", () => {
   it("rejects long name over 100 characters", () => {
     const longName = "x".repeat(101);
     const { stdout, exitCode } = run(
-      `${CLI} app view --id "${appId}" --set-long-name "${longName}"`
+      `${CLI} app edit "${appId}" --long-name "${longName}"`
     );
     expect(exitCode).toBe(1);
     expect(stdout).toMatch(/100 characters or less/);
@@ -90,7 +90,7 @@ describe("CLI Validation Tests", () => {
   it("rejects short description over 80 characters", () => {
     const longDesc = "x".repeat(81);
     const { stdout, exitCode } = run(
-      `${CLI} app view --id "${appId}" --set-short-description "${longDesc}"`
+      `${CLI} app edit "${appId}" --short-description "${longDesc}"`
     );
     expect(exitCode).toBe(1);
     expect(stdout).toMatch(/80 characters or less/);
@@ -99,7 +99,7 @@ describe("CLI Validation Tests", () => {
   it("rejects long description over 4000 characters", () => {
     const longDesc = "x".repeat(4001);
     const { stdout, exitCode } = run(
-      `${CLI} app view --id "${appId}" --set-long-description "${longDesc}"`
+      `${CLI} app edit "${appId}" --long-description "${longDesc}"`
     );
     expect(exitCode).toBe(1);
     expect(stdout).toMatch(/4000 characters or less/);
@@ -107,7 +107,7 @@ describe("CLI Validation Tests", () => {
 
   it("rejects website URL without https", () => {
     const { stdout, exitCode } = run(
-      `${CLI} app view --id "${appId}" --set-website "http://example.com"`
+      `${CLI} app edit "${appId}" --website "http://example.com"`
     );
     expect(exitCode).toBe(1);
     expect(stdout).toMatch(/https:\/\//);
@@ -115,7 +115,7 @@ describe("CLI Validation Tests", () => {
 
   it("rejects website URL with only https://", () => {
     const { stdout, exitCode } = run(
-      `${CLI} app view --id "${appId}" --set-website "https://"`
+      `${CLI} app edit "${appId}" --website "https://"`
     );
     expect(exitCode).toBe(1);
     expect(stdout).toMatch(/include a domain/);
@@ -123,7 +123,7 @@ describe("CLI Validation Tests", () => {
 
   it("rejects privacy URL without https", () => {
     const { stdout, exitCode } = run(
-      `${CLI} app view --id "${appId}" --set-privacy-url "http://example.com"`
+      `${CLI} app edit "${appId}" --privacy-url "http://example.com"`
     );
     expect(exitCode).toBe(1);
     expect(stdout).toMatch(/https:\/\//);
@@ -131,7 +131,7 @@ describe("CLI Validation Tests", () => {
 
   it("rejects privacy URL with only https://", () => {
     const { stdout, exitCode } = run(
-      `${CLI} app view --id "${appId}" --set-privacy-url "https://"`
+      `${CLI} app edit "${appId}" --privacy-url "https://"`
     );
     expect(exitCode).toBe(1);
     expect(stdout).toMatch(/include a domain/);
@@ -139,7 +139,7 @@ describe("CLI Validation Tests", () => {
 
   it("rejects terms URL without https", () => {
     const { stdout, exitCode } = run(
-      `${CLI} app view --id "${appId}" --set-terms-url "http://example.com"`
+      `${CLI} app edit "${appId}" --terms-url "http://example.com"`
     );
     expect(exitCode).toBe(1);
     expect(stdout).toMatch(/https:\/\//);
@@ -147,7 +147,7 @@ describe("CLI Validation Tests", () => {
 
   it("rejects terms URL with only https://", () => {
     const { stdout, exitCode } = run(
-      `${CLI} app view --id "${appId}" --set-terms-url "https://"`
+      `${CLI} app edit "${appId}" --terms-url "https://"`
     );
     expect(exitCode).toBe(1);
     expect(stdout).toMatch(/include a domain/);
@@ -185,16 +185,16 @@ describe("Integration Tests (requires auth + .testenv)", () => {
       if (!appId) return;
 
       run(
-        `${CLI} app view --id "${appId}" ` +
-          `--set-name "${originals["name.short"]}" ` +
-          `--set-long-name "${originals["name.full"]}" ` +
-          `--set-version "${originals["version"]}" ` +
-          `--set-developer "${originals["developer.name"]}" ` +
-          `--set-website "${originals["developer.websiteUrl"]}" ` +
-          `--set-privacy-url "${originals["developer.privacyUrl"]}" ` +
-          `--set-terms-url "${originals["developer.termsOfUseUrl"]}" ` +
-          `--set-short-description "${originals["description.short"]}" ` +
-          `--set-long-description "${originals["description.full"]}"`
+        `${CLI} app edit "${appId}" ` +
+          `--name "${originals["name.short"]}" ` +
+          `--long-name "${originals["name.full"]}" ` +
+          `--version "${originals["version"]}" ` +
+          `--developer "${originals["developer.name"]}" ` +
+          `--website "${originals["developer.websiteUrl"]}" ` +
+          `--privacy-url "${originals["developer.privacyUrl"]}" ` +
+          `--terms-url "${originals["developer.termsOfUseUrl"]}" ` +
+          `--short-description "${originals["description.short"]}" ` +
+          `--long-description "${originals["description.full"]}"`
       );
     },
     TEST_TIMEOUT
@@ -203,7 +203,7 @@ describe("Integration Tests (requires auth + .testenv)", () => {
   it("updates short name and verifies", () => {
     const testValue = `Test${Date.now()}`.slice(0, 30);
     const { exitCode } = run(
-      `${CLI} app view --id "${appId}" --set-name "${testValue}"`
+      `${CLI} app edit "${appId}" --name "${testValue}"`
     );
     expect(exitCode).toBe(0);
 
@@ -214,7 +214,7 @@ describe("Integration Tests (requires auth + .testenv)", () => {
   it("updates long name and verifies", () => {
     const testValue = "Test Long Name " + Date.now();
     const { exitCode } = run(
-      `${CLI} app view --id "${appId}" --set-long-name "${testValue}"`
+      `${CLI} app edit "${appId}" --long-name "${testValue}"`
     );
     expect(exitCode).toBe(0);
 
@@ -225,7 +225,7 @@ describe("Integration Tests (requires auth + .testenv)", () => {
   it("updates version and verifies", () => {
     const testValue = "9.8.7";
     const { exitCode } = run(
-      `${CLI} app view --id "${appId}" --set-version "${testValue}"`
+      `${CLI} app edit "${appId}" --version "${testValue}"`
     );
     expect(exitCode).toBe(0);
 
@@ -236,7 +236,7 @@ describe("Integration Tests (requires auth + .testenv)", () => {
   it("updates developer name and verifies", () => {
     const testValue = "Test Developer " + Date.now();
     const { exitCode } = run(
-      `${CLI} app view --id "${appId}" --set-developer "${testValue}"`
+      `${CLI} app edit "${appId}" --developer "${testValue}"`
     );
     expect(exitCode).toBe(0);
 
@@ -247,7 +247,7 @@ describe("Integration Tests (requires auth + .testenv)", () => {
   it("updates website URL and verifies", () => {
     const testValue = `https://test-${Date.now()}.example.com`;
     const { exitCode } = run(
-      `${CLI} app view --id "${appId}" --set-website "${testValue}"`
+      `${CLI} app edit "${appId}" --website "${testValue}"`
     );
     expect(exitCode).toBe(0);
 
@@ -258,7 +258,7 @@ describe("Integration Tests (requires auth + .testenv)", () => {
   it("updates privacy URL and verifies", () => {
     const testValue = `https://test-${Date.now()}.example.com/privacy`;
     const { exitCode } = run(
-      `${CLI} app view --id "${appId}" --set-privacy-url "${testValue}"`
+      `${CLI} app edit "${appId}" --privacy-url "${testValue}"`
     );
     expect(exitCode).toBe(0);
 
@@ -269,7 +269,7 @@ describe("Integration Tests (requires auth + .testenv)", () => {
   it("updates terms URL and verifies", () => {
     const testValue = `https://test-${Date.now()}.example.com/terms`;
     const { exitCode } = run(
-      `${CLI} app view --id "${appId}" --set-terms-url "${testValue}"`
+      `${CLI} app edit "${appId}" --terms-url "${testValue}"`
     );
     expect(exitCode).toBe(0);
 
@@ -280,7 +280,7 @@ describe("Integration Tests (requires auth + .testenv)", () => {
   it("updates short description and verifies", () => {
     const testValue = "Test short description " + Date.now();
     const { exitCode } = run(
-      `${CLI} app view --id "${appId}" --set-short-description "${testValue}"`
+      `${CLI} app edit "${appId}" --short-description "${testValue}"`
     );
     expect(exitCode).toBe(0);
 
@@ -293,7 +293,7 @@ describe("Integration Tests (requires auth + .testenv)", () => {
     () => {
       const testValue = "Test long description with more details " + Date.now();
       const { exitCode } = run(
-        `${CLI} app view --id "${appId}" --set-long-description "${testValue}"`
+        `${CLI} app edit "${appId}" --long-description "${testValue}"`
       );
       expect(exitCode).toBe(0);
 
@@ -307,7 +307,7 @@ describe("Integration Tests (requires auth + .testenv)", () => {
     const testName = `Multi${Date.now()}`.slice(0, 30);
     const testVersion = "1.2.3";
     const { exitCode } = run(
-      `${CLI} app view --id "${appId}" --set-name "${testName}" --set-version "${testVersion}"`
+      `${CLI} app edit "${appId}" --name "${testName}" --version "${testVersion}"`
     );
     expect(exitCode).toBe(0);
 

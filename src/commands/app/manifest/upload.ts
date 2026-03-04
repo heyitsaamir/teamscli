@@ -1,63 +1,51 @@
 import { Command } from "commander";
-import { readFile } from "node:fs/promises";
 import pc from "picocolors";
-import { createSpinner } from "nanospinner";
 import { getAccount, getTokenSilent, teamsDevPortalScopes } from "../../../auth/index.js";
-import { uploadManifest } from "../../../apps/index.js";
-import type { TeamsManifest } from "../../../apps/api.js";
+import { pickApp } from "../../../utils/app-picker.js";
+import { uploadManifestFromFile } from "./actions.js";
 
 export const manifestUploadCommand = new Command("upload")
   .description("Upload a manifest.json to update an existing Teams app")
-  .argument("<file-path>", "Path to manifest.json file")
-  .requiredOption("--id <appId>", "App ID")
-  .action(async (filePath: string, options) => {
-    const account = await getAccount();
-    if (!account) {
-      console.log(pc.red("Not logged in.") + ` Run ${pc.cyan("teams login")} first.`);
+  .argument("[appId]", "App ID")
+  .argument("[file-path]", "Path to manifest.json file")
+  .action(async (appIdArg: string | undefined, filePath: string | undefined, options) => {
+    // Disambiguate: if only one arg and it looks like a file path, treat as filePath
+    if (appIdArg && !filePath && (appIdArg.includes("/") || appIdArg.includes("\\") || appIdArg.endsWith(".json"))) {
+      filePath = appIdArg;
+      appIdArg = undefined;
+    }
+
+    // file-path is required for upload
+    if (!filePath) {
+      console.log(pc.red("Missing file path.") + ` Provide the path to manifest.json as an argument.`);
       process.exit(1);
     }
 
-    const token = await getTokenSilent(teamsDevPortalScopes);
-    if (!token) {
-      console.log(pc.red("Failed to get token.") + ` Try ${pc.cyan("teams login")} again.`);
-      process.exit(1);
-    }
+    let appId: string;
+    let token: string;
 
-    // Read and parse manifest file
-    let manifest: TeamsManifest;
-    try {
-      const content = await readFile(filePath, "utf-8");
-      manifest = JSON.parse(content) as TeamsManifest;
-    } catch (error) {
-      if ((error as NodeJS.ErrnoException).code === "ENOENT") {
-        console.log(pc.red(`File not found: ${filePath}`));
-      } else if (error instanceof SyntaxError) {
-        console.log(pc.red(`Invalid JSON in ${filePath}: ${error.message}`));
-      } else {
-        console.log(pc.red(`Failed to read ${filePath}: ${error instanceof Error ? error.message : "Unknown error"}`));
+    if (appIdArg) {
+      const account = await getAccount();
+      if (!account) {
+        console.log(pc.red("Not logged in.") + ` Run ${pc.cyan("teams login")} first.`);
+        process.exit(1);
       }
-      process.exit(1);
-    }
 
-    // Basic validation
-    if (!manifest.name?.short) {
-      console.log(pc.red("Invalid manifest: missing name.short"));
-      process.exit(1);
+      token = (await getTokenSilent(teamsDevPortalScopes))!;
+      if (!token) {
+        console.log(pc.red("Failed to get token.") + ` Try ${pc.cyan("teams login")} again.`);
+        process.exit(1);
+      }
+      appId = appIdArg;
+    } else {
+      const picked = await pickApp();
+      appId = picked.app.teamsAppId;
+      token = picked.token;
     }
-    if (!manifest.version) {
-      console.log(pc.red("Invalid manifest: missing version"));
-      process.exit(1);
-    }
-
-    const spinner = createSpinner("Uploading manifest...").start();
 
     try {
-      const result = await uploadManifest(token, options.id, manifest);
-      spinner.success({ text: "Manifest uploaded successfully" });
-      console.log(`${pc.dim("App:")} ${result.shortName}`);
-      console.log(`${pc.dim("Version:")} ${result.version}`);
+      await uploadManifestFromFile(token, appId, filePath);
     } catch (error) {
-      spinner.error({ text: "Failed to upload manifest" });
       console.log(pc.red(error instanceof Error ? error.message : "Unknown error"));
       process.exit(1);
     }

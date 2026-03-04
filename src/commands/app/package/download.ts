@@ -1,20 +1,16 @@
 import { Command } from "commander";
 import pc from "picocolors";
+import { writeFile } from "node:fs/promises";
+import { createSpinner } from "nanospinner";
 import { getAccount, getTokenSilent, teamsDevPortalScopes } from "../../../auth/index.js";
+import { fetchApp, downloadAppPackage } from "../../../apps/index.js";
 import { pickApp } from "../../../utils/app-picker.js";
-import { downloadManifest } from "./actions.js";
 
-export const manifestDownloadCommand = new Command("download")
-  .description("Download manifest from a Teams app")
+export const packageDownloadCommand = new Command("download")
+  .description("Download a Teams app package")
   .argument("[appId]", "App ID")
-  .argument("[file-path]", "Output file path (displays to stdout if not provided)")
-  .action(async (appIdArg: string | undefined, filePath: string | undefined, options) => {
-    // Disambiguate: if only one arg and it looks like a file path, treat as filePath
-    if (appIdArg && !filePath && (appIdArg.includes("/") || appIdArg.includes("\\") || appIdArg.endsWith(".json"))) {
-      filePath = appIdArg;
-      appIdArg = undefined;
-    }
-
+  .option("-o, --output <path>", "[OPTIONAL] Output file path (defaults to <appName>.zip)")
+  .action(async (appIdArg: string | undefined, options) => {
     let appId: string;
     let token: string;
 
@@ -38,7 +34,15 @@ export const manifestDownloadCommand = new Command("download")
     }
 
     try {
-      await downloadManifest(token, appId, filePath);
+      const app = await fetchApp(token, appId);
+      const outputPath = options.output || `${(app.appName || app.appId).replace(/\s+/g, "-")}.zip`;
+
+      const spinner = createSpinner("Downloading package...").start();
+      const packageBuffer = await downloadAppPackage(token, app.appId);
+      spinner.stop();
+
+      await writeFile(outputPath, packageBuffer);
+      console.log(pc.green(`Package saved to ${outputPath}`));
     } catch (error) {
       console.log(pc.red(error instanceof Error ? error.message : "Unknown error"));
       process.exit(1);

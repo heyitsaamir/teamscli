@@ -3,6 +3,7 @@ import { program } from "commander";
 import { loginCommand, logoutCommand } from "./commands/auth/index.js";
 import { statusCommand } from "./commands/status.js";
 import { appCommand, appsCommand } from "./commands/app/index.js";
+import { scaffoldCommand } from "./commands/scaffold/index.js";
 import { setVerbose } from "./utils/logger.js";
 
 program
@@ -22,5 +23,6 @@ program.addCommand(logoutCommand);
 program.addCommand(statusCommand);
 program.addCommand(appCommand);
 program.addCommand(appsCommand);
+program.addCommand(scaffoldCommand);
 
 program.parse();
