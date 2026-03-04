@@ -35,7 +35,7 @@ interface CreateOptions {
 export const appCreateCommand = new Command("create")
   .description("Create a new Teams app with bot")
   .option("-n, --name <name>", "App/bot name")
-  .option("-e, --endpoint <url>", "Bot messaging endpoint URL")
+  .option("-e, --endpoint <url>", "[OPTIONAL] Bot messaging endpoint URL")
   .option("-m, --manifest <path>", "[OPTIONAL] Path to manifest.json")
   .option("-p, --package <path>", "[OPTIONAL] Path to app package zip")
   .option("--env <path>", "[OPTIONAL] Path to .env file to write credentials")
@@ -65,10 +65,10 @@ export const appCreateCommand = new Command("create")
       options.name ??
       (options.package ? undefined : await input({ message: "App name:" }));
 
-    // Get endpoint
+    // Get endpoint (optional - can be set later)
     const endpoint =
       options.endpoint ??
-      (await input({ message: "Bot messaging endpoint URL:" }));
+      ((await input({ message: "Bot messaging endpoint URL (leave empty to skip):" })) || undefined);
 
     // Get env path
     const envPath =
@@ -174,7 +174,7 @@ export const appCreateCommand = new Command("create")
       await registerBot(tdpToken, {
         botId: clientId,
         name: name ?? "Bot",
-        endpoint,
+        endpoint: endpoint ?? "",
       });
       spinner.success({ text: "Registered bot" });
 
@@ -185,7 +185,7 @@ export const appCreateCommand = new Command("create")
           BOT_ID: clientId,
           BOT_PASSWORD: secretText,
           TEAMS_APP_ID: teamsAppId,
-          BOT_ENDPOINT: endpoint,
+          ...(endpoint ? { BOT_ENDPOINT: endpoint } : {}),
         });
         spinner.success({ text: `Credentials written to ${envPath}` });
 
@@ -197,7 +197,9 @@ export const appCreateCommand = new Command("create")
         logger.info(`\n${pc.dim("Client ID:")} ${clientId}`);
         logger.info(`${pc.dim("Client Secret:")} ${secretText}`);
         logger.info(`${pc.dim("Teams App ID:")} ${teamsAppId}`);
-        logger.info(`${pc.dim("Endpoint:")} ${endpoint}`);
+        if (endpoint) {
+          logger.info(`${pc.dim("Endpoint:")} ${endpoint}`);
+        }
 
         logger.warn("Save the client secret - it won't be shown again!");
       }
