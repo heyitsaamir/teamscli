@@ -8,6 +8,7 @@ import { scaffoldCommand } from "./commands/scaffold/index.js";
 import { selfUpdateCommand } from "./commands/self-update.js";
 import { setVerbose } from "./utils/logger.js";
 import { isInteractive } from "./utils/interactive.js";
+import { checkForUpdates } from "./utils/update-check.js";
 import pc from "picocolors";
 
 const require = createRequire(import.meta.url);
@@ -37,4 +38,5 @@ program.addCommand(appsCommand);
 program.addCommand(scaffoldCommand);
 program.addCommand(selfUpdateCommand);
 
+await checkForUpdates();
 program.parse();
