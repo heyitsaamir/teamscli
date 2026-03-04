@@ -8,6 +8,9 @@ import { appPackageCommand } from "./package/index.js";
 import { appManifestCommand } from "./manifest/index.js";
 import { authCommand } from "./auth/index.js";
 import { isInteractive } from "../../utils/interactive.js";
+import { pickApp } from "../../utils/app-picker.js";
+import { fetchApp } from "../../apps/index.js";
+import { showAppActions } from "./actions.js";
 
 export const appCommand = new Command("app")
   .description("Manage Teams apps")
@@ -22,35 +25,20 @@ export const appCommand = new Command("app")
         const action = await select({
           message: "What would you like to do?",
           choices: [
-            { name: "List apps", value: "list" },
+            { name: "Select app", value: "select" },
             { name: "Create app", value: "create" },
-            { name: "View app", value: "view" },
-            { name: "Edit app", value: "edit" },
-            { name: "Download package", value: "package" },
-            { name: "Manifest", value: "manifest" },
-            { name: "Generate secret", value: "secret" },
             { name: "Exit", value: "exit" },
           ],
         });
 
         if (action === "exit") return;
 
-        if (action === "list") {
-          await runAppList();
+        if (action === "select") {
+          const picked = await pickApp();
+          const app = await fetchApp(picked.token, picked.app.teamsAppId);
+          await showAppActions(app, picked.token);
         } else if (action === "create") {
           await appCreateCommand.parseAsync([], { from: "user" });
-        } else if (action === "view") {
-          await appViewCommand.parseAsync([], { from: "user" });
-        } else if (action === "edit") {
-          await appEditCommand.parseAsync([], { from: "user" });
-        } else if (action === "package") {
-          const { packageDownloadCommand } = await import("./package/download.js");
-          await packageDownloadCommand.parseAsync([], { from: "user" });
-        } else if (action === "manifest") {
-          await appManifestCommand.parseAsync([], { from: "user" });
-        } else if (action === "secret") {
-          const { secretCreateCommand } = await import("./auth/secret/create.js");
-          await secretCreateCommand.parseAsync([], { from: "user" });
         }
       } catch (error) {
         if (error instanceof Error && error.name === "ExitPromptError") {

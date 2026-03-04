@@ -3,7 +3,8 @@ import { search } from "@inquirer/prompts";
 import { createSpinner } from "nanospinner";
 import pc from "picocolors";
 import { getAccount, getTokenSilent, teamsDevPortalScopes } from "../../auth/index.js";
-import { fetchApps, showAppDetail } from "../../apps/index.js";
+import { fetchApps, fetchApp } from "../../apps/index.js";
+import { showAppActions } from "./actions.js";
 import { parseJsonFields, pickFields, outputJson } from "../../utils/json-output.js";
 import { isInteractive } from "../../utils/interactive.js";
 
@@ -71,7 +72,8 @@ export async function runAppList(options?: { json?: string }): Promise<void> {
         },
       });
 
-      await showAppDetail(selected, token, { interactive: true });
+      const app = await fetchApp(token, selected.teamsAppId);
+      await showAppActions(app, token);
     } catch (error) {
       // User cancelled prompt (Escape/Ctrl+C), exit gracefully
       if (error instanceof Error && error.name === "ExitPromptError") {
