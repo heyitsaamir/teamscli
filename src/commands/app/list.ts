@@ -3,9 +3,13 @@ import { search } from "@inquirer/prompts";
 import { createSpinner } from "nanospinner";
 import pc from "picocolors";
 import { getAccount, getTokenSilent, teamsDevPortalScopes } from "../../auth/index.js";
-import { fetchApps, showAppHome } from "../../apps/index.js";
+import { fetchApps, showAppDetail } from "../../apps/index.js";
+import { parseJsonFields, pickFields, outputJson } from "../../utils/json-output.js";
+import { isInteractive } from "../../utils/interactive.js";
 
-export async function runAppList(): Promise<void> {
+const LIST_JSON_FIELDS = ["appId", "teamsAppId", "appName", "version", "updatedAt"];
+
+export async function runAppList(options?: { json?: string }): Promise<void> {
   const account = await getAccount();
   if (!account) {
     console.log(pc.red("Not logged in.") + ` Run ${pc.cyan("teams login")} first.`);
@@ -30,7 +34,23 @@ export async function runAppList(): Promise<void> {
   }
 
   if (apps.length === 0) {
+    if (options?.json) {
+      outputJson([]);
+      return;
+    }
     console.log(pc.dim("No apps found."));
+    return;
+  }
+
+  if (options?.json) {
+    const fields = parseJsonFields(options.json, LIST_JSON_FIELDS);
+    outputJson(pickFields(apps, fields));
+    return;
+  }
+
+  if (!isInteractive()) {
+    // Non-interactive: output all apps as JSON
+    outputJson(apps);
     return;
   }
 
@@ -51,7 +71,7 @@ export async function runAppList(): Promise<void> {
         },
       });
 
-      await showAppHome(selected, token);
+      await showAppDetail(selected, token, { interactive: true });
     } catch (error) {
       // User cancelled prompt (Escape/Ctrl+C), exit gracefully
       if (error instanceof Error && error.name === "ExitPromptError") {
@@ -64,4 +84,7 @@ export async function runAppList(): Promise<void> {
 
 export const appListCommand = new Command("list")
   .description("List your Teams apps")
-  .action(runAppList);
+  .option("--json <fields>", "[OPTIONAL] Output as JSON with specified fields")
+  .action(async (options) => {
+    await runAppList(options);
+  });

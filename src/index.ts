@@ -5,12 +5,18 @@ import { statusCommand } from "./commands/status.js";
 import { appCommand, appsCommand } from "./commands/app/index.js";
 import { scaffoldCommand } from "./commands/scaffold/index.js";
 import { setVerbose } from "./utils/logger.js";
+import { isInteractive } from "./utils/interactive.js";
+import pc from "picocolors";
 
 program
   .name("teams2")
   .description("CLI for scaffolding Teams applications")
   .version("1.0.0")
   .option("-v, --verbose", "[OPTIONAL] Enable verbose logging")
+  .addHelpText("after", () => {
+    const status = isInteractive() ? pc.green("on") : pc.yellow("off");
+    return `\nInteractive mode: ${status}\n  Set ${pc.cyan("TEAMS_NO_INTERACTIVE=1")} to disable, unset to enable.`;
+  })
   .hook("preAction", (thisCommand) => {
     const opts = thisCommand.optsWithGlobals();
     if (opts.verbose) {

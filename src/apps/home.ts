@@ -1,10 +1,9 @@
-import { select, input } from "@inquirer/prompts";
+import { select } from "@inquirer/prompts";
 import pc from "picocolors";
-import { writeFile } from "node:fs/promises";
 import { createSpinner } from "nanospinner";
 import type { AppSummary, AppDetails } from "./types.js";
-import { fetchApp, downloadAppPackage, fetchAppDetailsV2 } from "./api.js";
-import { fetchBot, type BotDetails } from "./tdp.js";
+import { fetchApp, fetchAppDetailsV2 } from "./api.js";
+import { fetchBot } from "./tdp.js";
 
 /**
  * Fetch and print app detail header. Returns the resolved details.
@@ -59,6 +58,8 @@ async function printAppHeader(appSummary: AppSummary, token: string): Promise<{ 
   if (endpoint !== null) {
     console.log(`${pc.dim("Endpoint:")} ${endpoint || pc.yellow("(not set)")}`);
   }
+  const installLink = `https://teams.microsoft.com/l/app/${appDetails.teamsAppId}?installAppPackage=true`;
+  console.log(`${pc.dim("Install link:")} ${installLink}`);
 
   return { appDetails, endpoint };
 }
@@ -76,94 +77,6 @@ export async function showAppDetail(appSummary: AppSummary, token: string, optio
       message: "",
       choices: [{ name: "Back", value: "back" }],
     });
-  }
-}
-
-/**
- * Interactive app menu: shows detail header + action menu (Edit, Package, Secret, Back).
- * Returns when user selects "Back".
- */
-export async function showAppMenu(appSummary: AppSummary, token: string): Promise<void> {
-  let { appDetails } = await printAppHeader(appSummary, token);
-  const { showEditMenu } = await import("../commands/app/edit.js");
-
-  while (true) {
-    const action = await select({
-      message: "What would you like to do?",
-      choices: [
-        { name: "Edit", value: "edit" },
-        { name: "Download package", value: "package" },
-        { name: "Download manifest", value: "manifest-download" },
-        { name: "Upload manifest", value: "manifest-upload" },
-        { name: "Generate secret", value: "secret" },
-        { name: "Back", value: "back" },
-      ],
-    });
-
-    if (action === "back") return;
-
-    if (action === "edit") {
-      await showEditMenu(appSummary, token);
-      // Re-print header after edits
-      ({ appDetails } = await printAppHeader(appSummary, token));
-      continue;
-    }
-
-    if (action === "package") {
-      const defaultName = `${(appDetails.shortName || "app").replace(/\s+/g, "-")}.zip`;
-      const savePath = await input({
-        message: "Save to:",
-        default: defaultName,
-      });
-
-      const dlSpinner = createSpinner("Downloading package...").start();
-      const packageBuffer = await downloadAppPackage(token, appDetails.appId);
-      dlSpinner.stop();
-      await writeFile(savePath, packageBuffer);
-      console.log(pc.green(`Package saved to ${savePath}`));
-      continue;
-    }
-
-    if (action === "manifest-download") {
-      const savePath = await input({
-        message: "Save to (leave empty to print):",
-        default: "",
-      });
-
-      try {
-        const { downloadManifest } = await import("../commands/app/manifest/actions.js");
-        await downloadManifest(token, appDetails.appId, savePath || undefined);
-      } catch (error) {
-        console.log(pc.red(error instanceof Error ? error.message : "Unknown error"));
-      }
-      continue;
-    }
-
-    if (action === "manifest-upload") {
-      const filePath = await input({
-        message: "Path to manifest.json:",
-        default: "manifest.json",
-      });
-
-      try {
-        const { uploadManifestFromFile } = await import("../commands/app/manifest/actions.js");
-        const result = await uploadManifestFromFile(token, appDetails.teamsAppId, filePath);
-        appDetails = { ...appDetails, ...result };
-      } catch (error) {
-        console.log(pc.red(error instanceof Error ? error.message : "Unknown error"));
-      }
-      continue;
-    }
-
-    if (action === "secret") {
-      const { generateSecret } = await import("../commands/app/auth/secret/generate.js");
-      try {
-        await generateSecret({ tdpToken: token, appId: appDetails.teamsAppId, interactive: true });
-      } catch (error) {
-        console.log(pc.red(error instanceof Error ? error.message : "Failed to generate secret"));
-      }
-      continue;
-    }
   }
 }
 

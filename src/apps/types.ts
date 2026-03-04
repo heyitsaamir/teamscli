@@ -1,6 +1,7 @@
 export interface AppBot {
   botId: string;
   scopes?: string[];
+  messagingEndpoint?: string;
 }
 
 export interface AppSummary {
