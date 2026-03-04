@@ -12,6 +12,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: dotnet/nbgv@master
+        id: nbgv
+        with:
+          stamp: package.json
 
       - uses: pnpm/action-setup@v4
 
@@ -26,13 +33,22 @@ jobs:
 
       - run: npm pack && mv teams-*.tgz teamscli.tgz
 
-      - uses: softprops/action-gh-release@v2
-        with:
-          tag_name: latest
-          name: Latest Release
-          files: teamscli.tgz
-          body: |
-            Install with:
-            ```
-            npm install -g https://github.com/heyitsaamir/teamscli/releases/latest/download/teamscli.tgz
-            ```
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: v${{ steps.nbgv.outputs.SimpleVersion }}
+        run: |
+          PREV_TAG=$(gh release list --limit 1 --exclude-drafts --json tagName -q '.[0].tagName // empty')
+          NOTES="Install with:
+          \`\`\`
+          npm install -g https://github.com/heyitsaamir/teamscli/releases/latest/download/teamscli.tgz
+          \`\`\`"
+          if [ -n "$PREV_TAG" ] && [ "$PREV_TAG" != "$VERSION" ]; then
+            NOTES="${NOTES}
+
+          **Changes:** https://github.com/${{ github.repository }}/compare/${PREV_TAG}...${VERSION}"
+          fi
+          gh release create "$VERSION" teamscli.tgz \
+            --title "$VERSION" \
+            --notes "$NOTES" \
+            --latest
