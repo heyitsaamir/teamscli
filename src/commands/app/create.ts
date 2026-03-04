@@ -21,7 +21,7 @@ import {
 	graphScopes,
 	teamsDevPortalScopes,
 } from "../../auth/index.js";
-import { writeEnvFile } from "../../utils/env.js";
+import { outputCredentials } from "../../utils/env.js";
 import { logger } from "../../utils/logger.js";
 
 interface CreateOptions {
@@ -194,27 +194,11 @@ export const appCreateCommand = new Command("create")
 			});
 			spinner.success({ text: "Registered bot" });
 
-			// Write to .env if specified
-			if (envPath) {
-				spinner = createSpinner("Writing .env file...").start();
-				writeEnvFile(envPath, {
-					CLIENT_ID: clientId,
-					CLIENT_SECRET: secretText,
-					TENANT_ID: account.tenantId,
-				});
-				spinner.success({ text: `Credentials written to ${envPath}` });
-
-				logger.info(pc.bold(pc.green("\nApp created successfully!")));
-				logger.info(`Credentials written to ${pc.cyan(envPath)}`);
-			} else {
-				// Show in terminal
-				logger.info(pc.bold(pc.green("\nApp created successfully!")));
-				logger.info(`\n${pc.dim("CLIENT_ID=")}${clientId}`);
-				logger.info(`${pc.dim("CLIENT_SECRET=")}${secretText}`);
-				logger.info(`${pc.dim("TENANT_ID=")}${account.tenantId}`);
-
-				logger.warn("Save the client secret - it won't be shown again!");
-			}
+			outputCredentials(envPath, {
+				CLIENT_ID: clientId,
+				CLIENT_SECRET: secretText,
+				TENANT_ID: account.tenantId,
+			}, "App created successfully!");
 		} catch (error) {
 			spinner.error({ text: "Failed" });
 			logger.error(

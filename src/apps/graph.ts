@@ -33,6 +33,32 @@ export async function createAadApp(token: string, displayName: string): Promise<
   return response.json();
 }
 
+export async function getAadAppByClientId(
+  token: string,
+  clientId: string,
+): Promise<AadApp> {
+  const response = await fetch(
+    `${GRAPH_BASE_URL}/applications?$filter=appId eq '${clientId}'`,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    },
+  );
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Failed to look up AAD app: ${response.status} ${error}`);
+  }
+
+  const data = (await response.json()) as { value: AadApp[] };
+  if (data.value.length === 0) {
+    throw new Error(`No AAD app found with clientId ${clientId}`);
+  }
+
+  return data.value[0];
+}
+
 export async function createClientSecret(
   token: string,
   appRegistrationId: string

@@ -5,6 +5,7 @@ import { createSpinner } from "nanospinner";
 import { appListCommand, runAppList } from "./list.js";
 import { appCreateCommand } from "./create.js";
 import { manifestCommand } from "./manifest/index.js";
+import { generateSecretCommand } from "./generate-secret.js";
 import { installLinkCommand } from "./install-link.js";
 import { appContext } from "./context.js";
 import { getAccount, getTokenSilent, teamsDevPortalScopes } from "../../auth/index.js";
@@ -186,4 +187,5 @@ appCommand.hook("preSubcommand", async (thisCommand) => {
 appCommand.addCommand(appListCommand);
 appCommand.addCommand(appCreateCommand);
 appCommand.addCommand(manifestCommand);
+appCommand.addCommand(generateSecretCommand);
 appCommand.addCommand(installLinkCommand);

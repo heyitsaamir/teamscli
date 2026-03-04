@@ -1,5 +1,8 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
+import { createSpinner } from "nanospinner";
+import pc from "picocolors";
+import { logger } from "./logger.js";
 
 export interface EnvValues {
 	CLIENT_ID: string;
@@ -36,4 +39,26 @@ export function writeEnvFile(filePath: string, values: EnvValues): void {
 	}
 
 	fs.writeFileSync(resolvedPath, lines.join("\n").trim() + "\n");
+}
+
+export function outputCredentials(
+	envPath: string | undefined,
+	values: EnvValues,
+	successMessage: string,
+): void {
+	if (envPath) {
+		const spinner = createSpinner("Writing .env file...").start();
+		writeEnvFile(envPath, values);
+		spinner.success({ text: `Credentials written to ${envPath}` });
+
+		logger.info(pc.bold(pc.green(`\n${successMessage}`)));
+		logger.info(`Credentials written to ${pc.cyan(envPath)}`);
+	} else {
+		logger.info(pc.bold(pc.green(`\n${successMessage}`)));
+		logger.info(`\n${pc.dim("CLIENT_ID=")}${values.CLIENT_ID}`);
+		logger.info(`${pc.dim("CLIENT_SECRET=")}${values.CLIENT_SECRET}`);
+		logger.info(`${pc.dim("TENANT_ID=")}${values.TENANT_ID}`);
+
+		logger.warn("Save the client secret - it won't be shown again!");
+	}
 }
