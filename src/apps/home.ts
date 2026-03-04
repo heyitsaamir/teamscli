@@ -61,7 +61,11 @@ export async function showAppHome(appSummary: AppSummary, token: string): Promis
       console.log(`${pc.dim("Description:")} ${appDetails.shortDescription}`);
     }
     if (bot) {
-      console.log(`${pc.dim("Endpoint:")} ${bot.messagingEndpoint || pc.dim("(not set)")}`);
+      if (bot.messagingEndpoint) {
+        console.log(`${pc.dim("Endpoint:")} ${bot.messagingEndpoint}`);
+      } else {
+        console.log(`${pc.dim("Endpoint:")} ${pc.yellow("⚠ Not set — use \"Edit endpoint\" to configure")}`);
+      }
     }
 
     const action = await select({
