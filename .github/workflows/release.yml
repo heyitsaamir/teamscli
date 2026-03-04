@@ -39,17 +39,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VERSION: v${{ steps.nbgv.outputs.SimpleVersion }}
         run: |
-          PREV_TAG=$(gh release list --limit 1 --exclude-drafts --json tagName -q '.[0].tagName // empty')
-          NOTES="Install with:
-          \`\`\`
-          npm install -g https://github.com/heyitsaamir/teamscli/releases/latest/download/teamscli.tgz
-          \`\`\`"
-          if [ -n "$PREV_TAG" ] && [ "$PREV_TAG" != "$VERSION" ]; then
-            NOTES="${NOTES}
-
-          **Changes:** https://github.com/${{ github.repository }}/compare/${PREV_TAG}...${VERSION}"
-          fi
           gh release create "$VERSION" teamscli.tgz \
             --title "$VERSION" \
-            --notes "$NOTES" \
+            --generate-notes \
             --latest
