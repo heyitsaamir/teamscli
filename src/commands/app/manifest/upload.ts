@@ -5,18 +5,12 @@ import { createSpinner } from "nanospinner";
 import { getAccount, getTokenSilent, teamsDevPortalScopes } from "../../../auth/index.js";
 import { uploadManifest } from "../../../apps/index.js";
 import type { TeamsManifest } from "../../../apps/api.js";
-import { appContext } from "../context.js";
 
 export const manifestUploadCommand = new Command("upload")
-  .description("Upload a manifest.json to update an existing Teams app (requires --id on parent app command)")
+  .description("Upload a manifest.json to update an existing Teams app")
   .argument("<file-path>", "Path to manifest.json file")
-  .action(async (filePath: string) => {
-    const id = appContext.appId;
-    if (!id) {
-      console.log(pc.red("Missing required option: --id <appId>"));
-      console.log(pc.dim("Usage: teams app --id <appId> manifest upload <file-path>"));
-      process.exit(1);
-    }
+  .requiredOption("--id <appId>", "App ID")
+  .action(async (filePath: string, options) => {
     const account = await getAccount();
     if (!account) {
       console.log(pc.red("Not logged in.") + ` Run ${pc.cyan("teams login")} first.`);
@@ -58,7 +52,7 @@ export const manifestUploadCommand = new Command("upload")
     const spinner = createSpinner("Uploading manifest...").start();
 
     try {
-      const result = await uploadManifest(token, id, manifest);
+      const result = await uploadManifest(token, options.id, manifest);
       spinner.success({ text: "Manifest uploaded successfully" });
       console.log(`${pc.dim("App:")} ${result.shortName}`);
       console.log(`${pc.dim("Version:")} ${result.version}`);

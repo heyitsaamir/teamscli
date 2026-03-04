@@ -3,18 +3,11 @@ import pc from "picocolors";
 import { createSpinner } from "nanospinner";
 import { getAccount, getTokenSilent, teamsDevPortalScopes } from "../../auth/index.js";
 import { fetchApp } from "../../apps/index.js";
-import { appContext } from "./context.js";
 
 export const installLinkCommand = new Command("install-link")
-  .description("Get the Teams installation link for an app (requires --id on parent app command)")
-  .action(async () => {
-    const id = appContext.appId;
-    if (!id) {
-      console.log(pc.red("Missing required option: --id <appId>"));
-      console.log(pc.dim("Usage: teams2 app --id <appId> install-link"));
-      process.exit(1);
-    }
-
+  .description("Get the Teams installation link for an app")
+  .requiredOption("--id <appId>", "App ID")
+  .action(async (options) => {
     const account = await getAccount();
     if (!account) {
       console.log(pc.red("Not logged in.") + ` Run ${pc.cyan("teams login")} first.`);
@@ -30,7 +23,7 @@ export const installLinkCommand = new Command("install-link")
     const spinner = createSpinner("Fetching app details...").start();
 
     try {
-      const app = await fetchApp(token, id);
+      const app = await fetchApp(token, options.id);
       spinner.success({ text: "App found" });
 
       const installLink = `https://teams.microsoft.com/l/app/${app.teamsAppId}?installAppPackage=true`;

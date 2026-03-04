@@ -5,18 +5,12 @@ import pc from "picocolors";
 import { createSpinner } from "nanospinner";
 import { getAccount, getTokenSilent, teamsDevPortalScopes } from "../../../auth/index.js";
 import { downloadAppPackage } from "../../../apps/index.js";
-import { appContext } from "../context.js";
 
 export const manifestDownloadCommand = new Command("download")
-  .description("Download manifest from a Teams app (requires --id on parent app command)")
+  .description("Download manifest from a Teams app")
   .argument("[file-path]", "Output file path (displays to stdout if not provided)")
-  .action(async (filePath: string | undefined) => {
-    const id = appContext.appId;
-    if (!id) {
-      console.log(pc.red("Missing required option: --id <appId>"));
-      console.log(pc.dim("Usage: teams app --id <appId> manifest download [file-path]"));
-      process.exit(1);
-    }
+  .requiredOption("--id <appId>", "App ID")
+  .action(async (filePath: string | undefined, options) => {
     const account = await getAccount();
     if (!account) {
       console.log(pc.red("Not logged in.") + ` Run ${pc.cyan("teams login")} first.`);
@@ -32,7 +26,7 @@ export const manifestDownloadCommand = new Command("download")
     const spinner = createSpinner("Downloading manifest...").start();
 
     try {
-      const packageBuffer = await downloadAppPackage(token, id);
+      const packageBuffer = await downloadAppPackage(token, options.id);
       const zip = new AdmZip(packageBuffer);
       const manifestEntry = zip.getEntry("manifest.json");
 

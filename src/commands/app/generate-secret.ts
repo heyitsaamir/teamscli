@@ -14,23 +14,17 @@ import {
 } from "../../auth/index.js";
 import { outputCredentials } from "../../utils/env.js";
 import { logger } from "../../utils/logger.js";
-import { appContext } from "./context.js";
 
 interface GenerateSecretOptions {
+	id: string;
 	env?: string;
 }
 
 export const generateSecretCommand = new Command("generate-secret")
 	.description("Generate a new client secret for an existing app")
+	.requiredOption("--id <appId>", "App ID")
 	.option("--env <path>", "[OPTIONAL] Path to .env file to write credentials")
 	.action(async (options: GenerateSecretOptions) => {
-		if (!appContext.appId) {
-			logger.error(
-				`App ID required. Use ${pc.cyan("teams app --id <id> generate-secret")}`,
-			);
-			process.exit(1);
-		}
-
 		const account = await getAccount();
 		if (!account) {
 			logger.error(`Not logged in. Run ${pc.cyan("teams login")} first.`);
@@ -57,7 +51,7 @@ export const generateSecretCommand = new Command("generate-secret")
 		try {
 			// Fetch TDP app to get bot's clientId
 			spinner = createSpinner("Fetching app details...").start();
-			const app = await fetchApp(tdpToken, appContext.appId);
+			const app = await fetchApp(tdpToken, options.id);
 
 			if (!app.bots || app.bots.length === 0) {
 				spinner.error({ text: "This app has no bots" });
