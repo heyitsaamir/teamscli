@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { createRequire } from "node:module";
 import { program } from "commander";
 import { loginCommand, logoutCommand } from "./commands/auth/index.js";
 import { statusCommand } from "./commands/status.js";
@@ -9,10 +10,13 @@ import { setVerbose } from "./utils/logger.js";
 import { isInteractive } from "./utils/interactive.js";
 import pc from "picocolors";
 
+const require = createRequire(import.meta.url);
+const { version } = require("../package.json");
+
 program
   .name("teams2")
   .description("CLI for scaffolding Teams applications")
-  .version("1.0.0")
+  .version(version)
   .option("-v, --verbose", "[OPTIONAL] Enable verbose logging")
   .addHelpText("after", () => {
     const status = isInteractive() ? pc.green("on") : pc.yellow("off");
