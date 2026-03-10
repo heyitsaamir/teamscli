@@ -8,6 +8,7 @@ import {
 	createClientSecret,
 	createManifestZip,
 	createZipFromManifest,
+	getAadAppByClientId,
 	importAppPackage,
 	type ManifestOptions,
 	readManifestFile,
@@ -143,8 +144,7 @@ export const appCreateCommand = new Command("create")
 
 		try {
 			let clientId: string;
-			let appRegistrationId: string;
-			let secretText: string;
+				let secretText: string;
 			let zipBuffer: Buffer;
 			let teamsAppId: string;
 
@@ -158,14 +158,12 @@ export const appCreateCommand = new Command("create")
 				spinner = createSpinner("Creating Azure AD app...").start();
 				const aadApp = await createAadAppViaTdp(tdpToken, name ?? "Bot");
 				clientId = aadApp.appId;
-				appRegistrationId = aadApp.id;
 				spinner.success({ text: `Created Azure AD app (${clientId})` });
 			} else {
 				// Create Azure AD app (with service principal via TDP)
 				spinner = createSpinner("Creating Azure AD app...").start();
 				const aadApp = await createAadAppViaTdp(tdpToken, name!);
 				clientId = aadApp.appId;
-				appRegistrationId = aadApp.id;
 				spinner.success({ text: `Created Azure AD app (${clientId})` });
 
 				// Create zip from manifest or generate new one
@@ -190,9 +188,10 @@ export const appCreateCommand = new Command("create")
 				}
 			}
 
-			// Create client secret
+			// Look up Graph object ID (TDP returns a different ID)
 			spinner = createSpinner("Generating client secret...").start();
-			const secret = await createClientSecret(graphToken, appRegistrationId);
+			const graphApp = await getAadAppByClientId(graphToken, clientId);
+			const secret = await createClientSecret(graphToken, graphApp.id);
 			secretText = secret.secretText;
 			spinner.success({ text: "Generated client secret" });
 
