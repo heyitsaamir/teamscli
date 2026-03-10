@@ -7,7 +7,6 @@ import { logger } from "./logger.js";
 export interface EnvValues {
 	CLIENT_ID: string;
 	CLIENT_SECRET: string;
-	TENANT_ID: string;
 }
 
 export function writeEnvFile(filePath: string, values: EnvValues): void {
@@ -57,7 +56,6 @@ export function outputCredentials(
 		logger.info(pc.bold(pc.green(`\n${successMessage}`)));
 		logger.info(`\n${pc.dim("CLIENT_ID=")}${values.CLIENT_ID}`);
 		logger.info(`${pc.dim("CLIENT_SECRET=")}${values.CLIENT_SECRET}`);
-		logger.info(`${pc.dim("TENANT_ID=")}${values.TENANT_ID}`);
 
 		logger.warn("Save the client secret - it won't be shown again!");
 	}

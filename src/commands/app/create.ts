@@ -4,11 +4,10 @@ import { createSpinner } from "nanospinner";
 import pc from "picocolors";
 import {
 	collectManifestCustomization,
-	createAadAppViaTdp,
+	createAadApp,
 	createClientSecret,
 	createManifestZip,
 	createZipFromManifest,
-	getAadAppByClientId,
 	importAppPackage,
 	type ManifestOptions,
 	readManifestFile,
@@ -144,7 +143,8 @@ export const appCreateCommand = new Command("create")
 
 		try {
 			let clientId: string;
-				let secretText: string;
+			let appRegistrationId: string;
+			let secretText: string;
 			let zipBuffer: Buffer;
 			let teamsAppId: string;
 
@@ -154,16 +154,18 @@ export const appCreateCommand = new Command("create")
 				zipBuffer = readZipFile(options.package);
 				spinner.success({ text: "Package loaded" });
 
-				// Still need to create AAD app (with service principal) and secret
+				// Still need to create AAD app and secret
 				spinner = createSpinner("Creating Azure AD app...").start();
-				const aadApp = await createAadAppViaTdp(tdpToken, name ?? "Bot");
+				const aadApp = await createAadApp(graphToken, name ?? "Bot");
 				clientId = aadApp.appId;
+				appRegistrationId = aadApp.id;
 				spinner.success({ text: `Created Azure AD app (${clientId})` });
 			} else {
-				// Create Azure AD app (with service principal via TDP)
+				// Create Azure AD app
 				spinner = createSpinner("Creating Azure AD app...").start();
-				const aadApp = await createAadAppViaTdp(tdpToken, name!);
+				const aadApp = await createAadApp(graphToken, name!);
 				clientId = aadApp.appId;
+				appRegistrationId = aadApp.id;
 				spinner.success({ text: `Created Azure AD app (${clientId})` });
 
 				// Create zip from manifest or generate new one
@@ -188,10 +190,9 @@ export const appCreateCommand = new Command("create")
 				}
 			}
 
-			// Look up Graph object ID (TDP returns a different ID)
+			// Create client secret
 			spinner = createSpinner("Generating client secret...").start();
-			const graphApp = await getAadAppByClientId(graphToken, clientId);
-			const secret = await createClientSecret(graphToken, graphApp.id);
+			const secret = await createClientSecret(graphToken, appRegistrationId);
 			secretText = secret.secretText;
 			spinner.success({ text: "Generated client secret" });
 
@@ -213,7 +214,6 @@ export const appCreateCommand = new Command("create")
 			outputCredentials(envPath, {
 				CLIENT_ID: clientId,
 				CLIENT_SECRET: secretText,
-				TENANT_ID: account.tenantId,
 			}, "App created successfully!");
 		} catch (error) {
 			spinner.error({ text: "Failed" });
