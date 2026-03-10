@@ -4,7 +4,7 @@ import { createSpinner } from "nanospinner";
 import pc from "picocolors";
 import {
 	collectManifestCustomization,
-	createAadApp,
+	createAadAppViaTdp,
 	createClientSecret,
 	createManifestZip,
 	createZipFromManifest,
@@ -154,16 +154,16 @@ export const appCreateCommand = new Command("create")
 				zipBuffer = readZipFile(options.package);
 				spinner.success({ text: "Package loaded" });
 
-				// Still need to create AAD app and secret
+				// Still need to create AAD app (with service principal) and secret
 				spinner = createSpinner("Creating Azure AD app...").start();
-				const aadApp = await createAadApp(graphToken, name ?? "Bot");
+				const aadApp = await createAadAppViaTdp(tdpToken, name ?? "Bot");
 				clientId = aadApp.appId;
 				appRegistrationId = aadApp.id;
 				spinner.success({ text: `Created Azure AD app (${clientId})` });
 			} else {
-				// Create Azure AD app
+				// Create Azure AD app (with service principal via TDP)
 				spinner = createSpinner("Creating Azure AD app...").start();
-				const aadApp = await createAadApp(graphToken, name!);
+				const aadApp = await createAadAppViaTdp(tdpToken, name!);
 				clientId = aadApp.appId;
 				appRegistrationId = aadApp.id;
 				spinner.success({ text: `Created Azure AD app (${clientId})` });
