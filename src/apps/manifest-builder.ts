@@ -1,4 +1,5 @@
 import { input, checkbox } from "@inquirer/prompts";
+import { isInteractive } from "../utils/interactive.js";
 
 /**
  * Placeholder bot ID for manifest generation when no real bot ID is available.
@@ -21,6 +22,10 @@ export interface ManifestCustomization {
  * Prompts for description, scopes, and developer details.
  */
 export async function collectManifestCustomization(): Promise<ManifestCustomization> {
+  if (!isInteractive()) {
+    return {};
+  }
+
   const customizeFields = await checkbox({
     message: "Customize manifest fields? (space to select, enter to continue)",
     choices: [

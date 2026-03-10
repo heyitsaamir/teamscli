@@ -23,6 +23,7 @@ import {
 } from "../../auth/index.js";
 import { outputCredentials } from "../../utils/env.js";
 import { logger } from "../../utils/logger.js";
+import { isInteractive } from "../../utils/interactive.js";
 
 interface CreateOptions {
 	name?: string;
@@ -53,38 +54,54 @@ export const appCreateCommand = new Command("create")
 		}
 
 		// ===== Gather all inputs upfront =====
+		const interactive = isInteractive();
 
-		// Get manifest path (interactive only if no package)
+		if (!interactive && !options.name && !options.package) {
+			logger.error("--name is required in non-interactive mode");
+			process.exit(1);
+		}
+
+		// Determine if any flags were provided (scripting mode)
+		const hasFlags = !!(options.name || options.manifest || options.package);
+
+		// Get manifest path (skip prompt if --name provided — implies generation)
 		const manifestPath =
 			options.manifest ??
 			options.package ??
-			((await input({
-				message: "Path to manifest.json (leave empty to generate):",
-			})) ||
-				undefined);
+			(interactive && !hasFlags
+				? (await input({
+						message: "Path to manifest.json (leave empty to generate):",
+				  })) || undefined
+				: undefined);
 
 		// Get name if not using existing package/manifest
 		const name =
 			options.name ??
-			(options.package ? undefined : await input({ message: "App name:" }));
+			(options.package
+				? undefined
+				: interactive && !hasFlags
+					? await input({ message: "App name:" })
+					: undefined);
 
-		// Get endpoint (optional - can be set later)
+		// Get endpoint (prompt only in full interactive mode)
 		const endpoint =
 			options.endpoint ??
-			((await input({
-				message: "Bot messaging endpoint URL (leave empty to skip):",
-			})) ||
-				undefined);
+			(interactive && !hasFlags
+				? (await input({
+						message: "Bot messaging endpoint URL (leave empty to skip):",
+				  })) || undefined
+				: undefined);
 
-		// Get env path
+		// Get env path (prompt only in full interactive mode)
 		const envPath =
 			options.env ??
-			((await input({
-				message: "Path to .env file (leave empty to show in terminal):",
-			})) ||
-				undefined);
+			(interactive && !hasFlags
+				? (await input({
+						message: "Path to .env file (leave empty to show in terminal):",
+				  })) || undefined
+				: undefined);
 
-		// If generating manifest, ask for customization options upfront
+		// If generating manifest, collect customization options
 		const needsGeneratedManifest = !options.package && !manifestPath;
 		let descriptionOpts: { short: string; full?: string } | undefined;
 		let scopeChoices: string[] | undefined;
@@ -97,7 +114,7 @@ export const appCreateCommand = new Command("create")
 			  }
 			| undefined;
 
-		if (needsGeneratedManifest) {
+		if (needsGeneratedManifest && interactive && !hasFlags) {
 			const customization = await collectManifestCustomization();
 			descriptionOpts = customization.description;
 			scopeChoices = customization.scopes;
