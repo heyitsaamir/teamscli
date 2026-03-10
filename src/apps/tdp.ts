@@ -1,37 +1,5 @@
 const TDP_BASE_URL = "https://dev.teams.microsoft.com/api";
 
-export interface AadApp {
-  id: string;
-  appId: string;
-  displayName: string;
-}
-
-/**
- * Create an AAD app via TDP, which also creates the service principal.
- * Required for single-tenant apps.
- */
-export async function createAadAppViaTdp(
-  token: string,
-  displayName: string,
-  signInAudience: "AzureADMyOrg" | "AzureADMultipleOrgs" = "AzureADMyOrg"
-): Promise<AadApp> {
-  const response = await fetch(`${TDP_BASE_URL}/aadapp/v2`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ displayName, signInAudience }),
-  });
-
-  if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`Failed to create AAD app: ${response.status} ${error}`);
-  }
-
-  return response.json();
-}
-
 export interface ImportedApp {
   teamsAppId: string;
 }
@@ -83,7 +51,7 @@ export async function registerBot(
       messagingEndpoint: options.endpoint,
       callingEndpoint: "",
       configuredChannels: ["msteams"],
-      isSingleTenant: true,
+      isSingleTenant: false,
     }),
   });
 
