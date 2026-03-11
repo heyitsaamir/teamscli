@@ -16,7 +16,7 @@ const { version } = require("../package.json");
 
 program
   .name("teams2")
-  .description("CLI for scaffolding Teams applications")
+  .description("CLI for scaffolding Teams applications\n\nThis project is not affiliated with, endorsed by, or sponsored by Microsoft.")
   .version(version)
   .option("-v, --verbose", "[OPTIONAL] Enable verbose logging")
   .addHelpText("after", () => {
