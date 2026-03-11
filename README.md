@@ -25,3 +25,11 @@ teams2 apps        # List your Teams apps
 ```
 
 Use `-v` or `--verbose` to enable verbose logging.
+
+## Disclaimer
+
+This project is **not** affiliated with, endorsed by, or sponsored by Microsoft Corporation. "Microsoft Teams" is a trademark of Microsoft Corporation.
+
+## License
+
+MIT
