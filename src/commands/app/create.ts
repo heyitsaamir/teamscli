@@ -4,10 +4,11 @@ import { createSpinner } from "nanospinner";
 import pc from "picocolors";
 import {
 	collectManifestCustomization,
-	createAadApp,
+	createAadAppViaTdp,
 	createClientSecret,
 	createManifestZip,
 	createZipFromManifest,
+	getAadAppByClientId,
 	importAppPackage,
 	type ManifestOptions,
 	readManifestFile,
@@ -143,7 +144,6 @@ export const appCreateCommand = new Command("create")
 
 		try {
 			let clientId: string;
-			let appRegistrationId: string;
 			let secretText: string;
 			let zipBuffer: Buffer;
 			let teamsAppId: string;
@@ -154,18 +154,16 @@ export const appCreateCommand = new Command("create")
 				zipBuffer = readZipFile(options.package);
 				spinner.success({ text: "Package loaded" });
 
-				// Still need to create AAD app and secret
+				// Create AAD app via TDP (creates service principal server-side)
 				spinner = createSpinner("Creating Azure AD app...").start();
-				const aadApp = await createAadApp(graphToken, name ?? "Bot");
+				const aadApp = await createAadAppViaTdp(tdpToken, name ?? "Bot");
 				clientId = aadApp.appId;
-				appRegistrationId = aadApp.id;
 				spinner.success({ text: `Created Azure AD app (${clientId})` });
 			} else {
-				// Create Azure AD app
+				// Create AAD app via TDP (creates service principal server-side)
 				spinner = createSpinner("Creating Azure AD app...").start();
-				const aadApp = await createAadApp(graphToken, name!);
+				const aadApp = await createAadAppViaTdp(tdpToken, name!);
 				clientId = aadApp.appId;
-				appRegistrationId = aadApp.id;
 				spinner.success({ text: `Created Azure AD app (${clientId})` });
 
 				// Create zip from manifest or generate new one
@@ -190,9 +188,21 @@ export const appCreateCommand = new Command("create")
 				}
 			}
 
-			// Create client secret
+			// Look up Graph object ID (TDP returns a different ID; retry for replication lag)
 			spinner = createSpinner("Generating client secret...").start();
-			const secret = await createClientSecret(graphToken, appRegistrationId);
+			let graphApp: { id: string } | null = null;
+			for (let i = 0; i < 10; i++) {
+				try {
+					graphApp = await getAadAppByClientId(graphToken, clientId);
+					break;
+				} catch {
+					await new Promise((r) => setTimeout(r, 3000));
+				}
+			}
+			if (!graphApp) {
+				throw new Error("AAD app not yet available in Graph API. Try again shortly.");
+			}
+			const secret = await createClientSecret(graphToken, graphApp.id);
 			secretText = secret.secretText;
 			spinner.success({ text: "Generated client secret" });
 
@@ -211,10 +221,22 @@ export const appCreateCommand = new Command("create")
 			});
 			spinner.success({ text: "Registered bot" });
 
+			// Show app details
+			const installLink = `https://teams.microsoft.com/l/app/${teamsAppId}?installAppPackage=true`;
+			logger.info(pc.bold(pc.green("\nApp created successfully!")));
+			logger.info(`${pc.dim("Name:")} ${name ?? "Bot"}`);
+			logger.info(`${pc.dim("Teams App ID:")} ${teamsAppId}`);
+			logger.info(`${pc.dim("Bot ID:")} ${clientId}`);
+			if (endpoint) {
+				logger.info(`${pc.dim("Endpoint:")} ${endpoint}`);
+			}
+			logger.info(`${pc.dim("Install link:")} ${installLink}`);
+
 			outputCredentials(envPath, {
 				CLIENT_ID: clientId,
 				CLIENT_SECRET: secretText,
-			}, "App created successfully!");
+				TENANT_ID: account.tenantId,
+			}, "Credentials:");
 		} catch (error) {
 			spinner.error({ text: "Failed" });
 			logger.error(

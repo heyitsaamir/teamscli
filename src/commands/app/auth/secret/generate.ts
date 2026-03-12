@@ -74,5 +74,6 @@ export async function generateSecret(opts: GenerateSecretOptions): Promise<void>
 	outputCredentials(envPath, {
 		CLIENT_ID: clientId,
 		CLIENT_SECRET: secret.secretText,
+		TENANT_ID: account.tenantId,
 	}, "Secret generated successfully!");
 }
