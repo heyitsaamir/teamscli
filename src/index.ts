@@ -39,7 +39,10 @@ program.addCommand(scaffoldCommand);
 program.addCommand(selfUpdateCommand);
 
 const autoUpdate = !process.argv.includes("--disable-auto-update");
+const isSelfUpdate = process.argv.includes("self-update");
 process.argv = process.argv.filter((a) => a !== "--disable-auto-update");
 
-await checkForUpdates({ autoUpdate });
+if (!isSelfUpdate) {
+  await checkForUpdates({ autoUpdate });
+}
 program.parse();
