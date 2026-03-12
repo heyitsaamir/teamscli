@@ -43,3 +43,30 @@ Do NOT mark as `[OPTIONAL]` if the value will be prompted interactively when not
 ## Code Reuse
 
 Before implementing logic, check if a shared function already exists for it. Extract reusable logic into shared modules (e.g., `src/utils/`, action files like `manifest/actions.ts`, `secret/generate.ts`). Never duplicate business logic across interactive menus and CLI subcommands — both should call the same shared function.
+
+## Build
+
+Always run `npm run build` after changes — the CLI runs from `dist/`, not source. `tsc --noEmit` only type-checks.
+
+## Commander Patterns
+
+Use Commander's built-in features for global flags and hooks. Don't manually parse `process.argv` — use `.option()` on the program and access via `optsWithGlobals()` in `preAction` hooks.
+
+# Architecture Decisions
+
+## AAD App Creation — Use TDP, Not Graph API
+
+Create AAD apps via TDP's `/aadapp/v2` endpoint (`createAadAppViaTdp` in `src/apps/tdp.ts`), NOT via Graph API directly. TDP's backend creates the service principal server-side, which is required for single-tenant bot registration.
+
+- `signInAudience`: Always `AzureADMultipleOrgs` (multi-tenant AAD app)
+- `isSingleTenant`: Always `true` on bot registration (SFI requirement)
+- TDP returns a different `id` than Graph's object ID — use `getAadAppByClientId` to look up the Graph object ID before calling `addPassword`
+- Graph replication lag may require retries after TDP creates the app
+
+## Auth Client ID
+
+Uses ATK's shared public client `7ea7c24c-b1f6-4a20-9d11-9ae12e9e7ac0`. TDP's own web UI uses a different first-party client ID (`e1979c22`) which we cannot use for CLI auth.
+
+## Credential Output
+
+Always output `CLIENT_ID`, `CLIENT_SECRET`, and `TENANT_ID` together. The `TENANT_ID` comes from `account.tenantId` (MSAL AccountInfo).

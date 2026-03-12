@@ -19,14 +19,18 @@ program
   .description("CLI for scaffolding Teams applications")
   .version(version)
   .option("-v, --verbose", "[OPTIONAL] Enable verbose logging")
+  .option("--disable-auto-update", "[OPTIONAL] Disable automatic updates")
   .addHelpText("after", () => {
     const status = isInteractive() ? pc.green("on") : pc.yellow("off");
     return `\nInteractive mode: ${status}\n  Set ${pc.cyan("TEAMS_NO_INTERACTIVE=1")} to disable, unset to enable.`;
   })
-  .hook("preAction", (thisCommand) => {
+  .hook("preAction", async (thisCommand, actionCommand) => {
     const opts = thisCommand.optsWithGlobals();
     if (opts.verbose) {
       setVerbose(true);
+    }
+    if (actionCommand.name() !== "self-update") {
+      await checkForUpdates({ autoUpdate: !opts.disableAutoUpdate });
     }
   });
 
@@ -38,11 +42,4 @@ program.addCommand(appsCommand);
 program.addCommand(scaffoldCommand);
 program.addCommand(selfUpdateCommand);
 
-const autoUpdate = !process.argv.includes("--disable-auto-update");
-const isSelfUpdate = process.argv.includes("self-update");
-process.argv = process.argv.filter((a) => a !== "--disable-auto-update");
-
-if (!isSelfUpdate) {
-  await checkForUpdates({ autoUpdate });
-}
 program.parse();
