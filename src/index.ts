@@ -38,5 +38,8 @@ program.addCommand(appsCommand);
 program.addCommand(scaffoldCommand);
 program.addCommand(selfUpdateCommand);
 
-await checkForUpdates();
+const autoUpdate = !process.argv.includes("--disable-auto-update");
+process.argv = process.argv.filter((a) => a !== "--disable-auto-update");
+
+await checkForUpdates({ autoUpdate });
 program.parse();

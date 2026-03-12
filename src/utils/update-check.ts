@@ -1,9 +1,11 @@
 import { readFile, writeFile, mkdir } from "node:fs/promises";
 import { join } from "node:path";
 import { createRequire } from "node:module";
+import { execSync } from "node:child_process";
 import pc from "picocolors";
 import { paths } from "../auth/config.js";
 import { isInteractive } from "./interactive.js";
+import { runSelfUpdate } from "../commands/self-update.js";
 
 const STATE_FILE = join(paths.cache, "update-check.json");
 const CHECK_INTERVAL_MS = 24 * 60 * 60 * 1000; // 24 hours
@@ -47,20 +49,27 @@ async function fetchLatestVersion(): Promise<string | null> {
 }
 
 /**
- * Check for updates once daily. Prints a hint if a newer version is available.
+ * Check for updates once daily. Auto-updates and re-runs the command by default.
+ * Pass autoUpdate: false to just show a hint instead.
  * Non-blocking — silently skips on any failure.
  */
-export async function checkForUpdates(): Promise<void> {
+export async function checkForUpdates(options?: { autoUpdate?: boolean }): Promise<void> {
   if (!isInteractive()) return;
+
+  const autoUpdate = options?.autoUpdate ?? true;
 
   try {
     const state = await readState();
     const now = Date.now();
 
     if (state && now - state.lastCheck < CHECK_INTERVAL_MS) {
-      // Already checked recently — just show hint if we cached a newer version
+      // Already checked recently — auto-update or show hint if we cached a newer version
       if (state.latestVersion) {
-        showUpdateHint(state.latestVersion);
+        if (autoUpdate) {
+          autoUpdateAndRerun();
+        } else {
+          showUpdateHint(state.latestVersion);
+        }
       }
       return;
     }
@@ -70,13 +79,34 @@ export async function checkForUpdates(): Promise<void> {
 
     if (latestVersion && isNewer(latestVersion)) {
       newState.latestVersion = latestVersion;
-      showUpdateHint(latestVersion);
+
+      if (autoUpdate) {
+        await writeState(newState);
+        autoUpdateAndRerun();
+      } else {
+        showUpdateHint(latestVersion);
+      }
     }
 
     await writeState(newState);
   } catch {
     // Never block the CLI
   }
+}
+
+function autoUpdateAndRerun(): void {
+  const success = runSelfUpdate();
+  if (success) {
+    // Re-run the original command with the new binary
+    const args = process.argv.slice(2).filter((a) => a !== "--disable-auto-update");
+    try {
+      execSync(`teams2 ${args.join(" ")}`, { stdio: "inherit" });
+    } catch {
+      // Command may exit non-zero, that's fine
+    }
+    process.exit(0);
+  }
+  // On failure, runSelfUpdate already printed the error — continue with current version
 }
 
 function showUpdateHint(latestVersion: string): void {
