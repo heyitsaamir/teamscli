@@ -97,10 +97,13 @@ export async function checkForUpdates(options?: { autoUpdate?: boolean }): Promi
 function autoUpdateAndRerun(): void {
   const success = runSelfUpdate();
   if (success) {
-    // Re-run the original command with the new binary
+    // Re-run the original command using the same invocation method
     const args = process.argv.slice(2).filter((a) => a !== "--disable-auto-update");
+    const cmd = process.argv[1]
+      ? `${process.execPath} ${process.argv[1]} --disable-auto-update ${args.join(" ")}`
+      : `teams2 --disable-auto-update ${args.join(" ")}`;
     try {
-      execSync(`teams2 ${args.join(" ")}`, { stdio: "inherit" });
+      execSync(cmd, { stdio: "inherit" });
     } catch {
       // Command may exit non-zero, that's fine
     }
