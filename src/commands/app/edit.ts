@@ -3,10 +3,12 @@ import { select, input } from "@inquirer/prompts";
 import pc from "picocolors";
 import { createSpinner } from "nanospinner";
 import { getAccount, getTokenSilent, teamsDevPortalScopes } from "../../auth/index.js";
-import { fetchApp, fetchBot, updateBot, updateAppDetails, fetchAppDetailsV2, showBasicInfoEditor } from "../../apps/index.js";
+import { fetchApp, fetchBot, updateBot, updateAppDetails, fetchAppDetailsV2, showBasicInfoEditor, getBotLocation, createTdpBotHandler, createAzureBotHandler, discoverAzureBot, extractDomain } from "../../apps/index.js";
+import { ensureAz } from "../../utils/az.js";
 import { pickApp } from "../../utils/app-picker.js";
 import type { AppSummary, AppDetails } from "../../apps/types.js";
 import type { BotDetails } from "../../apps/tdp.js";
+import type { BotLocation } from "../../apps/bot-location.js";
 
 /**
  * Interactive edit menu for a single app. Returns when user selects "Back".
@@ -36,11 +38,16 @@ export async function showEditMenu(app: AppSummary, token: string): Promise<void
   }
 
   let bot: BotDetails | null = null;
+  let botLocation: BotLocation | null = null;
   if (appDetails.bots && appDetails.bots.length > 0) {
-    try {
-      bot = await fetchBot(token, appDetails.bots[0].botId);
-    } catch {
-      // Bot fetch failed, skip
+    const botId = appDetails.bots[0].botId;
+    botLocation = await getBotLocation(token, botId);
+    if (botLocation === "bf") {
+      try {
+        bot = await fetchBot(token, botId);
+      } catch {
+        // Bot fetch failed, skip
+      }
     }
   }
 
@@ -52,12 +59,16 @@ export async function showEditMenu(app: AppSummary, token: string): Promise<void
     if (bot) {
       console.log(`${pc.dim("Endpoint:")} ${bot.messagingEndpoint || pc.yellow("(not set)")}`);
     }
+    if (botLocation) {
+      console.log(`${pc.dim("Bot location:")} ${botLocation === "bf" ? "BF tenant" : "Azure"}`);
+    }
 
+    const showEndpoint = bot || botLocation === "azure";
     const action = await select({
       message: "What would you like to edit?",
       choices: [
         { name: "Basic info", value: "edit-basic-info" },
-        ...(bot ? [{ name: "Endpoint", value: "edit-endpoint" }] : []),
+        ...(showEndpoint ? [{ name: "Endpoint", value: "edit-endpoint" }] : []),
         { name: "Back", value: "back" },
       ],
     });
@@ -69,22 +80,70 @@ export async function showEditMenu(app: AppSummary, token: string): Promise<void
       continue;
     }
 
-    if (action === "edit-endpoint" && bot) {
-      const newEndpoint = await input({
-        message: "Enter new messaging endpoint URL:",
-        default: bot.messagingEndpoint,
-      });
+    if (action === "edit-endpoint") {
+      if (botLocation === "azure") {
+        const botId = appDetails.bots![0].botId;
+        const newEndpoint = await input({
+          message: "Enter new messaging endpoint URL:",
+        });
 
-      if (newEndpoint.trim() === bot.messagingEndpoint) {
-        console.log(pc.dim("\nNo changes made."));
+        if (!newEndpoint.trim()) {
+          console.log(pc.dim("\nNo changes made."));
+          continue;
+        }
+
+        ensureAz();
+        const azContext = discoverAzureBot(botId);
+        if (!azContext) {
+          console.log(pc.red("Could not find this bot in Azure."));
+          continue;
+        }
+        const handler = createAzureBotHandler(azContext);
+        const updateSpinner = createSpinner("Updating endpoint (Azure)...").start();
+        await handler.updateEndpoint(botId, newEndpoint.trim());
+        updateSpinner.success({ text: "Endpoint updated successfully" });
+
+        // Update validDomains
+        const domain = extractDomain(newEndpoint.trim());
+        if (domain) {
+          const domains = (appDetails.validDomains as string[]) ?? [];
+          if (!domains.includes(domain)) {
+            const domainSpinner = createSpinner("Updating valid domains...").start();
+            await updateAppDetails(token, app.teamsAppId, { validDomains: [...domains, domain] });
+            domainSpinner.success({ text: `Added ${domain} to valid domains` });
+          }
+        }
         continue;
       }
 
-      const updateSpinner = createSpinner("Updating endpoint...").start();
-      await updateBot(token, { ...bot, messagingEndpoint: newEndpoint.trim() });
-      updateSpinner.success({ text: "Endpoint updated successfully" });
-      bot = { ...bot, messagingEndpoint: newEndpoint.trim() };
-      continue;
+      if (bot) {
+        const newEndpoint = await input({
+          message: "Enter new messaging endpoint URL:",
+          default: bot.messagingEndpoint,
+        });
+
+        if (newEndpoint.trim() === bot.messagingEndpoint) {
+          console.log(pc.dim("\nNo changes made."));
+          continue;
+        }
+
+        const updateSpinner = createSpinner("Updating endpoint...").start();
+        await updateBot(token, { ...bot, messagingEndpoint: newEndpoint.trim() });
+        updateSpinner.success({ text: "Endpoint updated successfully" });
+        bot = { ...bot, messagingEndpoint: newEndpoint.trim() };
+
+        // Update validDomains with the new endpoint's domain
+        const domain = extractDomain(newEndpoint.trim());
+        if (domain) {
+          const domains = (appDetails.validDomains as string[]) ?? [];
+          if (!domains.includes(domain)) {
+            const domainSpinner = createSpinner("Updating valid domains...").start();
+            await updateAppDetails(token, app.teamsAppId, { validDomains: [...domains, domain] });
+            domainSpinner.success({ text: `Added ${domain} to valid domains` });
+          }
+        }
+        continue;
+      }
     }
   }
 }
@@ -178,16 +237,45 @@ export const appEditCommand = new Command("edit")
         }
 
         const botId = app.bots[0].botId;
-        const spinner = createSpinner("Fetching bot details...").start();
-        const bot = await fetchBot(token, botId);
-        spinner.stop();
+        const location = await getBotLocation(token, botId);
 
-        console.log(`${pc.dim("Current endpoint:")} ${bot.messagingEndpoint || pc.dim("(not set)")}`);
+        if (location === "azure") {
+          ensureAz();
+          const azContext = discoverAzureBot(botId);
+          if (!azContext) {
+            console.log(pc.red("Could not find this bot in Azure."));
+            console.log(`Use: ${pc.cyan("az bot update --name <name> --resource-group <rg> --endpoint <url>")}`);
+            process.exit(1);
+          }
+          const handler = createAzureBotHandler(azContext);
+          const updateSpinner = createSpinner("Updating endpoint (Azure)...").start();
+          await handler.updateEndpoint(botId, options.endpoint);
+          updateSpinner.success({ text: "Endpoint updated successfully" });
+          console.log(`${pc.dim("New endpoint:")} ${options.endpoint}`);
+        } else {
+          const spinner = createSpinner("Fetching bot details...").start();
+          const bot = await fetchBot(token, botId);
+          spinner.stop();
 
-        const updateSpinner = createSpinner("Updating endpoint...").start();
-        await updateBot(token, { ...bot, messagingEndpoint: options.endpoint });
-        updateSpinner.success({ text: "Endpoint updated successfully" });
-        console.log(`${pc.dim("New endpoint:")} ${options.endpoint}`);
+          console.log(`${pc.dim("Current endpoint:")} ${bot.messagingEndpoint || pc.dim("(not set)")}`);
+
+          const updateSpinner = createSpinner("Updating endpoint...").start();
+          await updateBot(token, { ...bot, messagingEndpoint: options.endpoint });
+          updateSpinner.success({ text: "Endpoint updated successfully" });
+          console.log(`${pc.dim("New endpoint:")} ${options.endpoint}`);
+        }
+
+        // Update validDomains with the new endpoint's domain
+        const domain = extractDomain(options.endpoint);
+        if (domain) {
+          const details = await fetchAppDetailsV2(token, appId);
+          const domains = (details.validDomains as string[]) ?? [];
+          if (!domains.includes(domain)) {
+            const domainSpinner = createSpinner("Updating valid domains...").start();
+            await updateAppDetails(token, appId, { validDomains: [...domains, domain] });
+            domainSpinner.success({ text: `Added ${domain} to valid domains` });
+          }
+        }
         return;
       }
 

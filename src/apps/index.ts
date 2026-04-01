@@ -6,3 +6,5 @@ export * from "./manifest.js";
 export * from "./manifest-builder.js";
 export * from "./tdp.js";
 export * from "./basic-info.js";
+export * from "./bot-location.js";
+export * from "./bot-handler.js";
