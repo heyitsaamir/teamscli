@@ -1,3 +1,6 @@
+import { writeFileSync, unlinkSync, mkdtempSync } from "node:fs";
+import { join } from "node:path";
+import { tmpdir } from "node:os";
 import { registerBot, fetchBot, updateBot } from "./tdp.js";
 import { runAz } from "../utils/az.js";
 import { logger } from "../utils/logger.js";
@@ -6,10 +9,12 @@ export interface CreateBotOpts {
   botId: string;
   name: string;
   endpoint?: string;
+  description?: string;
 }
 
 export interface BotHandler {
   createBot(opts: CreateBotOpts): Promise<void>;
+  validateCreateBot(opts: CreateBotOpts): Promise<void>;
   updateEndpoint(botId: string, endpoint: string): Promise<void>;
 }
 
@@ -34,6 +39,10 @@ class TdpBotHandler implements BotHandler {
     });
   }
 
+  async validateCreateBot(): Promise<void> {
+    // TDP creation has no pre-validation — it either works or throws
+  }
+
   async updateEndpoint(botId: string, endpoint: string): Promise<void> {
     const bot = await fetchBot(this.token, botId);
     await updateBot(this.token, { ...bot, messagingEndpoint: endpoint });
@@ -41,41 +50,98 @@ class TdpBotHandler implements BotHandler {
 }
 
 /**
+ * Generate an ARM template for Azure Bot Service.
+ */
+function generateArmTemplate(opts: CreateBotOpts, azure: AzureContext): object {
+  return {
+    $schema: "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    contentVersion: "1.0.0.0",
+    resources: [
+      {
+        type: "Microsoft.BotService/botServices",
+        apiVersion: "2021-03-01",
+        name: opts.botId,
+        location: "global",
+        kind: "azurebot",
+        sku: { name: "F0" },
+        properties: {
+          displayName: opts.description || opts.name,
+          endpoint: opts.endpoint || "",
+          msaAppId: opts.botId,
+          msaAppType: "SingleTenant",
+          msaAppTenantId: azure.tenantId,
+        },
+      },
+    ],
+  };
+}
+
+/**
+ * Write an ARM template to a temp file, run the callback, then clean up.
+ */
+function withArmTemplate(template: object, fn: (templatePath: string) => void): void {
+  const dir = mkdtempSync(join(tmpdir(), "teams-cli-"));
+  const templatePath = join(dir, "azuredeploy.json");
+  try {
+    writeFileSync(templatePath, JSON.stringify(template, null, 2));
+    fn(templatePath);
+  } finally {
+    try { unlinkSync(templatePath); } catch { /* best effort cleanup */ }
+  }
+}
+
+/**
  * Bot handler that creates/manages bots in Azure via az CLI.
+ * Uses ARM templates with what-if validation.
  */
 class AzureBotHandler implements BotHandler {
   constructor(private azure: AzureContext) {}
 
   async createBot(opts: CreateBotOpts): Promise<void> {
-    // Use the client ID as the Azure resource name — always valid, always unique.
-    // The display name (opts.name) is passed as --description.
-    const resourceName = opts.botId;
-    logger.debug(`Creating Azure bot: ${resourceName} (${opts.name}) in ${this.azure.resourceGroup}`);
-    runAz([
-      "bot", "create",
-      "--app-type", "SingleTenant",
-      "--appid", opts.botId,
-      "--tenant-id", this.azure.tenantId,
-      "--name", resourceName,
-      "--description", opts.name,
-      "--resource-group", this.azure.resourceGroup,
-      "--location", this.azure.region,
-      ...(opts.endpoint ? ["--endpoint", opts.endpoint] : []),
-      "--subscription", this.azure.subscription,
-    ]);
+    const template = generateArmTemplate(opts, this.azure);
 
-    // Enable the Microsoft Teams channel (az bot create only enables webchat + directline)
+    withArmTemplate(template, (templatePath) => {
+      // Deploy the ARM template
+      logger.debug(`Deploying Azure bot: ${opts.botId} (${opts.name}) in ${this.azure.resourceGroup}`);
+      runAz([
+        "deployment", "group", "create",
+        "--resource-group", this.azure.resourceGroup,
+        "--template-file", templatePath,
+        "--subscription", this.azure.subscription,
+      ]);
+    });
+
+    // Enable the Microsoft Teams channel (ARM template doesn't configure channels)
     logger.debug("Enabling Microsoft Teams channel");
     runAz([
       "bot", "msteams", "create",
-      "--name", resourceName,
+      "--name", opts.botId,
       "--resource-group", this.azure.resourceGroup,
       "--subscription", this.azure.subscription,
     ]);
   }
 
+  /**
+   * Validate that createBot would succeed without creating any resources.
+   * Uses ARM template what-if to check permissions, name availability, etc.
+   * Throws if validation fails.
+   */
+  async validateCreateBot(opts: CreateBotOpts): Promise<void> {
+    const template = generateArmTemplate(opts, this.azure);
+
+    withArmTemplate(template, (templatePath) => {
+      logger.debug("Running ARM what-if validation");
+      runAz([
+        "deployment", "group", "what-if",
+        "--resource-group", this.azure.resourceGroup,
+        "--template-file", templatePath,
+        "--subscription", this.azure.subscription,
+        "--no-pretty-print",
+      ]);
+    });
+  }
+
   async updateEndpoint(botId: string, endpoint: string): Promise<void> {
-    // Azure resource name is always the client ID (set at creation time)
     logger.debug(`Updating Azure bot endpoint: ${botId} → ${endpoint}`);
     runAz([
       "bot", "update",
@@ -108,7 +174,6 @@ export function discoverAzureBot(botId: string): AzureContext | null {
     );
     if (results.length === 0) return null;
     const bot = results[0];
-    // Get current subscription
     const account = runAz<{ id: string; tenantId: string }>(["account", "show"]);
     return {
       subscription: account.id,
