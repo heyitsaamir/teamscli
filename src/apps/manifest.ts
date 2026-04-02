@@ -15,7 +15,7 @@ export interface ManifestOptions {
   };
 }
 
-function extractDomain(url: string): string | null {
+export function extractDomain(url: string): string | null {
   try {
     const parsed = new URL(url);
     return parsed.hostname;

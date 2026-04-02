@@ -13,8 +13,11 @@ import {
 	type ManifestOptions,
 	readManifestFile,
 	readZipFile,
-	registerBot,
 	updateManifestBotId,
+	createTdpBotHandler,
+	createAzureBotHandler,
+	type AzureContext,
+	type BotLocation,
 } from "../../apps/index.js";
 import {
 	getAccount,
@@ -25,6 +28,9 @@ import {
 import { outputCredentials } from "../../utils/env.js";
 import { logger } from "../../utils/logger.js";
 import { isInteractive } from "../../utils/interactive.js";
+import { getConfig } from "../../utils/config.js";
+import { ensureAz, runAz } from "../../utils/az.js";
+import { resolveSubscription, resolveResourceGroup } from "../../utils/az-prompts.js";
 
 interface CreateOptions {
 	name?: string;
@@ -32,6 +38,12 @@ interface CreateOptions {
 	manifest?: string;
 	package?: string;
 	env?: string;
+	azure?: boolean;
+	bf?: boolean;
+	subscription?: string;
+	resourceGroup?: string;
+	createResourceGroup?: boolean;
+	region?: string;
 }
 
 export const appCreateCommand = new Command("create")
@@ -41,6 +53,12 @@ export const appCreateCommand = new Command("create")
 	.option("-m, --manifest <path>", "[OPTIONAL] Path to manifest.json")
 	.option("-p, --package <path>", "[OPTIONAL] Path to app package zip")
 	.option("--env <path>", "[OPTIONAL] Path to .env file to write credentials")
+	.option("--azure", "[OPTIONAL] Create bot in Azure (requires az CLI)")
+	.option("--bf", "[OPTIONAL] Create bot in BF tenant via TDP")
+	.option("--subscription <id>", "[OPTIONAL] Azure subscription ID (defaults to az CLI default)")
+	.option("--resource-group <name>", "Azure resource group (required for --azure)")
+	.option("--create-resource-group", "[OPTIONAL] Create the resource group if it doesn't exist")
+	.option("--region <name>", "[OPTIONAL] Azure region for resource group (default: westus2)")
 	.action(async (options: CreateOptions) => {
 		const account = await getAccount();
 		if (!account) {
@@ -52,6 +70,36 @@ export const appCreateCommand = new Command("create")
 		if (options.manifest && options.package) {
 			logger.error("Cannot specify both --manifest and --package");
 			process.exit(1);
+		}
+
+		// Validate conflicting flags
+		if (options.azure && options.bf) {
+			logger.error("Cannot specify both --azure and --bf");
+			process.exit(1);
+		}
+
+		// Resolve bot location: explicit flag > config > default (bf)
+		let location: BotLocation;
+		if (options.azure) location = "azure";
+		else if (options.bf) location = "bf";
+		else location = ((await getConfig("default-bot-location")) as BotLocation) ?? "bf";
+
+		// Gather Azure context if needed
+		let azureContext: AzureContext | undefined;
+		if (location === "azure") {
+			ensureAz();
+			const subscription = await resolveSubscription(options.subscription);
+			const resourceGroup = await resolveResourceGroup(subscription, options.resourceGroup);
+
+			if (options.createResourceGroup) {
+				const rgRegion = options.region ?? "westus2";
+				const rgSpinner = createSpinner(`Creating resource group ${resourceGroup}...`).start();
+				runAz(["group", "create", "--name", resourceGroup, "--location", rgRegion, "--subscription", subscription]);
+				rgSpinner.success({ text: `Resource group ${resourceGroup} ready` });
+			}
+
+			// Bot Service location is always "global"
+			azureContext = { subscription, resourceGroup, region: "global", tenantId: account.tenantId };
 		}
 
 		// ===== Gather all inputs upfront =====
@@ -213,13 +261,13 @@ export const appCreateCommand = new Command("create")
 			spinner.success({ text: `Created Teams app (${teamsAppId})` });
 
 			// Register bot
-			spinner = createSpinner("Registering bot...").start();
-			await registerBot(tdpToken, {
-				botId: clientId,
-				name: name ?? "Bot",
-				endpoint: endpoint ?? "",
-			});
-			spinner.success({ text: "Registered bot" });
+			const locationLabel = location === "bf" ? "BF tenant" : "Azure";
+			spinner = createSpinner(`Registering bot (${locationLabel})...`).start();
+			const handler = location === "bf"
+				? createTdpBotHandler(tdpToken)
+				: createAzureBotHandler(azureContext!);
+			await handler.createBot({ botId: clientId, name: name ?? "Bot", endpoint });
+			spinner.success({ text: `Registered bot (${locationLabel})` });
 
 			// Show app details
 			const installLink = `https://teams.microsoft.com/l/app/${teamsAppId}?installAppPackage=true`;

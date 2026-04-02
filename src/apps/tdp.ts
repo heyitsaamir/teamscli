@@ -65,6 +65,9 @@ export async function registerBot(
     botId: string;
     name: string;
     endpoint: string;
+    description?: string;
+    callingEndpoint?: string;
+    configuredChannels?: string[];
   }
 ): Promise<BotRegistration> {
   const response = await fetch(`${TDP_BASE_URL}/botframework`, {
@@ -76,10 +79,10 @@ export async function registerBot(
     body: JSON.stringify({
       botId: options.botId,
       name: options.name,
-      description: "",
+      description: options.description ?? "",
       messagingEndpoint: options.endpoint,
-      callingEndpoint: "",
-      configuredChannels: ["msteams"],
+      callingEndpoint: options.callingEndpoint ?? "",
+      configuredChannels: options.configuredChannels ?? ["msteams"],
       isSingleTenant: true,
     }),
   });
@@ -113,6 +116,50 @@ export async function fetchBot(token: string, botId: string): Promise<BotDetails
   }
 
   return response.json();
+}
+
+export async function deleteBot(token: string, botId: string): Promise<void> {
+  const response = await fetch(`${TDP_BASE_URL}/botframework/${botId}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!response.ok && response.status !== 204) {
+    const error = await response.text();
+    throw new Error(`Failed to delete bot: ${response.status} ${error}`);
+  }
+}
+
+export interface MeetingSubscription {
+  id: string;
+  eventTypes: string[];
+}
+
+export async function fetchMeetingSubscription(token: string, botId: string): Promise<MeetingSubscription | null> {
+  const response = await fetch(`${TDP_BASE_URL}/botframework/${botId}/meetings/subscription`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (response.status === 404) return null;
+  if (!response.ok) return null;
+
+  return response.json();
+}
+
+export async function setMeetingSubscription(token: string, botId: string, eventTypes: string[]): Promise<void> {
+  const response = await fetch(`${TDP_BASE_URL}/botframework/${botId}/meetings/subscription`, {
+    method: "PUT",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(eventTypes),
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Failed to set meeting subscription: ${response.status} ${error}`);
+  }
 }
 
 export async function updateBot(token: string, bot: BotDetails): Promise<void> {
