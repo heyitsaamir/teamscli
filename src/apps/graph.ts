@@ -59,6 +59,53 @@ export async function getAadAppByClientId(
   return data.value[0];
 }
 
+/**
+ * Get the full AAD application object by Graph object ID.
+ * Returns all fields (unlike getAadAppByClientId which returns a subset).
+ */
+export async function getAadAppFull(
+  token: string,
+  appObjectId: string,
+): Promise<Record<string, unknown>> {
+  const response = await fetch(
+    `${GRAPH_BASE_URL}/applications/${appObjectId}`,
+    { headers: { Authorization: `Bearer ${token}` } },
+  );
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Failed to get AAD app: ${response.status} ${error}`);
+  }
+
+  return response.json();
+}
+
+/**
+ * PATCH an AAD application with partial updates.
+ */
+export async function updateAadApp(
+  token: string,
+  appObjectId: string,
+  updates: Record<string, unknown>,
+): Promise<void> {
+  const response = await fetch(
+    `${GRAPH_BASE_URL}/applications/${appObjectId}`,
+    {
+      method: "PATCH",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(updates),
+    },
+  );
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Failed to update AAD app: ${response.status} ${error}`);
+  }
+}
+
 export async function createClientSecret(
   token: string,
   appRegistrationId: string

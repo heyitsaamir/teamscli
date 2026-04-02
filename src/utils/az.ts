@@ -51,5 +51,7 @@ export function runAz<T = unknown>(args: string[]): T {
     encoding: "utf-8",
     stdio: ["pipe", "pipe", "pipe"],
   });
-  return JSON.parse(output) as T;
+  const trimmed = output.trim();
+  if (!trimmed) return undefined as T;
+  return JSON.parse(trimmed) as T;
 }
