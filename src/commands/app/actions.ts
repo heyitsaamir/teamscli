@@ -14,6 +14,7 @@ import { ssoEditCommand } from "./auth/sso/edit.js";
 import { ssoRemoveCommand } from "./auth/sso/remove.js";
 import { requireAzureBot } from "./auth/require-azure.js";
 import { runAz } from "../../utils/az.js";
+import { appDoctorCommand } from "./doctor.js";
 import type { AppSummary } from "../../apps/types.js";
 
 async function showAuthMenu(appId: string, _token: string): Promise<void> {
@@ -107,6 +108,7 @@ export async function showAppActions(app: AppSummary, token: string): Promise<vo
         { name: "Manifest", value: "manifest" },
         { name: "Generate secret", value: "secret" },
         { name: "Auth (OAuth/SSO)", value: "auth" },
+        { name: "Doctor (diagnostics)", value: "doctor" },
         { name: "Back", value: "back" },
       ],
     });
@@ -164,6 +166,13 @@ export async function showAppActions(app: AppSummary, token: string): Promise<vo
     } else if (action === "auth") {
       try {
         await showAuthMenu(app.teamsAppId, token);
+      } catch (error) {
+        if (error instanceof Error && error.name === "ExitPromptError") continue;
+        console.log(pc.red(error instanceof Error ? error.message : "Unknown error"));
+      }
+    } else if (action === "doctor") {
+      try {
+        await appDoctorCommand.parseAsync([app.teamsAppId], { from: "user" });
       } catch (error) {
         if (error instanceof Error && error.name === "ExitPromptError") continue;
         console.log(pc.red(error instanceof Error ? error.message : "Unknown error"));
