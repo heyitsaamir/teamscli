@@ -1,0 +1,78 @@
+# Quickstart
+
+Create your first Teams bot app from scratch in under 5 minutes.
+
+## 1. Log in
+
+```bash
+teams2 login
+```
+
+Follow the device code flow — open the URL, enter the code, sign in with your M365 account.
+
+## 2. Create an app
+
+**Interactive mode** — just run:
+
+```bash
+teams2 app create
+```
+
+The CLI will prompt you for a name and handle everything else: AAD app registration, manifest generation, Teams app import, and bot registration.
+
+**Scripted mode** — pass all values as flags:
+
+```bash
+teams2 app create --name "My Bot" --endpoint https://mybot.azurewebsites.net/api/messages
+```
+
+This creates a bot in the default BF (Bot Framework) tenant. To use Azure instead:
+
+```bash
+teams2 app create --name "My Bot" --azure --resource-group my-rg --endpoint https://mybot.azurewebsites.net/api/messages
+```
+
+## 3. Get your credentials
+
+After creation, teams2 outputs:
+
+```
+CLIENT_ID=<your-app-client-id>
+CLIENT_SECRET=<your-client-secret>
+TENANT_ID=<your-tenant-id>
+```
+
+Save these to a `.env` file automatically:
+
+```bash
+teams2 app create --name "My Bot" --env .env
+```
+
+## 4. View your app
+
+List all your apps:
+
+```bash
+teams2 apps
+```
+
+View details of a specific app:
+
+```bash
+teams2 app view <appId>
+```
+
+## 5. Interactive mode
+
+Just run `teams2 app` with no subcommand to enter the interactive menu. From there you can browse your apps, edit properties, manage manifests, and more.
+
+```bash
+teams2 app
+```
+
+## Next Steps
+
+- [Edit your app's properties](/commands/app/edit) — name, endpoint, version
+- [Download the manifest](/commands/app/manifest-download) to customize it locally
+- [Set up SSO](/commands/app/auth-sso-setup) for single sign-on
+- [Understand bot locations](/concepts/bot-locations) — BF tenant vs Azure
