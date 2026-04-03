@@ -227,10 +227,6 @@ function writeCommandDoc(info: CommandInfo): void {
 ${START_MARKER}
 ${autoContent}
 ${END_MARKER}
-
-## Details
-
-_Add command-specific details, examples, and notes here._
 `;
 
   fs.writeFileSync(targetPath, content);
