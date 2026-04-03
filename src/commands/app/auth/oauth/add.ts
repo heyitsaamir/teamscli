@@ -43,7 +43,9 @@ export const oauthAddCommand = new Command("add")
         logger.error("--provider is required in non-interactive mode");
         process.exit(1);
       }
+      const providerSpinner = createSpinner("Fetching OAuth providers...").start();
       const providers = runAz<{ value: ServiceProvider[] }>(["bot", "authsetting", "list-providers"]);
+      providerSpinner.stop();
       const providerList = providers.value.map((p) => ({
         name: p.properties.displayName,
         value: p.properties.serviceProviderName,

@@ -43,12 +43,14 @@ export const ssoEditCommand = new Command("edit")
         process.exit(1);
       }
 
+      const listSpinner = createSpinner("Fetching SSO connections...").start();
       const settings = runAz<AuthSetting[]>([
         "bot", "authsetting", "list",
         "--name", botId,
         "--resource-group", azure.resourceGroup,
         "--subscription", azure.subscription,
       ]);
+      listSpinner.stop();
 
       const aadConnections = settings.filter((s) => {
         const provider = s.properties?.serviceProviderDisplayName ?? "";
@@ -75,6 +77,7 @@ export const ssoEditCommand = new Command("edit")
     }
 
     // Fetch current details
+    const detailSpinner = createSpinner("Loading connection details...").start();
     const current = runAz<AuthSetting>([
       "bot", "authsetting", "show",
       "--name", botId,
@@ -82,6 +85,7 @@ export const ssoEditCommand = new Command("edit")
       "--setting-name", connectionName,
       "--subscription", azure.subscription,
     ]);
+    detailSpinner.stop();
 
     const currentScopes = current.properties?.scopes ?? "User.Read";
     const currentTenantId = current.properties?.parameters?.find((p) => p.key === "tenantId")?.value ?? azure.tenantId;

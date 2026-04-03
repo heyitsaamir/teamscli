@@ -30,12 +30,14 @@ export const ssoRemoveCommand = new Command("remove")
       }
 
       // List SSO connections and let user pick
+      const listSpinner = createSpinner("Fetching SSO connections...").start();
       const settings = runAz<AuthSetting[]>([
         "bot", "authsetting", "list",
         "--name", botId,
         "--resource-group", azure.resourceGroup,
         "--subscription", azure.subscription,
       ]);
+      listSpinner.stop();
 
       // Filter to Aadv2 connections (list doesn't return parameters)
       const ssoConnections = settings.filter((s) => {

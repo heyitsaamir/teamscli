@@ -29,12 +29,14 @@ export const oauthRemoveCommand = new Command("remove")
       }
 
       // List connections and let user pick
+      const listSpinner = createSpinner("Fetching OAuth connections...").start();
       const settings = runAz<AuthSetting[]>([
         "bot", "authsetting", "list",
         "--name", botId,
         "--resource-group", azure.resourceGroup,
         "--subscription", azure.subscription,
       ]);
+      listSpinner.stop();
 
       if (settings.length === 0) {
         console.log(pc.dim("No OAuth connections to remove."));
