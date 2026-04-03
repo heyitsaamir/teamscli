@@ -5,7 +5,7 @@ Create your first Teams bot app from scratch in under 5 minutes.
 ## 1. Log in
 
 ```bash
-teams2 login
+teams login
 ```
 
 Follow the device code flow — open the URL, enter the code, sign in with your M365 account.
@@ -15,7 +15,7 @@ Follow the device code flow — open the URL, enter the code, sign in with your 
 **Interactive mode** — just run:
 
 ```bash
-teams2 app create
+teams app create
 ```
 
 The CLI will prompt you for a name and handle everything else: AAD app registration, manifest generation, Teams app import, and bot registration.
@@ -23,18 +23,18 @@ The CLI will prompt you for a name and handle everything else: AAD app registrat
 **Scripted mode** — pass all values as flags:
 
 ```bash
-teams2 app create --name "My Bot" --endpoint https://mybot.azurewebsites.net/api/messages
+teams app create --name "My Bot" --endpoint https://mybot.azurewebsites.net/api/messages
 ```
 
 This creates a bot in the default BF (Bot Framework) tenant. To use Azure instead:
 
 ```bash
-teams2 app create --name "My Bot" --azure --resource-group my-rg --endpoint https://mybot.azurewebsites.net/api/messages
+teams app create --name "My Bot" --azure --resource-group my-rg --endpoint https://mybot.azurewebsites.net/api/messages
 ```
 
 ## 3. Get your credentials
 
-After creation, teams2 outputs:
+After creation, teams outputs:
 
 ```
 CLIENT_ID=<your-app-client-id>
@@ -45,7 +45,7 @@ TENANT_ID=<your-tenant-id>
 Save these to a `.env` file automatically:
 
 ```bash
-teams2 app create --name "My Bot" --env .env
+teams app create --name "My Bot" --env .env
 ```
 
 ## 4. View your app
@@ -53,21 +53,21 @@ teams2 app create --name "My Bot" --env .env
 List all your apps:
 
 ```bash
-teams2 apps
+teams apps
 ```
 
 View details of a specific app:
 
 ```bash
-teams2 app view <appId>
+teams app view <appId>
 ```
 
 ## 5. Interactive mode
 
-Just run `teams2 app` with no subcommand to enter the interactive menu. From there you can browse your apps, edit properties, manage manifests, and more.
+Just run `teams app` with no subcommand to enter the interactive menu. From there you can browse your apps, edit properties, manage manifests, and more.
 
 ```bash
-teams2 app
+teams app
 ```
 
 ## Next Steps

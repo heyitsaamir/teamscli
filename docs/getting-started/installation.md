@@ -8,7 +8,7 @@
 
 ## Install
 
-Install `teams2` globally from the GitHub release:
+Install `teams` globally from the GitHub release:
 
 ```bash
 npm install -g https://github.com/heyitsaamir/teamscli/releases/latest/download/teamscli.tgz
@@ -17,7 +17,7 @@ npm install -g https://github.com/heyitsaamir/teamscli/releases/latest/download/
 ## Verify
 
 ```bash
-teams2 --version
+teams --version
 ```
 
 ## Update
@@ -25,13 +25,13 @@ teams2 --version
 The CLI checks for updates automatically on each run. To update manually:
 
 ```bash
-teams2 self-update
+teams self-update
 ```
 
 Disable auto-update checks with:
 
 ```bash
-teams2 --disable-auto-update <command>
+teams --disable-auto-update <command>
 ```
 
 ## Azure CLI (Optional)

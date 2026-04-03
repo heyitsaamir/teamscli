@@ -1,6 +1,6 @@
 # SSO Architecture
 
-Single Sign-On (SSO) lets your Teams bot authenticate users silently using their existing Teams identity. This page explains the architecture and what `teams2 app auth sso setup` configures.
+Single Sign-On (SSO) lets your Teams bot authenticate users silently using their existing Teams identity. This page explains the architecture and what `teams app auth sso setup` configures.
 
 ## Overview
 
@@ -12,7 +12,7 @@ SSO for Teams bots involves three systems working together:
 
 ## What SSO Setup Configures
 
-`teams2 app auth sso setup` performs three steps in sequence:
+`teams app auth sso setup` performs three steps in sequence:
 
 ### Step 1: AAD App Configuration
 
@@ -75,17 +75,17 @@ The user sees no login prompt — it's completely silent.
 
 - Bot must be in **Azure** (not BF tenant) — SSO requires OAuth connection management
 - Azure CLI (`az`) must be installed and logged in
-- AAD app must exist (created automatically by `teams2 app create`)
+- AAD app must exist (created automatically by `teams app create`)
 
 If your bot is in the BF tenant, [migrate it first](/commands/app/bot-migrate):
 
 ```bash
-teams2 app bot migrate <appId> --resource-group my-rg
+teams app bot migrate <appId> --resource-group my-rg
 ```
 
 ## Diagnosing SSO Issues
 
-Use `teams2 app doctor` to verify your SSO configuration. It checks:
+Use `teams app doctor` to verify your SSO configuration. It checks:
 
 - Identifier URI format (`api://botid-{botId}`)
 - `access_as_user` scope exists

@@ -2,7 +2,7 @@ import { defineConfig } from "vitepress";
 import llmstxt from "vitepress-plugin-llms";
 
 export default defineConfig({
-  title: "teams2",
+  title: "teams",
   description: "CLI for managing Microsoft Teams apps",
   base: "/teamscli/",
 

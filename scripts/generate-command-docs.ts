@@ -30,7 +30,7 @@ function escapeHtml(text: string): string {
 
 // Build root program (without parse)
 const program = new Command();
-program.name("teams2").description("CLI for scaffolding Teams applications");
+program.name("teams").description("CLI for scaffolding Teams applications");
 program.addCommand(loginCommand);
 program.addCommand(logoutCommand);
 program.addCommand(statusCommand);
@@ -41,7 +41,7 @@ program.addCommand(selfUpdateCommand);
 program.addCommand(configCommand);
 
 interface CommandInfo {
-  fullName: string; // e.g. "teams2 app create"
+  fullName: string; // e.g. "teams app create"
   filePath: string; // e.g. "app/create"
   description: string;
   usage: string;
@@ -94,7 +94,7 @@ function walkCommands(cmd: Command, parentParts: string[] = []): CommandInfo[] {
 }
 
 function extractCommandInfo(cmd: Command, parts: string[]): CommandInfo {
-  const fullName = `teams2 ${parts.join(" ")}`;
+  const fullName = `teams ${parts.join(" ")}`;
   const filePath = getFilePath(parts);
 
   const args = cmd.registeredArguments.map((arg) => ({
@@ -124,7 +124,7 @@ function extractCommandInfo(cmd: Command, parts: string[]): CommandInfo {
   return {
     fullName,
     filePath,
-    description: cmd.description(),
+    description: cmd.description().replace(/teams2/g, "teams"),
     usage,
     arguments: args,
     options,
@@ -196,7 +196,7 @@ function writeCommandDoc(info: CommandInfo): void {
   const autoContent = generateMarkdown(info);
   const frontmatter = [
     "---",
-    `title: "${info.fullName.replace("teams2 ", "")}"`,
+    `title: "${info.fullName.replace("teams ", "")}"`,
     `command: "${info.fullName}"`,
     "---",
   ].join("\n");

@@ -1,6 +1,6 @@
 # Command Reference
 
-All teams2 commands. Run any command with `--help` for inline usage.
+All teams commands. Run any command with `--help` for inline usage.
 
 ## Global Options
 
@@ -14,7 +14,7 @@ All teams2 commands. Run any command with `--help` for inline usage.
 ## Command Tree
 
 ```
-teams2
+teams
 ├── login                          Log in to Microsoft 365
 ├── logout                         Log out of Microsoft 365
 ├── status                         Show current CLI status

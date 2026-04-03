@@ -2,7 +2,7 @@
 layout: home
 
 hero:
-  name: teams2
+  name: teams
   text: CLI for Microsoft Teams Apps
   tagline: Create, manage, and configure Teams apps from the command line
   actions:
