@@ -32,15 +32,6 @@ An **Azure bot** is a bot registration in your own Azure subscription (via Azure
 - Requires Azure CLI (`az`) to be installed and logged in
 - Requires a resource group
 
-## How the CLI Detects Location
-
-teams determines a bot's location by calling `GET /botframework/{botId}` on the TDP API:
-
-- **200 response** → bot is in the BF tenant
-- **404 response** → bot is in Azure
-
-This is the same check used by `teams app bot status`.
-
 ## Choosing a Location
 
 | Scenario | Recommended |
@@ -71,7 +62,9 @@ teams config default-bot-location azure
 
 ## Migration
 
-You can migrate a bot from the BF tenant to Azure without changing your AAD app or credentials:
+If you try to use a feature that requires Azure (like OAuth or SSO) on a BF tenant bot, the CLI will automatically detect this and offer to migrate your bot for you.
+
+You can also migrate manually at any time without changing your AAD app or credentials:
 
 ```bash
 teams app bot migrate <appId> --resource-group my-rg
