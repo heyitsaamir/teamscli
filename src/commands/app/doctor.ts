@@ -226,7 +226,7 @@ async function checkAadApp(
   // Check secrets
   const creds = (fullApp.passwordCredentials ?? []) as Array<{ endDateTime?: string; displayName?: string }>;
   if (creds.length === 0) {
-    results.push({ category: cat, label: "No client secrets", status: "warn", detail: "Run: teams2 app auth secret generate" });
+    results.push({ category: cat, label: "No client secrets", status: "warn", detail: "Run: teams app auth secret generate" });
   } else {
     const now = new Date();
     const active = creds.filter((c) => !c.endDateTime || new Date(c.endDateTime) > now);

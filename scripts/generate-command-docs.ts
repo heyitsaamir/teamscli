@@ -124,7 +124,7 @@ function extractCommandInfo(cmd: Command, parts: string[]): CommandInfo {
   return {
     fullName,
     filePath,
-    description: cmd.description().replace(/teams2/g, "teams"),
+    description: cmd.description(),
     usage,
     arguments: args,
     options,

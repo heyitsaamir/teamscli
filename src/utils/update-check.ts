@@ -101,7 +101,7 @@ function autoUpdateAndRerun(): void {
     const args = process.argv.slice(2).filter((a) => a !== "--disable-auto-update");
     const cmd = process.argv[1]
       ? `${process.execPath} ${process.argv[1]} --disable-auto-update ${args.join(" ")}`
-      : `teams2 --disable-auto-update ${args.join(" ")}`;
+      : `teams --disable-auto-update ${args.join(" ")}`;
     try {
       execSync(cmd, { stdio: "inherit" });
     } catch {
@@ -119,7 +119,7 @@ function showUpdateHint(latestVersion: string): void {
 
   console.log(
     pc.yellow(`\nUpdate available: ${pc.dim(currentVersion)} → ${pc.bold(latestVersion)}`) +
-    `  Run ${pc.cyan("teams2 self-update")} to update.\n`
+    `  Run ${pc.cyan("teams self-update")} to update.\n`
   );
 }
 

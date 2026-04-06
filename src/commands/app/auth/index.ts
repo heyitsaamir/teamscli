@@ -36,7 +36,7 @@ export const authCommand = new Command("auth")
     }
   });
 
-// secret is still a subcommand for CLI access (teams2 app auth secret create)
+// secret is still a subcommand for CLI access (teams app auth secret create)
 // but not shown in the interactive menu since it's about bot identity, not user auth
 authCommand.addCommand(secretCommand);
 authCommand.addCommand(oauthCommand);

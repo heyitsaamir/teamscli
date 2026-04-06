@@ -16,7 +16,7 @@ const require = createRequire(import.meta.url);
 const { version } = require("../package.json");
 
 program
-  .name("teams2")
+  .name("teams")
   .description("CLI for scaffolding Teams applications")
   .version(version)
   .option("-v, --verbose", "[OPTIONAL] Enable verbose logging")

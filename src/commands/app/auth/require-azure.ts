@@ -73,7 +73,7 @@ export async function requireAzureBot(appIdArg?: string): Promise<AzureBotInfo> 
         process.exit(0);
       }
     } else {
-      console.log(`Run ${pc.cyan(`teams2 app bot migrate ${appId}`)} first.`);
+      console.log(`Run ${pc.cyan(`teams app bot migrate ${appId}`)} first.`);
       process.exit(1);
     }
   }

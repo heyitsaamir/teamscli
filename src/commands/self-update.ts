@@ -10,14 +10,14 @@ const INSTALL_URL =
  * Run the self-update. Returns true on success, false on failure.
  */
 export function runSelfUpdate(): boolean {
-  const spinner = createSpinner("Updating teams2...").start();
+  const spinner = createSpinner("Updating teams...").start();
 
   try {
     execSync(`npm install -g ${INSTALL_URL}`, { stdio: "pipe" });
     spinner.success({ text: "Updated to the latest version" });
 
     try {
-      const version = execSync("teams2 --version", { encoding: "utf-8" }).trim();
+      const version = execSync("teams --version", { encoding: "utf-8" }).trim();
       console.log(`${pc.dim("Version:")} ${version}`);
     } catch {
       // version check is best-effort
@@ -36,7 +36,7 @@ export function runSelfUpdate(): boolean {
 }
 
 export const selfUpdateCommand = new Command("self-update")
-  .description("Update teams2 to the latest version")
+  .description("Update teams to the latest version")
   .action(async () => {
     if (!runSelfUpdate()) {
       process.exit(1);

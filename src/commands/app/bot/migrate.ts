@@ -167,7 +167,7 @@ export const botMigrateCommand = new Command("migrate")
       } catch {
         rollbackSpinner.error({ text: "Rollback failed" });
         console.log(pc.red("Could not restore BF registration. Re-register manually:"));
-        console.log(pc.cyan(`  teams2 app create --name "${botName}" --bf`));
+        console.log(pc.cyan(`  teams app create --name "${botName}" --bf`));
       }
       process.exit(1);
     }
