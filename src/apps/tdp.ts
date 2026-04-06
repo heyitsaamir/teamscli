@@ -1,4 +1,5 @@
 import type { AadApp } from "./graph.js";
+import { apiFetch } from "../utils/http.js";
 
 const TDP_BASE_URL = "https://dev.teams.microsoft.com/api";
 
@@ -9,7 +10,7 @@ export async function createAadAppViaTdp(
   token: string,
   displayName: string,
 ): Promise<AadApp> {
-  const response = await fetch(`${TDP_BASE_URL}/aadapp/v2`, {
+  const response = await apiFetch(`${TDP_BASE_URL}/aadapp/v2`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${token}`,
@@ -42,7 +43,7 @@ export async function importAppPackage(
   token: string,
   zipBuffer: Buffer
 ): Promise<ImportedApp> {
-  const response = await fetch(`${TDP_BASE_URL}/appdefinitions/v2/import`, {
+  const response = await apiFetch(`${TDP_BASE_URL}/appdefinitions/v2/import`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${token}`,
@@ -70,7 +71,7 @@ export async function registerBot(
     configuredChannels?: string[];
   }
 ): Promise<BotRegistration> {
-  const response = await fetch(`${TDP_BASE_URL}/botframework`, {
+  const response = await apiFetch(`${TDP_BASE_URL}/botframework`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${token}`,
@@ -107,7 +108,7 @@ export interface BotDetails {
 }
 
 export async function fetchBot(token: string, botId: string): Promise<BotDetails> {
-  const response = await fetch(`${TDP_BASE_URL}/botframework/${botId}`, {
+  const response = await apiFetch(`${TDP_BASE_URL}/botframework/${botId}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
 
@@ -119,7 +120,7 @@ export async function fetchBot(token: string, botId: string): Promise<BotDetails
 }
 
 export async function deleteBot(token: string, botId: string): Promise<void> {
-  const response = await fetch(`${TDP_BASE_URL}/botframework/${botId}`, {
+  const response = await apiFetch(`${TDP_BASE_URL}/botframework/${botId}`, {
     method: "DELETE",
     headers: { Authorization: `Bearer ${token}` },
   });
@@ -136,7 +137,7 @@ export interface MeetingSubscription {
 }
 
 export async function fetchMeetingSubscription(token: string, botId: string): Promise<MeetingSubscription | null> {
-  const response = await fetch(`${TDP_BASE_URL}/botframework/${botId}/meetings/subscription`, {
+  const response = await apiFetch(`${TDP_BASE_URL}/botframework/${botId}/meetings/subscription`, {
     headers: { Authorization: `Bearer ${token}` },
   });
 
@@ -147,7 +148,7 @@ export async function fetchMeetingSubscription(token: string, botId: string): Pr
 }
 
 export async function setMeetingSubscription(token: string, botId: string, eventTypes: string[]): Promise<void> {
-  const response = await fetch(`${TDP_BASE_URL}/botframework/${botId}/meetings/subscription`, {
+  const response = await apiFetch(`${TDP_BASE_URL}/botframework/${botId}/meetings/subscription`, {
     method: "PUT",
     headers: {
       Authorization: `Bearer ${token}`,
@@ -163,7 +164,7 @@ export async function setMeetingSubscription(token: string, botId: string, event
 }
 
 export async function updateBot(token: string, bot: BotDetails): Promise<void> {
-  const response = await fetch(`${TDP_BASE_URL}/botframework/${bot.botId}`, {
+  const response = await apiFetch(`${TDP_BASE_URL}/botframework/${bot.botId}`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${token}`,

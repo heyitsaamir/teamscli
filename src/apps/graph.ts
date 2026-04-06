@@ -1,3 +1,5 @@
+import { apiFetch } from "../utils/http.js";
+
 const GRAPH_BASE_URL = "https://graph.microsoft.com/v1.0";
 
 export interface AadApp {
@@ -13,7 +15,7 @@ export interface ClientSecret {
 }
 
 export async function createAadApp(token: string, displayName: string): Promise<AadApp> {
-  const response = await fetch(`${GRAPH_BASE_URL}/applications`, {
+  const response = await apiFetch(`${GRAPH_BASE_URL}/applications`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${token}`,
@@ -37,7 +39,7 @@ export async function getAadAppByClientId(
   token: string,
   clientId: string,
 ): Promise<AadApp> {
-  const response = await fetch(
+  const response = await apiFetch(
     `${GRAPH_BASE_URL}/applications?$filter=appId eq '${clientId}'`,
     {
       headers: {
@@ -67,7 +69,7 @@ export async function getAadAppFull(
   token: string,
   appObjectId: string,
 ): Promise<Record<string, unknown>> {
-  const response = await fetch(
+  const response = await apiFetch(
     `${GRAPH_BASE_URL}/applications/${appObjectId}`,
     { headers: { Authorization: `Bearer ${token}` } },
   );
@@ -88,7 +90,7 @@ export async function updateAadApp(
   appObjectId: string,
   updates: Record<string, unknown>,
 ): Promise<void> {
-  const response = await fetch(
+  const response = await apiFetch(
     `${GRAPH_BASE_URL}/applications/${appObjectId}`,
     {
       method: "PATCH",
@@ -113,7 +115,7 @@ export async function createClientSecret(
   const expiryDate = new Date();
   expiryDate.setFullYear(expiryDate.getFullYear() + 2);
 
-  const response = await fetch(
+  const response = await apiFetch(
     `${GRAPH_BASE_URL}/applications/${appRegistrationId}/addPassword`,
     {
       method: "POST",

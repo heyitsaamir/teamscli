@@ -1,4 +1,5 @@
 import type { AppSummary, AppDetails, AppBot } from "./types.js";
+import { apiFetch } from "../utils/http.js";
 
 /**
  * Teams app manifest.json structure (subset of fields we care about)
@@ -40,7 +41,7 @@ export interface TeamsManifest {
 const TDP_BASE_URL = "https://dev.teams.microsoft.com/api";
 
 export async function fetchApps(token: string): Promise<AppSummary[]> {
-  const response = await fetch(`${TDP_BASE_URL}/appdefinitions/my?pageNumber=1`, {
+  const response = await apiFetch(`${TDP_BASE_URL}/appdefinitions/my?pageNumber=1`, {
     headers: { Authorization: `Bearer ${token}` },
   });
 
@@ -52,7 +53,7 @@ export async function fetchApps(token: string): Promise<AppSummary[]> {
 }
 
 export async function fetchApp(token: string, id: string): Promise<AppSummary> {
-  const response = await fetch(`${TDP_BASE_URL}/appdefinitions/${id}`, {
+  const response = await apiFetch(`${TDP_BASE_URL}/appdefinitions/${id}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
 
@@ -64,7 +65,7 @@ export async function fetchApp(token: string, id: string): Promise<AppSummary> {
 }
 
 export async function downloadAppPackage(token: string, appId: string): Promise<Buffer> {
-  const response = await fetch(`${TDP_BASE_URL}/appdefinitions/${appId}/manifest`, {
+  const response = await apiFetch(`${TDP_BASE_URL}/appdefinitions/${appId}/manifest`, {
     headers: { Authorization: `Bearer ${token}` },
   });
 
@@ -82,7 +83,7 @@ export async function downloadAppPackage(token: string, appId: string): Promise<
  * Returns all editable fields plus internal properties that must be preserved on update.
  */
 export async function fetchAppDetailsV2(token: string, teamsAppId: string): Promise<AppDetails> {
-  const response = await fetch(`${TDP_BASE_URL}/appdefinitions/v2/${teamsAppId}`, {
+  const response = await apiFetch(`${TDP_BASE_URL}/appdefinitions/v2/${teamsAppId}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
 
@@ -109,7 +110,7 @@ export async function updateAppDetails(
   const updatedDetails = { ...currentDetails, ...updates };
 
   // 3. POST full object back
-  const response = await fetch(`${TDP_BASE_URL}/appdefinitions/v2/${teamsAppId}`, {
+  const response = await apiFetch(`${TDP_BASE_URL}/appdefinitions/v2/${teamsAppId}`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${token}`,
@@ -204,7 +205,7 @@ export async function uploadManifest(
   const updatedDetails = { ...currentDetails, ...manifestDetails };
 
   // 4. POST full object back
-  const response = await fetch(`${TDP_BASE_URL}/appdefinitions/v2/${teamsAppId}`, {
+  const response = await apiFetch(`${TDP_BASE_URL}/appdefinitions/v2/${teamsAppId}`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${token}`,
