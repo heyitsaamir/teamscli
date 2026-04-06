@@ -52,6 +52,10 @@ Always run `npm run build` after changes — the CLI runs from `dist/`, not sour
 
 Use Commander's built-in features for global flags and hooks. Don't manually parse `process.argv` — use `.option()` on the program and access via `optsWithGlobals()` in `preAction` hooks.
 
+## Pre-PR Validation
+
+Before creating a PR, always run the agentic tests defined in `agentic-tests.md`. These are basic smoke tests (setup/act/assert) that verify the CLI works end-to-end. Run `pnpm build` first, then execute each test scenario via `node dist/index.js <command>` (not the global `teams` command) and confirm expected output.
+
 # Architecture Decisions
 
 ## AAD App Creation — Use TDP, Not Graph API
