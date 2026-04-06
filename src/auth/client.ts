@@ -12,9 +12,7 @@ export async function getMsalClient(): Promise<PublicClientApplication> {
   const cachePlugin = await createCachePlugin();
   const config = {
     ...msalConfig,
-    cache: {
-      cachePlugin,
-    },
+    ...(cachePlugin ? { cache: { cachePlugin } } : {}),
   };
 
   msalClient = new PublicClientApplication(config);
