@@ -2,6 +2,7 @@
 
 import asyncio
 import os
+import re
 import sys
 
 from microsoft_teams.apps import App
@@ -27,9 +28,9 @@ def build_pr_card() -> AdaptiveCard:
     body = os.environ.get("PR_BODY", "") or ""
     labels = os.environ.get("PR_LABELS", "") or ""
 
-    # Replace markdown headers with bold text for the card
-    import re
-    clean = re.sub(r"^#{1,6}\s+(.+)$", r"**\1**", body, flags=re.MULTILINE)
+    # Normalize CRLF and replace markdown headers with bold text for the card
+    normalized = body.replace("\r\n", "\n").replace("\r", "\n")
+    clean = re.sub(r"^#{1,6}\s+(.+)$", r"**\1**", normalized, flags=re.MULTILINE)
     summary = clean[:200] + "..." if len(clean) > 200 else clean
 
     facts = [
