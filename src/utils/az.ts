@@ -1,10 +1,14 @@
 import { execFileSync } from "node:child_process";
+import { platform } from "node:os";
 import { logger } from "./logger.js";
 import { CliError } from "./errors.js";
 
+// Resolve the correct Azure CLI executable for the platform
+const AZ_COMMAND = platform() === "win32" ? "az.cmd" : "az";
+
 export function isAzInstalled(): boolean {
   try {
-    execFileSync("az", ["version"], { stdio: "pipe" });
+    execFileSync(AZ_COMMAND, ["version"], { stdio: "pipe" });
     return true;
   } catch {
     return false;
@@ -13,7 +17,7 @@ export function isAzInstalled(): boolean {
 
 export function isAzLoggedIn(): boolean {
   try {
-    execFileSync("az", ["account", "show"], { stdio: "pipe" });
+    execFileSync(AZ_COMMAND, ["account", "show"], { stdio: "pipe" });
     return true;
   } catch {
     return false;
@@ -38,8 +42,8 @@ export function ensureAz(): void {
  * Automatically appends --output json.
  */
 export function runAz<T = unknown>(args: string[]): T {
-  logger.debug(`az ${args.join(" ")}`);
-  const output = execFileSync("az", [...args, "--output", "json"], {
+  logger.debug(`${AZ_COMMAND} ${args.join(" ")}`);
+  const output = execFileSync(AZ_COMMAND, [...args, "--output", "json"], {
     encoding: "utf-8",
     stdio: ["pipe", "pipe", "pipe"],
   });
