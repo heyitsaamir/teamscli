@@ -1,6 +1,5 @@
 import { input } from "@inquirer/prompts";
 import { Command } from "commander";
-import { createSpinner } from "nanospinner";
 import pc from "picocolors";
 import {
 	collectManifestCustomization,
@@ -26,11 +25,27 @@ import {
 	teamsDevPortalScopes,
 } from "../../auth/index.js";
 import { outputCredentials } from "../../utils/env.js";
+import { outputJson } from "../../utils/json-output.js";
 import { logger } from "../../utils/logger.js";
 import { isInteractive } from "../../utils/interactive.js";
 import { getConfig } from "../../utils/config.js";
 import { ensureAz, runAz } from "../../utils/az.js";
 import { resolveSubscription, resolveResourceGroup } from "../../utils/az-prompts.js";
+import { createSilentSpinner } from "../../utils/spinner.js";
+
+interface AppCreateOutput {
+	appName: string;
+	teamsAppId: string;
+	botId: string;
+	endpoint: string | null;
+	installLink: string;
+	botLocation: "bf" | "azure";
+	credentials: {
+		CLIENT_ID: string;
+		CLIENT_SECRET: string;
+		TENANT_ID: string;
+	};
+}
 
 interface CreateOptions {
 	name?: string;
@@ -44,6 +59,7 @@ interface CreateOptions {
 	resourceGroup?: string;
 	createResourceGroup?: boolean;
 	region?: string;
+	json?: boolean;
 }
 
 export const appCreateCommand = new Command("create")
@@ -59,7 +75,9 @@ export const appCreateCommand = new Command("create")
 	.option("--resource-group <name>", "Azure resource group (required for --azure)")
 	.option("--create-resource-group", "[OPTIONAL] Create the resource group if it doesn't exist")
 	.option("--region <name>", "[OPTIONAL] Azure region for resource group (default: westus2)")
+	.option("--json", "[OPTIONAL] Output as JSON")
 	.action(async (options: CreateOptions) => {
+		const silent = !!options.json;
 		const account = await getAccount();
 		if (!account) {
 			logger.error(`Not logged in. Run ${pc.cyan("teams login")} first.`);
@@ -93,7 +111,7 @@ export const appCreateCommand = new Command("create")
 
 			if (options.createResourceGroup) {
 				const rgRegion = options.region ?? "westus2";
-				const rgSpinner = createSpinner(`Creating resource group ${resourceGroup}...`).start();
+				const rgSpinner = createSilentSpinner(`Creating resource group ${resourceGroup}...`, silent).start();
 				runAz(["group", "create", "--name", resourceGroup, "--location", rgRegion, "--subscription", subscription]);
 				rgSpinner.success({ text: `Resource group ${resourceGroup} ready` });
 			}
@@ -144,7 +162,7 @@ export const appCreateCommand = new Command("create")
 		// Get env path (prompt only in full interactive mode)
 		const envPath =
 			options.env ??
-			(interactive && !hasFlags
+			(interactive && !hasFlags && !options.json
 				? (await input({
 						message: "Path to .env file (leave empty to show in terminal):",
 				  })) || undefined
@@ -173,7 +191,7 @@ export const appCreateCommand = new Command("create")
 		// ===== All inputs gathered, now do async work =====
 
 		// Get tokens
-		let spinner = createSpinner("Acquiring tokens...").start();
+		let spinner = createSilentSpinner("Acquiring tokens...", silent).start();
 
 		const graphToken = await getTokenSilent(graphScopes);
 		if (!graphToken) {
@@ -198,25 +216,25 @@ export const appCreateCommand = new Command("create")
 
 			if (options.package) {
 				// Use existing package - read manifest to get bot ID
-				spinner = createSpinner("Reading package...").start();
+				spinner = createSilentSpinner("Reading package...", silent).start();
 				zipBuffer = readZipFile(options.package);
 				spinner.success({ text: "Package loaded" });
 
 				// Create AAD app via TDP (creates service principal server-side)
-				spinner = createSpinner("Creating Azure AD app...").start();
+				spinner = createSilentSpinner("Creating Azure AD app...", silent).start();
 				const aadApp = await createAadAppViaTdp(tdpToken, name ?? "Bot");
 				clientId = aadApp.appId;
 				spinner.success({ text: `Created Azure AD app (${clientId})` });
 			} else {
 				// Create AAD app via TDP (creates service principal server-side)
-				spinner = createSpinner("Creating Azure AD app...").start();
+				spinner = createSilentSpinner("Creating Azure AD app...", silent).start();
 				const aadApp = await createAadAppViaTdp(tdpToken, name!);
 				clientId = aadApp.appId;
 				spinner.success({ text: `Created Azure AD app (${clientId})` });
 
 				// Create zip from manifest or generate new one
 				if (manifestPath) {
-					spinner = createSpinner("Processing manifest...").start();
+					spinner = createSilentSpinner("Processing manifest...", silent).start();
 					const manifest = readManifestFile(manifestPath);
 					const updatedManifest = updateManifestBotId(manifest, clientId);
 					zipBuffer = createZipFromManifest(updatedManifest);
@@ -237,7 +255,7 @@ export const appCreateCommand = new Command("create")
 			}
 
 			// Look up Graph object ID (TDP returns a different ID; retry for replication lag)
-			spinner = createSpinner("Generating client secret...").start();
+			spinner = createSilentSpinner("Generating client secret...", silent).start();
 			let graphApp: { id: string } | null = null;
 			for (let i = 0; i < 10; i++) {
 				try {
@@ -255,36 +273,54 @@ export const appCreateCommand = new Command("create")
 			spinner.success({ text: "Generated client secret" });
 
 			// Import to Teams
-			spinner = createSpinner("Creating Teams app...").start();
+			spinner = createSilentSpinner("Creating Teams app...", silent).start();
 			const importedApp = await importAppPackage(tdpToken, zipBuffer);
 			teamsAppId = importedApp.teamsAppId;
 			spinner.success({ text: `Created Teams app (${teamsAppId})` });
 
 			// Register bot
 			const locationLabel = location === "bf" ? "BF tenant" : "Azure";
-			spinner = createSpinner(`Registering bot (${locationLabel})...`).start();
+			spinner = createSilentSpinner(`Registering bot (${locationLabel})...`, silent).start();
 			const handler = location === "bf"
 				? createTdpBotHandler(tdpToken)
 				: createAzureBotHandler(azureContext!);
 			await handler.createBot({ botId: clientId, name: name ?? "Bot", endpoint });
 			spinner.success({ text: `Registered bot (${locationLabel})` });
 
-			// Show app details
+			// Output results
 			const installLink = `https://teams.microsoft.com/l/app/${teamsAppId}?installAppPackage=true`;
-			logger.info(pc.bold(pc.green("\nApp created successfully!")));
-			logger.info(`${pc.dim("Name:")} ${name ?? "Bot"}`);
-			logger.info(`${pc.dim("Teams App ID:")} ${teamsAppId}`);
-			logger.info(`${pc.dim("Bot ID:")} ${clientId}`);
-			if (endpoint) {
-				logger.info(`${pc.dim("Endpoint:")} ${endpoint}`);
-			}
-			logger.info(`${pc.dim("Install link:")} ${installLink}`);
 
-			outputCredentials(envPath, {
-				CLIENT_ID: clientId,
-				CLIENT_SECRET: secretText,
-				TENANT_ID: account.tenantId,
-			}, "Credentials:");
+			if (options.json) {
+				const result: AppCreateOutput = {
+					appName: name ?? "Bot",
+					teamsAppId,
+					botId: clientId,
+					endpoint: endpoint ?? null,
+					installLink,
+					botLocation: location,
+					credentials: {
+						CLIENT_ID: clientId,
+						CLIENT_SECRET: secretText,
+						TENANT_ID: account.tenantId,
+					},
+				};
+				outputJson(result);
+			} else {
+				logger.info(pc.bold(pc.green("\nApp created successfully!")));
+				logger.info(`${pc.dim("Name:")} ${name ?? "Bot"}`);
+				logger.info(`${pc.dim("Teams App ID:")} ${teamsAppId}`);
+				logger.info(`${pc.dim("Bot ID:")} ${clientId}`);
+				if (endpoint) {
+					logger.info(`${pc.dim("Endpoint:")} ${endpoint}`);
+				}
+				logger.info(`${pc.dim("Install link:")} ${installLink}`);
+
+				outputCredentials(envPath, {
+					CLIENT_ID: clientId,
+					CLIENT_SECRET: secretText,
+					TENANT_ID: account.tenantId,
+				}, "Credentials:");
+			}
 		} catch (error) {
 			spinner.error({ text: "Failed" });
 			logger.error(

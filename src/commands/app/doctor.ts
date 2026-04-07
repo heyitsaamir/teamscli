@@ -1,6 +1,5 @@
 import { Command } from "commander";
 import pc from "picocolors";
-import { createSpinner } from "nanospinner";
 import { getAccount, getTokenSilent, teamsDevPortalScopes, graphScopes } from "../../auth/index.js";
 import { fetchAppDetailsV2, getAadAppByClientId, getAadAppFull, fetchBot, getBotLocation, discoverAzureBot, extractDomain } from "../../apps/index.js";
 import type { AppDetails } from "../../apps/types.js";
@@ -8,8 +7,10 @@ import type { BotDetails } from "../../apps/tdp.js";
 import type { BotLocation } from "../../apps/bot-location.js";
 import type { AzureContext } from "../../apps/bot-handler.js";
 import { isAzInstalled, isAzLoggedIn, runAz } from "../../utils/az.js";
+import { outputJson } from "../../utils/json-output.js";
 import { pickApp } from "../../utils/app-picker.js";
 import { logger } from "../../utils/logger.js";
+import { createSilentSpinner } from "../../utils/spinner.js";
 
 type CheckStatus = "pass" | "fail" | "warn" | "info";
 
@@ -18,6 +19,24 @@ interface CheckResult {
   label: string;
   status: CheckStatus;
   detail?: string;
+}
+
+interface DoctorOutput {
+  appId: string;
+  appName: string;
+  checks: Array<{
+    category: string;
+    label: string;
+    status: CheckStatus;
+    detail?: string;
+  }>;
+  summary: {
+    total: number;
+    pass: number;
+    fail: number;
+    warn: number;
+    info: number;
+  };
 }
 
 const STATUS_ICONS: Record<CheckStatus, string> = {
@@ -86,6 +105,7 @@ async function checkBotRegistration(
   results: CheckResult[],
   details: AppDetails,
   tdpToken: string,
+  silent = false,
 ): Promise<{ botId: string; location: BotLocation; bfBot: BotDetails | null; azure: AzureContext | null } | null> {
   const cat = "Bot Registration";
 
@@ -145,7 +165,7 @@ async function checkBotRegistration(
     } else if (!isAzLoggedIn()) {
       results.push({ category: cat, label: "Azure CLI not logged in", status: "warn", detail: "Run az login" });
     } else {
-      azure = discoverAzureBot(botId);
+      azure = discoverAzureBot(botId, silent);
       if (azure) {
         results.push({ category: cat, label: "Azure bot discoverable", status: "pass", detail: azure.resourceGroup });
 
@@ -434,7 +454,8 @@ async function checkSso(
 
 // --- Main command ---
 
-async function runDoctor(appIdArg: string | undefined): Promise<void> {
+async function runDoctor(appIdArg: string | undefined, json?: boolean): Promise<void> {
+  const silent = !!json;
   const account = await getAccount();
   if (!account) {
     console.log(pc.red("Not logged in.") + ` Run ${pc.cyan("teams login")} first.`);
@@ -457,7 +478,7 @@ async function runDoctor(appIdArg: string | undefined): Promise<void> {
     appId = picked.app.teamsAppId;
   }
 
-  const spinner = createSpinner("Fetching app details...").start();
+  const spinner = createSilentSpinner("Fetching app details...", silent).start();
 
   let details: AppDetails;
   try {
@@ -471,21 +492,29 @@ async function runDoctor(appIdArg: string | undefined): Promise<void> {
   spinner.stop();
 
   const appName = details.shortName || details.appId;
-  console.log(`\nDiagnosing: ${pc.bold(appName)} ${pc.dim(`(${details.appId})`)}`);
+  if (!json) {
+    console.log(`\nDiagnosing: ${pc.bold(appName)} ${pc.dim(`(${details.appId})`)}`);
+  }
 
   const allResults: CheckResult[] = [];
 
   // 1. Bot Registration
   spinner.update({ text: "Checking bot registration..." }).start();
   const botResults: CheckResult[] = [];
-  const botInfo = await checkBotRegistration(botResults, details, tdpToken);
+  const botInfo = await checkBotRegistration(botResults, details, tdpToken, silent);
   spinner.stop();
-  console.log(`\n${pc.bold("Bot Registration")}`);
-  printResults(botResults);
+  if (!json) {
+    console.log(`\n${pc.bold("Bot Registration")}`);
+    printResults(botResults);
+  }
   allResults.push(...botResults);
 
   if (!botInfo) {
-    printSummary(allResults);
+    if (json) {
+      emitDoctorJson(appId, appName, allResults);
+    } else {
+      printSummary(allResults);
+    }
     return;
   }
 
@@ -508,8 +537,10 @@ async function runDoctor(appIdArg: string | undefined): Promise<void> {
     aadResults.push({ category: "AAD App", label: "Could not get Graph token", status: "warn", detail: "Run teams login to grant Graph permissions" });
   }
   spinner.stop();
-  console.log(`\n${pc.bold("AAD App")}`);
-  printResults(aadResults);
+  if (!json) {
+    console.log(`\n${pc.bold("AAD App")}`);
+    printResults(aadResults);
+  }
   allResults.push(...aadResults);
 
   // 3. Manifest
@@ -518,8 +549,10 @@ async function runDoctor(appIdArg: string | undefined): Promise<void> {
     ? bfBot?.messagingEndpoint
     : undefined;
   checkManifest(manifestResults, details, botId, endpoint);
-  console.log(`\n${pc.bold("Manifest")}`);
-  printResults(manifestResults);
+  if (!json) {
+    console.log(`\n${pc.bold("Manifest")}`);
+    printResults(manifestResults);
+  }
   allResults.push(...manifestResults);
 
   // 4. SSO (only if webApplicationInfo configured)
@@ -528,20 +561,43 @@ async function runDoctor(appIdArg: string | undefined): Promise<void> {
     const ssoResults: CheckResult[] = [];
     await checkSso(ssoResults, details, botId, fullAadApp, azure);
     spinner.stop();
-    console.log(`\n${pc.bold("SSO")}`);
-    printResults(ssoResults);
+    if (!json) {
+      console.log(`\n${pc.bold("SSO")}`);
+      printResults(ssoResults);
+    }
     allResults.push(...ssoResults);
   }
 
-  printSummary(allResults);
+  if (json) {
+    emitDoctorJson(appId, appName, allResults);
+  } else {
+    printSummary(allResults);
+  }
+}
+
+function emitDoctorJson(appId: string, appName: string, allResults: CheckResult[]): void {
+  const result: DoctorOutput = {
+    appId,
+    appName,
+    checks: allResults,
+    summary: {
+      total: allResults.length,
+      pass: allResults.filter((r) => r.status === "pass").length,
+      fail: allResults.filter((r) => r.status === "fail").length,
+      warn: allResults.filter((r) => r.status === "warn").length,
+      info: allResults.filter((r) => r.status === "info").length,
+    },
+  };
+  outputJson(result);
 }
 
 export const appDoctorCommand = new Command("doctor")
   .description("Run diagnostic checks on a Teams app")
   .argument("[appId]", "App ID")
-  .action(async (appIdArg: string | undefined) => {
+  .option("--json", "[OPTIONAL] Output as JSON")
+  .action(async (appIdArg: string | undefined, options: { json?: boolean }) => {
     try {
-      await runDoctor(appIdArg);
+      await runDoctor(appIdArg, options.json);
     } catch (error) {
       if (error instanceof Error && error.name === "ExitPromptError") {
         return;

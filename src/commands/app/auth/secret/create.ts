@@ -11,12 +11,14 @@ import { generateSecret } from "./generate.js";
 
 interface SecretCreateOptions {
 	env?: string;
+	json?: boolean;
 }
 
 export const secretCreateCommand = new Command("create")
 	.description("Generate a new client secret for an existing app")
 	.argument("[appId]", "App ID")
 	.option("--env <path>", "[OPTIONAL] Path to .env file to write credentials")
+	.option("--json", "[OPTIONAL] Output as JSON")
 	.action(async (appIdArg: string | undefined, options: SecretCreateOptions) => {
 		let appId: string;
 		let tdpToken: string;
@@ -46,7 +48,8 @@ export const secretCreateCommand = new Command("create")
 				tdpToken,
 				appId,
 				envPath: options.env,
-				interactive: !options.env,
+				interactive: !options.env && !options.json,
+				json: options.json,
 			});
 		} catch (error) {
 			logger.error(

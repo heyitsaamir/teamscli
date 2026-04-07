@@ -4,3 +4,8 @@
 # A Teams app ID to use for integration tests
 # This app will be modified during tests (values are restored after each test)
 TEST_APP_ID=your-app-id-here
+
+# Azure subscription for lifecycle tests (create → migrate → sso)
+# Leave unset to skip Azure-dependent tests
+TEST_AZ_SUBSCRIPTION=
+TEST_AZ_RESOURCE_GROUP=teams-cli-test

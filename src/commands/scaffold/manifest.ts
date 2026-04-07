@@ -8,7 +8,13 @@ import {
   collectManifestCustomization,
   PLACEHOLDER_BOT_ID,
 } from "../../apps/index.js";
+import { outputJson } from "../../utils/json-output.js";
 import { logger } from "../../utils/logger.js";
+
+interface ScaffoldManifestOutput {
+  outputPath: string;
+  manifest: Record<string, unknown>;
+}
 
 interface ScaffoldManifestOptions {
   path?: string;
@@ -16,6 +22,7 @@ interface ScaffoldManifestOptions {
   domain?: string;
   botId?: string;
   interactive?: boolean;
+  json?: boolean;
 }
 
 export const scaffoldManifestCommand = new Command("manifest")
@@ -25,12 +32,19 @@ export const scaffoldManifestCommand = new Command("manifest")
   .option("-d, --domain <domain>", "[OPTIONAL] Valid domain for the manifest")
   .option("-b, --bot-id <id>", "[OPTIONAL] Bot ID (uses placeholder if not provided)")
   .option("-i, --interactive", "[OPTIONAL] Force interactive mode even when args provided")
+  .option("--json", "[OPTIONAL] Output as JSON")
   .action(async (options: ScaffoldManifestOptions) => {
     const outputDir = options.path ?? process.cwd();
 
-    // Determine if we need interactive mode
+    // --json requires --name
+    if (options.json && !options.name) {
+      logger.error("--name is required with --json");
+      process.exit(1);
+    }
+
+    // Determine if we need interactive mode (--json forces non-interactive)
     const hasRequiredArgs = !!options.name;
-    const useInteractive = options.interactive || !hasRequiredArgs;
+    const useInteractive = !options.json && (options.interactive || !hasRequiredArgs);
 
     let name: string;
     let botId: string;
@@ -102,12 +116,20 @@ export const scaffoldManifestCommand = new Command("manifest")
     const outputPath = path.join(outputDir, "manifest.json");
     fs.writeFileSync(outputPath, JSON.stringify(manifest, null, 2));
 
-    logger.info(pc.bold(pc.green("Manifest created successfully!")));
-    logger.info(`Output: ${pc.cyan(outputPath)}`);
+    if (options.json) {
+      const result: ScaffoldManifestOutput = {
+        outputPath,
+        manifest: manifest as Record<string, unknown>,
+      };
+      outputJson(result);
+    } else {
+      logger.info(pc.bold(pc.green("Manifest created successfully!")));
+      logger.info(`Output: ${pc.cyan(outputPath)}`);
 
-    if (botId === PLACEHOLDER_BOT_ID) {
-      logger.warn(
-        `Using placeholder bot ID. Update ${pc.cyan("id")} and ${pc.cyan("bots[0].botId")} with your actual bot ID.`
-      );
+      if (botId === PLACEHOLDER_BOT_ID) {
+        logger.warn(
+          `Using placeholder bot ID. Update ${pc.cyan("id")} and ${pc.cyan("bots[0].botId")} with your actual bot ID.`
+        );
+      }
     }
   });
