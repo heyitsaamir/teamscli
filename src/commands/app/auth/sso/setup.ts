@@ -235,9 +235,9 @@ export const ssoSetupCommand = new Command("setup")
       };
       outputJson(result);
     } else {
-      console.log(pc.bold(pc.green("\nSSO configured!")));
-      console.log(`${pc.dim("Connection name:")} ${connectionName}`);
-      console.log(`${pc.dim("Identifier URI:")} api://${botId}`);
-      console.log(`${pc.dim("Scopes:")} ${scopes}`);
+      logger.info(pc.bold(pc.green("\nSSO configured!")));
+      logger.info(`${pc.dim("Connection name:")} ${connectionName}`);
+      logger.info(`${pc.dim("Identifier URI:")} api://${botId}`);
+      logger.info(`${pc.dim("Scopes:")} ${scopes}`);
     }
   }));

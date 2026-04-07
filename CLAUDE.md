@@ -18,9 +18,22 @@ Use picocolors for terminal styling.
 
 Use `Intl.DateTimeFormat` via `formatDate()` from `src/utils/date.ts`.
 
-## Logging
+## Logging & Errors
 
-Use `logger` from `src/utils/logger.ts`. `--verbose` enables `logger.debug()`.
+Use `logger` from `src/utils/logger.ts` for all output. Never use `console.log`/`console.error` directly (except inside `logger.ts` and `json-output.ts`).
+
+- `logger.info(...)` — general output (stdout)
+- `logger.warn(...)` — warnings (stderr)
+- `logger.error(...)` — errors (stderr)
+- `logger.debug(...)` — verbose-only, gated by `--verbose`
+
+For error conditions, throw `CliError` from `src/utils/errors.ts`:
+
+```typescript
+throw new CliError("AUTH_REQUIRED", "Not logged in.", "Run `teams login` first.");
+```
+
+Wrap command `.action()` handlers with `wrapAction()` — it catches `CliError` and unknown errors, routes to JSON or human output, and handles `ExitPromptError` gracefully. In interactive menus (not wrapped by `wrapAction`), catch errors inline with `logger.error()`.
 
 ## Spinners
 
@@ -50,7 +63,7 @@ Always run `npm run build` after changes — the CLI runs from `dist/`, not sour
 
 ## JSON Output
 
-Every command MUST support `--json` (boolean flag, marked `[OPTIONAL]`). Each command defines a typed output interface in its own file (e.g., `AppCreateOutput`). Use `outputJson()` from `src/utils/json-output.ts`. Guard all human output (`console.log`, `logger.info`, `outputCredentials`) with `if (!options.json)`. Skip interactive prompts in JSON mode — use defaults or require flags.
+Every command MUST support `--json` (boolean flag, marked `[OPTIONAL]`). Each command defines a typed output interface in its own file (e.g., `AppCreateOutput`). Use `outputJson()` from `src/utils/json-output.ts`. Guard all human output (`logger.info`, `outputCredentials`) with `if (!options.json)`. Skip interactive prompts in JSON mode — use defaults or require flags.
 
 ## Commander Patterns
 

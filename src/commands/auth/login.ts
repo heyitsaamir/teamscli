@@ -1,6 +1,7 @@
 import { Command } from "commander";
 import { createSpinner } from "nanospinner";
 import { login, getAccount } from "../../auth/index.js";
+import { logger } from "../../utils/logger.js";
 
 export const loginCommand = new Command("login")
   .description("Log in to Microsoft 365")
@@ -8,8 +9,8 @@ export const loginCommand = new Command("login")
     const existingAccount = await getAccount();
 
     if (existingAccount) {
-      console.log(`Already logged in as ${existingAccount.username}`);
-      console.log('Run "teams logout" first to switch accounts.');
+      logger.info(`Already logged in as ${existingAccount.username}`);
+      logger.info('Run "teams logout" first to switch accounts.');
       return;
     }
 
@@ -20,7 +21,7 @@ export const loginCommand = new Command("login")
     } catch (error) {
       spinner.error({ text: "Login failed" });
       if (error instanceof Error) {
-        console.error(error.message);
+        logger.error(error.message);
       }
       process.exit(1);
     }

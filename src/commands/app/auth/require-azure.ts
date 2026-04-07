@@ -6,6 +6,7 @@ import { pickApp } from "../../../utils/app-picker.js";
 import { ensureAz } from "../../../utils/az.js";
 import { isInteractive } from "../../../utils/interactive.js";
 import { CliError } from "../../../utils/errors.js";
+import { logger } from "../../../utils/logger.js";
 import { botMigrateCommand } from "../bot/migrate.js";
 
 export interface AzureBotInfo {
@@ -51,7 +52,7 @@ export async function requireAzureBot(appIdArg?: string, silent = false): Promis
 
   if (location === "bf") {
     if (isInteractive()) {
-      console.log(pc.yellow("This feature requires an Azure bot."));
+      logger.info(pc.yellow("This feature requires an Azure bot."));
 
       const migrate = await confirm({
         message: "Would you like to migrate this bot to Azure now?",

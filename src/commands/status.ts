@@ -3,6 +3,7 @@ import { createSpinner } from "nanospinner";
 import pc from "picocolors";
 import { getAccount, paths } from "../auth/index.js";
 import { isAzInstalled, isAzLoggedIn, runAz } from "../utils/az.js";
+import { logger } from "../utils/logger.js";
 
 export const statusCommand = new Command("status")
     .description("Show current CLI status")
@@ -13,30 +14,30 @@ export const statusCommand = new Command("status")
 
         if (!account) {
             spinner.warn({ text: "Not logged in" });
-            console.log(`Run ${pc.cyan("teams login")} to authenticate.`);
+            logger.info(`Run ${pc.cyan("teams login")} to authenticate.`);
             return;
         }
 
         spinner.success({ text: `Logged in as ${account.username}` });
 
         if (options.verbose) {
-            console.log(`\n${pc.dim("Tenant ID:")} ${account.tenantId}`);
-            console.log(`${pc.dim("Home Account ID:")} ${account.homeAccountId}`);
-            console.log(`${pc.dim("Config path:")} ${paths.config}`);
+            logger.info(`\n${pc.dim("Tenant ID:")} ${account.tenantId}`);
+            logger.info(`${pc.dim("Home Account ID:")} ${account.homeAccountId}`);
+            logger.info(`${pc.dim("Config path:")} ${paths.config}`);
         }
 
         // Azure CLI status
         if (!isAzInstalled()) {
-            console.log(`\n${pc.dim("Azure CLI:")} ${pc.yellow("not installed")}`);
+            logger.info(`\n${pc.dim("Azure CLI:")} ${pc.yellow("not installed")}`);
         } else if (!isAzLoggedIn()) {
-            console.log(`\n${pc.dim("Azure CLI:")} installed, ${pc.yellow("not logged in")}`);
+            logger.info(`\n${pc.dim("Azure CLI:")} installed, ${pc.yellow("not logged in")}`);
         } else {
             try {
                 const sub = runAz<{ name: string; id: string }>(["account", "show"]);
-                console.log(`\n${pc.dim("Azure CLI:")} ${pc.green("connected")}`);
-                console.log(`${pc.dim("Subscription:")} ${sub.name} ${pc.dim(`(${sub.id})`)}`);
+                logger.info(`\n${pc.dim("Azure CLI:")} ${pc.green("connected")}`);
+                logger.info(`${pc.dim("Subscription:")} ${sub.name} ${pc.dim(`(${sub.id})`)}`);
             } catch {
-                console.log(`\n${pc.dim("Azure CLI:")} installed, ${pc.yellow("status unknown")}`);
+                logger.info(`\n${pc.dim("Azure CLI:")} installed, ${pc.yellow("status unknown")}`);
             }
         }
     });

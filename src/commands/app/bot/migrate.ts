@@ -77,15 +77,15 @@ export const botMigrateCommand = new Command("migrate")
       if (options.json) {
         outputJson({ botId, status: "already_in_azure" });
       } else {
-        console.log(pc.yellow("This bot is already in Azure. No migration needed."));
+        logger.info(pc.yellow("This bot is already in Azure. No migration needed."));
       }
       return;
     }
 
     if (!options.json) {
-      console.log(`${pc.dim("Bot ID:")} ${botId}`);
-      console.log(`${pc.dim("Current location:")} BF tenant`);
-      console.log();
+      logger.info(`${pc.dim("Bot ID:")} ${botId}`);
+      logger.info(`${pc.dim("Current location:")} BF tenant`);
+      logger.info();
     }
 
     // Azure setup
@@ -125,14 +125,14 @@ export const botMigrateCommand = new Command("migrate")
     // Print warnings for human output
     if (!options.json) {
       if (botDetails.configuredChannels.includes("m365extensions")) {
-        console.log(pc.yellow("\nWarning: This bot has the M365 Extensions channel enabled."));
-        console.log(pc.yellow("This channel cannot be automatically enabled in Azure."));
-        console.log(`Re-enable it manually in the Azure portal after migration.\n`);
+        logger.info(pc.yellow("\nWarning: This bot has the M365 Extensions channel enabled."));
+        logger.info(pc.yellow("This channel cannot be automatically enabled in Azure."));
+        logger.info(`Re-enable it manually in the Azure portal after migration.\n`);
       }
       if (botDetails.callingEndpoint) {
-        console.log(pc.yellow("\nWarning: This bot has a calling endpoint configured."));
-        console.log(`${pc.dim("Calling endpoint:")} ${botDetails.callingEndpoint}`);
-        console.log(`Re-configure calling in Azure portal > Bot Service > Channels > Teams > Calling.\n`);
+        logger.info(pc.yellow("\nWarning: This bot has a calling endpoint configured."));
+        logger.info(`${pc.dim("Calling endpoint:")} ${botDetails.callingEndpoint}`);
+        logger.info(`Re-configure calling in Azure portal > Bot Service > Channels > Teams > Calling.\n`);
       }
     }
 
@@ -195,15 +195,15 @@ export const botMigrateCommand = new Command("migrate")
         if (options.json) {
           outputJson({ ok: false, error: { code: "API_ARM_ERROR", message: "Migration failed" }, rolledBack: true });
         } else {
-          console.log(pc.yellow("Migration failed but your bot has been restored to BF tenant."));
+          logger.info(pc.yellow("Migration failed but your bot has been restored to BF tenant."));
         }
       } catch {
         rollbackSpinner.error({ text: "Rollback failed" });
         if (options.json) {
           outputJson({ ok: false, error: { code: "API_ARM_ERROR", message: "Migration failed and rollback failed" }, rolledBack: false });
         } else {
-          console.log(pc.red("Could not restore BF registration. Re-register manually:"));
-          console.log(pc.cyan(`  teams app create --name "${botName}" --bf`));
+          logger.info(pc.red("Could not restore BF registration. Re-register manually:"));
+          logger.info(pc.cyan(`  teams app create --name "${botName}" --bf`));
         }
       }
       process.exit(1);
@@ -222,7 +222,7 @@ export const botMigrateCommand = new Command("migrate")
       };
       outputJson(result);
     } else {
-      console.log(pc.bold(pc.green("\nBot migrated to Azure!")));
-      console.log(pc.dim("Your credentials (CLIENT_ID, CLIENT_SECRET, TENANT_ID) are unchanged."));
+      logger.info(pc.bold(pc.green("\nBot migrated to Azure!")));
+      logger.info(pc.dim("Your credentials (CLIENT_ID, CLIENT_SECRET, TENANT_ID) are unchanged."));
     }
   }));

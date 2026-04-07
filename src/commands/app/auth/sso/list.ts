@@ -5,6 +5,7 @@ import { createSpinner } from "nanospinner";
 import { runAz } from "../../../../utils/az.js";
 import { isInteractive } from "../../../../utils/interactive.js";
 import { logger } from "../../../../utils/logger.js";
+import { CliError, wrapAction } from "../../../../utils/errors.js";
 import { requireAzureBot } from "../require-azure.js";
 import { ssoEditCommand } from "./edit.js";
 
@@ -27,7 +28,7 @@ interface SsoConnection {
 export const ssoListCommand = new Command("list")
   .description("List SSO connections on an Azure bot")
   .argument("[appId]", "App ID")
-  .action(async (appIdArg?: string) => {
+  .action(wrapAction(async (appIdArg?: string) => {
     const { appId, botId, azure } = await requireAzureBot(appIdArg);
 
     const spinner = createSpinner("Fetching SSO connections...").start();
@@ -46,7 +47,7 @@ export const ssoListCommand = new Command("list")
       });
 
       if (aadConnections.length === 0) {
-        console.log(pc.dim("No SSO connections configured."));
+        logger.info(pc.dim("No SSO connections configured."));
         return;
       }
 
@@ -68,7 +69,7 @@ export const ssoListCommand = new Command("list")
           if (tokenExchangeUrl) {
             const scopes = details.properties?.scopes ?? "";
             ssoConnections.push({ name: connectionName, tokenExchangeUrl, scopes });
-            console.log(`${pc.bold(connectionName)} ${pc.dim(tokenExchangeUrl)} ${pc.dim(`scopes: ${scopes}`)}`);
+            logger.info(`${pc.bold(connectionName)} ${pc.dim(tokenExchangeUrl)} ${pc.dim(`scopes: ${scopes}`)}`);
           }
         } catch {
           // Skip connections we can't read
@@ -76,7 +77,7 @@ export const ssoListCommand = new Command("list")
       }
 
       if (ssoConnections.length === 0) {
-        console.log(pc.dim("No SSO connections configured."));
+        logger.info(pc.dim("No SSO connections configured."));
         return;
       }
 
@@ -96,7 +97,6 @@ export const ssoListCommand = new Command("list")
       }
     } catch (error) {
       spinner.error({ text: "Failed to list SSO connections" });
-      logger.error(error instanceof Error ? error.message : "Unknown error");
-      process.exit(1);
+      throw new CliError("API_ERROR", error instanceof Error ? error.message : "Failed to list SSO connections");
     }
-  });
+  }));

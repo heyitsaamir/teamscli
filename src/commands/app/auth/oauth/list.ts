@@ -3,6 +3,7 @@ import pc from "picocolors";
 import { createSpinner } from "nanospinner";
 import { runAz } from "../../../../utils/az.js";
 import { logger } from "../../../../utils/logger.js";
+import { CliError, wrapAction } from "../../../../utils/errors.js";
 import { requireAzureBot } from "../require-azure.js";
 
 interface AuthSetting {
@@ -18,7 +19,7 @@ export const oauthListCommand = new Command("list")
   .description("List OAuth connections on an Azure bot")
   .argument("[appId]", "App ID")
   .option("--json", "[OPTIONAL] Output as JSON")
-  .action(async (appIdArg: string | undefined, options: { json?: boolean }) => {
+  .action(wrapAction(async (appIdArg: string | undefined, options: { json?: boolean }) => {
     const { botId, azure } = await requireAzureBot(appIdArg);
 
     const spinner = createSpinner("Fetching OAuth connections...").start();
@@ -32,12 +33,12 @@ export const oauthListCommand = new Command("list")
       spinner.stop();
 
       if (options.json) {
-        console.log(JSON.stringify(settings, null, 2));
+        logger.info(JSON.stringify(settings, null, 2));
         return;
       }
 
       if (settings.length === 0) {
-        console.log(pc.dim("No OAuth connections configured."));
+        logger.info(pc.dim("No OAuth connections configured."));
         return;
       }
 
@@ -46,11 +47,10 @@ export const oauthListCommand = new Command("list")
         const connectionName = setting.name.split("/").pop() ?? setting.name;
         const provider = setting.properties?.serviceProviderDisplayName ?? "Unknown";
         const clientId = setting.properties?.clientId ?? "";
-        console.log(`${pc.bold(connectionName)} ${pc.dim(`(${provider})`)}${clientId ? ` ${pc.dim(clientId)}` : ""}`);
+        logger.info(`${pc.bold(connectionName)} ${pc.dim(`(${provider})`)}${clientId ? ` ${pc.dim(clientId)}` : ""}`);
       }
     } catch (error) {
       spinner.error({ text: "Failed to list OAuth connections" });
-      logger.error(error instanceof Error ? error.message : "Unknown error");
-      process.exit(1);
+      throw new CliError("API_ERROR", error instanceof Error ? error.message : "Failed to list OAuth connections");
     }
-  });
+  }));

@@ -7,6 +7,7 @@ import { getAadAppByClientId, createClientSecret } from "../../../../apps/graph.
 import { runAz } from "../../../../utils/az.js";
 import { isInteractive } from "../../../../utils/interactive.js";
 import { logger } from "../../../../utils/logger.js";
+import { CliError, wrapAction } from "../../../../utils/errors.js";
 import { requireAzureBot } from "../require-azure.js";
 
 interface AuthSetting {
@@ -26,7 +27,7 @@ export const ssoEditCommand = new Command("edit")
   .option("--scopes <scopes>", "[OPTIONAL] New scopes")
   .option("--new-connection-name <name>", "[OPTIONAL] Rename the connection")
   .option("--client-secret <secret>", "[OPTIONAL] Client secret (auto-generated if not provided)")
-  .action(async (appIdArg: string | undefined, options: {
+  .action(wrapAction(async (appIdArg: string | undefined, options: {
     connectionName?: string;
     scopes?: string;
     newConnectionName?: string;
@@ -39,8 +40,7 @@ export const ssoEditCommand = new Command("edit")
     let connectionName = options.connectionName;
     if (!connectionName) {
       if (!interactive) {
-        logger.error("--connection-name is required in non-interactive mode");
-        process.exit(1);
+        throw new CliError("VALIDATION_MISSING", "--connection-name is required in non-interactive mode.");
       }
 
       const listSpinner = createSpinner("Fetching SSO connections...").start();
@@ -58,7 +58,7 @@ export const ssoEditCommand = new Command("edit")
       });
 
       if (aadConnections.length === 0) {
-        console.log(pc.dim("No SSO connections to edit."));
+        logger.info(pc.dim("No SSO connections to edit."));
         return;
       }
 
@@ -125,7 +125,7 @@ export const ssoEditCommand = new Command("edit")
 
     // Check if anything changed
     if (newScopes === currentScopes && newName === connectionName) {
-      console.log(pc.dim("No changes made."));
+      logger.info(pc.dim("No changes made."));
       return;
     }
 
@@ -140,8 +140,7 @@ export const ssoEditCommand = new Command("edit")
     if (!clientSecret) {
       const graphToken = await getTokenSilent(graphScopes);
       if (!graphToken) {
-        console.log(pc.red("Failed to get Graph token.") + ` Try ${pc.cyan("teams login")} again.`);
-        process.exit(1);
+        throw new CliError("AUTH_TOKEN_FAILED", "Failed to get Graph token.", "Try `teams login` again.");
       }
       const secretSpinner = createSpinner("Creating new client secret...").start();
       const aadApp = await getAadAppByClientId(graphToken, botId);
@@ -177,11 +176,10 @@ export const ssoEditCommand = new Command("edit")
       ]);
 
       spinner.success({ text: `SSO connection updated` });
-      if (newName !== connectionName) console.log(`${pc.dim("Connection name:")} ${newName}`);
-      console.log(`${pc.dim("Scopes:")} ${newScopes}`);
+      if (newName !== connectionName) logger.info(`${pc.dim("Connection name:")} ${newName}`);
+      logger.info(`${pc.dim("Scopes:")} ${newScopes}`);
     } catch (error) {
       spinner.error({ text: "Failed to update SSO connection" });
-      logger.error(error instanceof Error ? error.message : "Unknown error");
-      process.exit(1);
+      throw new CliError("API_ERROR", error instanceof Error ? error.message : "Failed to update SSO connection");
     }
-  });
+  }));

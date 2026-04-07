@@ -8,7 +8,7 @@ import { scaffoldCommand } from "./commands/scaffold/index.js";
 import { selfUpdateCommand } from "./commands/self-update.js";
 import { configCommand } from "./commands/config/index.js";
 import { CliError } from "./utils/errors.js";
-import { setVerbose } from "./utils/logger.js";
+import { logger, setVerbose } from "./utils/logger.js";
 import { isInteractive } from "./utils/interactive.js";
 import { checkForUpdates } from "./utils/update-check.js";
 import pc from "picocolors";
@@ -16,10 +16,10 @@ import pc from "picocolors";
 // Safety net: catch CliError thrown from shared utilities in non-wrapped commands
 process.on("unhandledRejection", (error) => {
   if (error instanceof CliError) {
-    console.log(pc.red(error.message));
-    if (error.suggestion) console.log(error.suggestion);
+    logger.error(pc.red(error.message));
+    if (error.suggestion) logger.error(error.suggestion);
   } else {
-    console.log(pc.red(error instanceof Error ? error.message : "Unknown error"));
+    logger.error(pc.red(error instanceof Error ? error.message : "Unknown error"));
   }
   process.exit(1);
 });

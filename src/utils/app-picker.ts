@@ -6,6 +6,7 @@ import { fetchApps } from "../apps/index.js";
 import type { AppSummary } from "../apps/types.js";
 import { isInteractive } from "./interactive.js";
 import { CliError } from "./errors.js";
+import { logger } from "./logger.js";
 
 export interface PickAppResult {
   app: AppSummary;
@@ -43,11 +44,11 @@ export async function pickApp(): Promise<PickAppResult> {
   }
 
   if (apps.length === 0) {
-    console.log(pc.dim("No apps found."));
+    logger.info(pc.dim("No apps found."));
     process.exit(0);
   }
 
-  console.log(pc.dim(`Tip: pass ${pc.cyan("<appId>")} as the first argument to skip this prompt`));
+  logger.info(pc.dim(`Tip: pass ${pc.cyan("<appId>")} as the first argument to skip this prompt`));
 
   try {
     const app = await search({

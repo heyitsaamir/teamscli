@@ -20,9 +20,9 @@ export const logger = {
     console.log(...args);
   },
   warn: (...args: unknown[]) => {
-    console.warn(pc.yellow("[warn]"), ...args);
+    console.warn(...args);
   },
   error: (...args: unknown[]) => {
-    console.error(pc.red("[error]"), ...args);
+    console.error(...args);
   },
 };
