@@ -19,9 +19,9 @@ jobs:
 
       - name: Send Teams notification
         env:
-          CLIENT_ID: ${{ secrets.TEAMS_CLIENT_ID }}
-          CLIENT_SECRET: ${{ secrets.TEAMS_CLIENT_SECRET }}
-          TENANT_ID: ${{ secrets.TEAMS_TENANT_ID }}
+          CLIENT_ID: ${{ secrets.CLIENT_ID }}
+          CLIENT_SECRET: ${{ secrets.CLIENT_SECRET }}
+          TENANT_ID: ${{ secrets.TENANT_ID }}
           TEAMS_CONVERSATION_ID: ${{ secrets.TEAMS_CONVERSATION_ID }}
           PR_TITLE: ${{ github.event.pull_request.title }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
