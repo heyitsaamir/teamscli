@@ -2,3 +2,4 @@ node_modules/
 dist/
 .testenv
 test-results/
+.worktrees/
