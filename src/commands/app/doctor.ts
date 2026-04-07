@@ -7,6 +7,7 @@ import type { BotDetails } from "../../apps/tdp.js";
 import type { BotLocation } from "../../apps/bot-location.js";
 import type { AzureContext } from "../../apps/bot-handler.js";
 import { isAzInstalled, isAzLoggedIn, runAz } from "../../utils/az.js";
+import { CliError, wrapAction } from "../../utils/errors.js";
 import { outputJson } from "../../utils/json-output.js";
 import { pickApp } from "../../utils/app-picker.js";
 import { logger } from "../../utils/logger.js";
@@ -458,8 +459,7 @@ async function runDoctor(appIdArg: string | undefined, json?: boolean): Promise<
   const silent = !!json;
   const account = await getAccount();
   if (!account) {
-    console.log(pc.red("Not logged in.") + ` Run ${pc.cyan("teams login")} first.`);
-    process.exit(1);
+    throw new CliError("AUTH_REQUIRED", "Not logged in.", "Run `teams login` first.");
   }
 
   let tdpToken: string;
@@ -468,8 +468,7 @@ async function runDoctor(appIdArg: string | undefined, json?: boolean): Promise<
   if (appIdArg) {
     tdpToken = (await getTokenSilent(teamsDevPortalScopes))!;
     if (!tdpToken) {
-      console.log(pc.red("Failed to get token.") + ` Try ${pc.cyan("teams login")} again.`);
-      process.exit(1);
+      throw new CliError("AUTH_TOKEN_FAILED", "Failed to get token.", "Try `teams login` again.");
     }
     appId = appIdArg;
   } else {
@@ -485,8 +484,7 @@ async function runDoctor(appIdArg: string | undefined, json?: boolean): Promise<
     details = await fetchAppDetailsV2(tdpToken, appId);
   } catch (e) {
     spinner.error({ text: "Failed to fetch app details" });
-    console.log(pc.red(e instanceof Error ? e.message : "Unknown error"));
-    process.exit(1);
+    throw new CliError("NOT_FOUND_APP", e instanceof Error ? e.message : "Failed to fetch app details.");
   }
 
   spinner.stop();
@@ -595,14 +593,6 @@ export const appDoctorCommand = new Command("doctor")
   .description("Run diagnostic checks on a Teams app")
   .argument("[appId]", "App ID")
   .option("--json", "[OPTIONAL] Output as JSON")
-  .action(async (appIdArg: string | undefined, options: { json?: boolean }) => {
-    try {
-      await runDoctor(appIdArg, options.json);
-    } catch (error) {
-      if (error instanceof Error && error.name === "ExitPromptError") {
-        return;
-      }
-      console.log(pc.red(error instanceof Error ? error.message : "Unknown error"));
-      process.exit(1);
-    }
-  });
+  .action(wrapAction(async (appIdArg: string | undefined, options: { json?: boolean }) => {
+    await runDoctor(appIdArg, options.json);
+  }));

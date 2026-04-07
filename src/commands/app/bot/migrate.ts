@@ -6,6 +6,7 @@ import { fetchAppDetailsV2 } from "../../../apps/api.js";
 import { pickApp } from "../../../utils/app-picker.js";
 import { ensureAz, runAz } from "../../../utils/az.js";
 import { resolveSubscription, resolveResourceGroup } from "../../../utils/az-prompts.js";
+import { CliError, wrapAction } from "../../../utils/errors.js";
 import { outputJson } from "../../../utils/json-output.js";
 import { logger } from "../../../utils/logger.js";
 import { createSilentSpinner } from "../../../utils/spinner.js";
@@ -37,12 +38,11 @@ export const botMigrateCommand = new Command("migrate")
   .option("--create-resource-group", "[OPTIONAL] Create the resource group if it doesn't exist")
   .option("--region <name>", "[OPTIONAL] Azure region for resource group (default: westus2)")
   .option("--json", "[OPTIONAL] Output as JSON")
-  .action(async (appIdArg: string | undefined, options: MigrateOptions) => {
+  .action(wrapAction(async (appIdArg: string | undefined, options: MigrateOptions) => {
     const silent = !!options.json;
     const account = await getAccount();
     if (!account) {
-      console.log(pc.red("Not logged in.") + ` Run ${pc.cyan("teams login")} first.`);
-      process.exit(1);
+      throw new CliError("AUTH_REQUIRED", "Not logged in.", "Run `teams login` first.");
     }
 
     let token: string;
@@ -51,8 +51,7 @@ export const botMigrateCommand = new Command("migrate")
     if (appIdArg) {
       token = (await getTokenSilent(teamsDevPortalScopes))!;
       if (!token) {
-        console.log(pc.red("Failed to get token.") + ` Try ${pc.cyan("teams login")} again.`);
-        process.exit(1);
+        throw new CliError("AUTH_TOKEN_FAILED", "Failed to get token.", "Try `teams login` again.");
       }
       appId = appIdArg;
     } else {
@@ -64,8 +63,7 @@ export const botMigrateCommand = new Command("migrate")
     // Get bot details
     const details = await fetchAppDetailsV2(token, appId);
     if (!details.bots || details.bots.length === 0) {
-      console.log(pc.red("This app has no bots."));
-      process.exit(1);
+      throw new CliError("NOT_FOUND_BOT", "This app has no bots.");
     }
 
     const botId = details.bots[0].botId;
@@ -155,11 +153,7 @@ export const botMigrateCommand = new Command("migrate")
       validateSpinner.success({ text: "Azure deployment validated" });
     } catch (error) {
       validateSpinner.error({ text: "Azure deployment validation failed" });
-      logger.error(error instanceof Error ? error.message : "Unknown error");
-      if (!options.json) {
-        console.log(pc.dim("No changes were made. Your bot is still in BF tenant."));
-      }
-      process.exit(1);
+      throw new CliError("API_ARM_ERROR", error instanceof Error ? error.message : "Azure deployment validation failed.", "No changes were made. Your bot is still in BF tenant.");
     }
 
     // Step 2: Delete BF registration (validated that Azure will succeed)
@@ -169,8 +163,7 @@ export const botMigrateCommand = new Command("migrate")
       deleteSpinner.success({ text: "BF registration removed" });
     } catch (error) {
       deleteSpinner.error({ text: "Failed to remove BF registration" });
-      logger.error(error instanceof Error ? error.message : "Unknown error");
-      process.exit(1);
+      throw new CliError("API_ERROR", error instanceof Error ? error.message : "Failed to remove BF registration.");
     }
 
     // Step 3: Create Azure bot (already validated)
@@ -200,14 +193,14 @@ export const botMigrateCommand = new Command("migrate")
         rollbackSpinner.success({ text: "BF registration restored" });
 
         if (options.json) {
-          outputJson({ error: "Migration failed", rolledBack: true });
+          outputJson({ ok: false, error: { code: "API_ARM_ERROR", message: "Migration failed" }, rolledBack: true });
         } else {
           console.log(pc.yellow("Migration failed but your bot has been restored to BF tenant."));
         }
       } catch {
         rollbackSpinner.error({ text: "Rollback failed" });
         if (options.json) {
-          outputJson({ error: "Migration failed", rolledBack: false });
+          outputJson({ ok: false, error: { code: "API_ARM_ERROR", message: "Migration failed and rollback failed" }, rolledBack: false });
         } else {
           console.log(pc.red("Could not restore BF registration. Re-register manually:"));
           console.log(pc.cyan(`  teams app create --name "${botName}" --bf`));
@@ -232,4 +225,4 @@ export const botMigrateCommand = new Command("migrate")
       console.log(pc.bold(pc.green("\nBot migrated to Azure!")));
       console.log(pc.dim("Your credentials (CLIENT_ID, CLIENT_SECRET, TENANT_ID) are unchanged."));
     }
-  });
+  }));

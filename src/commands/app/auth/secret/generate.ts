@@ -1,5 +1,4 @@
 import { input } from "@inquirer/prompts";
-import pc from "picocolors";
 import {
 	createClientSecret,
 	fetchApp,
@@ -11,6 +10,7 @@ import {
 	graphScopes,
 } from "../../../../auth/index.js";
 import { outputCredentials } from "../../../../utils/env.js";
+import { CliError } from "../../../../utils/errors.js";
 import { outputJson } from "../../../../utils/json-output.js";
 import { createSilentSpinner } from "../../../../utils/spinner.js";
 
@@ -55,14 +55,14 @@ export async function generateSecret(opts: GenerateSecretOptions): Promise<void>
 
 	const account = await getAccount();
 	if (!account) {
-		throw new Error(`Not logged in. Run ${pc.cyan("teams login")} first.`);
+		throw new CliError("AUTH_REQUIRED", "Not logged in.", "Run `teams login` first.");
 	}
 
 	let spinner = createSilentSpinner("Acquiring Graph token...", silent).start();
 	const graphToken = await getTokenSilent(graphScopes);
 	if (!graphToken) {
 		spinner.error({ text: "Failed to get Graph token" });
-		throw new Error(`Try ${pc.cyan("teams login")} again.`);
+		throw new CliError("AUTH_TOKEN_FAILED", "Failed to get Graph token.", "Try `teams login` again.");
 	}
 	spinner.success({ text: "Graph token acquired" });
 
@@ -71,7 +71,7 @@ export async function generateSecret(opts: GenerateSecretOptions): Promise<void>
 
 	if (!app.bots || app.bots.length === 0) {
 		spinner.error({ text: "This app has no bots" });
-		throw new Error("This app has no bots");
+		throw new CliError("NOT_FOUND_BOT", "This app has no bots.");
 	}
 
 	const clientId = app.bots[0].botId;

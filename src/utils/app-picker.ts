@@ -5,6 +5,7 @@ import { getAccount, getTokenSilent, teamsDevPortalScopes } from "../auth/index.
 import { fetchApps } from "../apps/index.js";
 import type { AppSummary } from "../apps/types.js";
 import { isInteractive } from "./interactive.js";
+import { CliError } from "./errors.js";
 
 export interface PickAppResult {
   app: AppSummary;
@@ -18,20 +19,17 @@ export interface PickAppResult {
  */
 export async function pickApp(): Promise<PickAppResult> {
   if (!isInteractive()) {
-    console.log(pc.red("Missing app ID.") + ` Pass ${pc.cyan("<appId>")} as the first argument in non-interactive mode.`);
-    process.exit(1);
+    throw new CliError("VALIDATION_MISSING", "Missing app ID.", "Pass <appId> as the first argument in non-interactive mode.");
   }
 
   const account = await getAccount();
   if (!account) {
-    console.log(pc.red("Not logged in.") + ` Run ${pc.cyan("teams login")} first.`);
-    process.exit(1);
+    throw new CliError("AUTH_REQUIRED", "Not logged in.", "Run `teams login` first.");
   }
 
   const token = await getTokenSilent(teamsDevPortalScopes);
   if (!token) {
-    console.log(pc.red("Failed to get token.") + ` Try ${pc.cyan("teams login")} again.`);
-    process.exit(1);
+    throw new CliError("AUTH_TOKEN_FAILED", "Failed to get token.", "Try `teams login` again.");
   }
 
   const spinner = createSpinner("Fetching apps...").start();
@@ -41,8 +39,7 @@ export async function pickApp(): Promise<PickAppResult> {
     spinner.stop();
   } catch (error) {
     spinner.error({ text: "Failed to fetch apps" });
-    console.log(pc.red(error instanceof Error ? error.message : "Unknown error"));
-    process.exit(1);
+    throw new CliError("API_ERROR", error instanceof Error ? error.message : "Failed to fetch apps");
   }
 
   if (apps.length === 0) {

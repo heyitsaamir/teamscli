@@ -4,6 +4,7 @@ import { createSpinner } from "nanospinner";
 import { runAz } from "./az.js";
 import { isInteractive } from "./interactive.js";
 import { logger } from "./logger.js";
+import { CliError } from "./errors.js";
 
 interface AzSubscription {
   id: string;
@@ -31,11 +32,7 @@ export async function resolveSubscription(flagValue?: string): Promise<string> {
   if (cachedSubscription) return cachedSubscription.id;
 
   if (!isInteractive()) {
-    console.log(
-      pc.red("--subscription is required in non-interactive mode.") +
-        ` Use ${pc.cyan("az account list")} to find your subscription ID.`,
-    );
-    process.exit(1);
+    throw new CliError("VALIDATION_MISSING", "--subscription is required in non-interactive mode.", "Use `az account list` to find your subscription ID.");
   }
 
   // Get current default subscription
@@ -87,10 +84,7 @@ export async function resolveResourceGroup(
   if (flagValue) return flagValue;
 
   if (!isInteractive()) {
-    console.log(
-      pc.red("--resource-group is required in non-interactive mode."),
-    );
-    process.exit(1);
+    throw new CliError("VALIDATION_MISSING", "--resource-group is required in non-interactive mode.");
   }
 
   const rgSpinner = createSpinner("Fetching resource groups...").start();
@@ -101,11 +95,7 @@ export async function resolveResourceGroup(
   rgSpinner.stop();
 
   if (groups.length === 0) {
-    console.log(pc.yellow("No resource groups found in this subscription."));
-    console.log(
-      `Create one with: ${pc.cyan("--resource-group <name> --create-resource-group")}`,
-    );
-    process.exit(1);
+    throw new CliError("NOT_FOUND_RESOURCE_GROUP", "No resource groups found in this subscription.", "Use `--resource-group <name> --create-resource-group` to create one.");
   }
 
   const picked = await search<string>({

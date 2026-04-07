@@ -5,6 +5,7 @@ import { fetchAppDetailsV2, getBotLocation, discoverAzureBot, type AzureContext 
 import { pickApp } from "../../../utils/app-picker.js";
 import { ensureAz } from "../../../utils/az.js";
 import { isInteractive } from "../../../utils/interactive.js";
+import { CliError } from "../../../utils/errors.js";
 import { botMigrateCommand } from "../bot/migrate.js";
 
 export interface AzureBotInfo {
@@ -22,8 +23,7 @@ export interface AzureBotInfo {
 export async function requireAzureBot(appIdArg?: string, silent = false): Promise<AzureBotInfo> {
   const account = await getAccount();
   if (!account) {
-    console.log(pc.red("Not logged in.") + ` Run ${pc.cyan("teams login")} first.`);
-    process.exit(1);
+    throw new CliError("AUTH_REQUIRED", "Not logged in.", "Run `teams login` first.");
   }
 
   let token: string;
@@ -32,8 +32,7 @@ export async function requireAzureBot(appIdArg?: string, silent = false): Promis
   if (appIdArg) {
     token = (await getTokenSilent(teamsDevPortalScopes))!;
     if (!token) {
-      console.log(pc.red("Failed to get token.") + ` Try ${pc.cyan("teams login")} again.`);
-      process.exit(1);
+      throw new CliError("AUTH_TOKEN_FAILED", "Failed to get token.", "Try `teams login` again.");
     }
     appId = appIdArg;
   } else {
@@ -44,17 +43,16 @@ export async function requireAzureBot(appIdArg?: string, silent = false): Promis
 
   const details = await fetchAppDetailsV2(token, appId);
   if (!details.bots || details.bots.length === 0) {
-    console.log(pc.red("This app has no bots."));
-    process.exit(1);
+    throw new CliError("NOT_FOUND_BOT", "This app has no bots.");
   }
 
   const botId = details.bots[0].botId;
   const location = await getBotLocation(token, botId);
 
   if (location === "bf") {
-    console.log(pc.yellow("This feature requires an Azure bot."));
-
     if (isInteractive()) {
+      console.log(pc.yellow("This feature requires an Azure bot."));
+
       const migrate = await confirm({
         message: "Would you like to migrate this bot to Azure now?",
         default: true,
@@ -63,26 +61,22 @@ export async function requireAzureBot(appIdArg?: string, silent = false): Promis
       if (migrate) {
         await botMigrateCommand.parseAsync([appId], { from: "user" });
 
-        // Re-check — migration should have moved it to Azure
         const newLocation = await getBotLocation(token, botId);
         if (newLocation !== "azure") {
-          console.log(pc.red("Migration did not complete. Cannot proceed."));
-          process.exit(1);
+          throw new CliError("API_ERROR", "Migration did not complete. Cannot proceed.");
         }
       } else {
         process.exit(0);
       }
     } else {
-      console.log(`Run ${pc.cyan(`teams app bot migrate ${appId}`)} first.`);
-      process.exit(1);
+      throw new CliError("PERMISSION_AZURE_REQUIRED", "This feature requires an Azure bot.", `Run \`teams app bot migrate ${appId}\` first.`);
     }
   }
 
   ensureAz();
   const azure = discoverAzureBot(botId, silent);
   if (!azure) {
-    console.log(pc.red("Could not find this bot in Azure."));
-    process.exit(1);
+    throw new CliError("NOT_FOUND_AZURE_BOT", "Could not find this bot in Azure.");
   }
 
   return { token, appId, botId, azure };
