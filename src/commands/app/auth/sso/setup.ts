@@ -6,6 +6,7 @@ import { getAadAppByClientId, getAadAppFull, updateAadApp, createClientSecret } 
 import { updateAppDetails, fetchAppDetailsV2 } from "../../../../apps/api.js";
 import { runAz } from "../../../../utils/az.js";
 import { isInteractive } from "../../../../utils/interactive.js";
+import { CliError, wrapAction } from "../../../../utils/errors.js";
 import { outputJson } from "../../../../utils/json-output.js";
 import { logger } from "../../../../utils/logger.js";
 import { createSilentSpinner } from "../../../../utils/spinner.js";
@@ -47,7 +48,7 @@ export const ssoSetupCommand = new Command("setup")
   .option("--scopes <scopes>", "[OPTIONAL] Scopes (default: User.Read)")
   .option("--client-secret <secret>", "AAD app client secret")
   .option("--json", "[OPTIONAL] Output as JSON")
-  .action(async (appIdArg: string | undefined, options: SsoOptions) => {
+  .action(wrapAction(async (appIdArg: string | undefined, options: SsoOptions) => {
     const silent = !!options.json;
     const { token, appId, botId, azure } = await requireAzureBot(appIdArg, silent);
     const interactive = isInteractive();
@@ -67,8 +68,7 @@ export const ssoSetupCommand = new Command("setup")
     // Get Graph token (needed for both secret creation and AAD app updates)
     const graphToken = await getTokenSilent(graphScopes);
     if (!graphToken) {
-      console.log(pc.red("Failed to get Graph token.") + ` Try ${pc.cyan("teams login")} again.`);
-      process.exit(1);
+      throw new CliError("AUTH_TOKEN_FAILED", "Failed to get Graph token.", "Try `teams login` again.");
     }
 
     // Client secret — use provided, prompt, or create new
@@ -174,8 +174,7 @@ export const ssoSetupCommand = new Command("setup")
       aadSpinner.success({ text: "AAD app configured for SSO" });
     } catch (error) {
       aadSpinner.error({ text: "Failed to configure AAD app" });
-      logger.error(error instanceof Error ? error.message : "Unknown error");
-      process.exit(1);
+      throw new CliError("API_ERROR", error instanceof Error ? error.message : "Failed to configure AAD app.");
     }
 
     // Step 2: Create OAuth connection for SSO
@@ -198,8 +197,7 @@ export const ssoSetupCommand = new Command("setup")
       oauthSpinner.success({ text: `SSO connection "${connectionName}" created` });
     } catch (error) {
       oauthSpinner.error({ text: "Failed to create SSO connection" });
-      logger.error(error instanceof Error ? error.message : "Unknown error");
-      process.exit(1);
+      throw new CliError("API_ERROR", error instanceof Error ? error.message : "Failed to create SSO connection.");
     }
 
     // Step 3: Update TDP manifest with webApplicationInfo
@@ -242,4 +240,4 @@ export const ssoSetupCommand = new Command("setup")
       console.log(`${pc.dim("Identifier URI:")} api://${botId}`);
       console.log(`${pc.dim("Scopes:")} ${scopes}`);
     }
-  });
+  }));

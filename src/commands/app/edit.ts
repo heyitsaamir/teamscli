@@ -4,10 +4,10 @@ import pc from "picocolors";
 import { getAccount, getTokenSilent, teamsDevPortalScopes } from "../../auth/index.js";
 import { fetchApp, fetchBot, updateBot, updateAppDetails, fetchAppDetailsV2, showBasicInfoEditor, getBotLocation, createTdpBotHandler, createAzureBotHandler, discoverAzureBot, extractDomain } from "../../apps/index.js";
 import { ensureAz } from "../../utils/az.js";
+import { CliError, wrapAction } from "../../utils/errors.js";
 import { outputJson } from "../../utils/json-output.js";
 import { pickApp } from "../../utils/app-picker.js";
 import { createSilentSpinner } from "../../utils/spinner.js";
-import { logger } from "../../utils/logger.js";
 import type { AppSummary, AppDetails } from "../../apps/types.js";
 import type { BotDetails } from "../../apps/tdp.js";
 import type { BotLocation } from "../../apps/bot-location.js";
@@ -178,7 +178,7 @@ export const appEditCommand = new Command("edit")
   .option("--privacy-url <url>", "[OPTIONAL] Set the privacy policy URL (HTTPS required)")
   .option("--terms-url <url>", "[OPTIONAL] Set the terms of use URL (HTTPS required)")
   .option("--json", "[OPTIONAL] Output as JSON")
-  .action(async (appIdArg: string | undefined, options) => {
+  .action(wrapAction(async (appIdArg: string | undefined, options) => {
     const silent = !!options.json;
 
     // Check if any mutation flags were provided
@@ -195,41 +195,31 @@ export const appEditCommand = new Command("edit")
 
     // --json requires mutation flags
     if (options.json && !hasMutationFlags) {
-      logger.error("--json requires at least one mutation flag (--name, --endpoint, etc.)");
-      process.exit(1);
+      throw new CliError("VALIDATION_MISSING", "--json requires at least one mutation flag (--name, --endpoint, etc.).");
     }
 
     // Interactive mode (no appId, no mutation flags): picker loop
     if (!appIdArg && !hasMutationFlags) {
       while (true) {
-        try {
-          const picked = await pickApp();
-          const app = await fetchApp(picked.token, picked.app.teamsAppId);
-          await showEditMenu(app, picked.token);
-        } catch (error) {
-          if (error instanceof Error && error.name === "ExitPromptError") {
-            return;
-          }
-          throw error;
-        }
+        const picked = await pickApp();
+        const app = await fetchApp(picked.token, picked.app.teamsAppId);
+        await showEditMenu(app, picked.token);
       }
     }
 
-    // Resolve app ID + token (--id provided, or picker for scripting with flags)
+    // Resolve app ID + token
     let appId: string;
     let token: string;
 
     if (appIdArg) {
       const account = await getAccount();
       if (!account) {
-        console.log(pc.red("Not logged in.") + ` Run ${pc.cyan("teams login")} first.`);
-        process.exit(1);
+        throw new CliError("AUTH_REQUIRED", "Not logged in.", "Run `teams login` first.");
       }
 
       token = (await getTokenSilent(teamsDevPortalScopes))!;
       if (!token) {
-        console.log(pc.red("Failed to get token.") + ` Try ${pc.cyan("teams login")} again.`);
-        process.exit(1);
+        throw new CliError("AUTH_TOKEN_FAILED", "Failed to get token.", "Try `teams login` again.");
       }
       appId = appIdArg;
     } else {
@@ -238,183 +228,155 @@ export const appEditCommand = new Command("edit")
       token = picked.token;
     }
 
-    try {
-      const app = await fetchApp(token, appId);
+    const app = await fetchApp(token, appId);
 
-      // Interactive mode with --id: single edit session, "Back" exits
-      if (!hasMutationFlags) {
-        try {
-          await showEditMenu(app, token);
-        } catch (error) {
-          if (error instanceof Error && error.name === "ExitPromptError") {
-            return;
-          }
-          throw error;
-        }
-        return;
-      }
-
-      // Scripting mode: mutation flags provided
-      if (options.endpoint) {
-        if (!app.bots || app.bots.length === 0) {
-          console.log(pc.red("This app has no bots."));
-          process.exit(1);
-        }
-
-        const botId = app.bots[0].botId;
-        const location = await getBotLocation(token, botId);
-
-        if (location === "azure") {
-          ensureAz();
-          const azContext = discoverAzureBot(botId, silent);
-          if (!azContext) {
-            console.log(pc.red("Could not find this bot in Azure."));
-            console.log(`Use: ${pc.cyan("az bot update --name <name> --resource-group <rg> --endpoint <url>")}`);
-            process.exit(1);
-          }
-          const handler = createAzureBotHandler(azContext);
-          const updateSpinner = createSilentSpinner("Updating endpoint (Azure)...", silent).start();
-          await handler.updateEndpoint(botId, options.endpoint);
-          updateSpinner.success({ text: "Endpoint updated successfully" });
-          if (!options.json) {
-            console.log(`${pc.dim("New endpoint:")} ${options.endpoint}`);
-          }
-        } else {
-          const spinner = createSilentSpinner("Fetching bot details...", silent).start();
-          const bot = await fetchBot(token, botId);
-          spinner.stop();
-
-          if (!options.json) {
-            console.log(`${pc.dim("Current endpoint:")} ${bot.messagingEndpoint || pc.dim("(not set)")}`);
-          }
-
-          const updateSpinner = createSilentSpinner("Updating endpoint...", silent).start();
-          await updateBot(token, { ...bot, messagingEndpoint: options.endpoint });
-          updateSpinner.success({ text: "Endpoint updated successfully" });
-          if (!options.json) {
-            console.log(`${pc.dim("New endpoint:")} ${options.endpoint}`);
-          }
-        }
-
-        // Update validDomains with the new endpoint's domain
-        const details = await fetchAppDetailsV2(token, appId);
-        const domains = (details.validDomains as string[]) ?? [];
-        const domain = extractDomain(options.endpoint);
-        let validDomains = domains;
-        if (domain && !domains.includes(domain)) {
-          const domainSpinner = createSilentSpinner("Updating valid domains...", silent).start();
-          validDomains = [...domains, domain];
-          await updateAppDetails(token, appId, { validDomains });
-          domainSpinner.success({ text: `Added ${domain} to valid domains` });
-        }
-
-        if (options.json) {
-          const result: AppEditEndpointOutput = {
-            teamsAppId: appId,
-            botId: app.bots[0].botId,
-            updated: { endpoint: options.endpoint },
-            validDomains,
-          };
-          outputJson(result);
-        }
-        return;
-      }
-
-      // Handle basic info field updates
-      const basicInfoUpdates: Record<string, unknown> = {};
-
-      if (options.name !== undefined) {
-        if (options.name.length > 30) {
-          console.log(pc.red("Short name must be 30 characters or less."));
-          process.exit(1);
-        }
-        basicInfoUpdates.shortName = options.name;
-      }
-
-      if (options.longName !== undefined) {
-        if (options.longName.length > 100) {
-          console.log(pc.red("Long name must be 100 characters or less."));
-          process.exit(1);
-        }
-        basicInfoUpdates.longName = options.longName;
-      }
-
-      if (options.shortDescription !== undefined) {
-        if (options.shortDescription.length > 80) {
-          console.log(pc.red("Short description must be 80 characters or less."));
-          process.exit(1);
-        }
-        basicInfoUpdates.shortDescription = options.shortDescription;
-      }
-
-      if (options.longDescription !== undefined) {
-        if (options.longDescription.length > 4000) {
-          console.log(pc.red("Long description must be 4000 characters or less."));
-          process.exit(1);
-        }
-        basicInfoUpdates.longDescription = options.longDescription;
-      }
-
-      if (options.version !== undefined) {
-        basicInfoUpdates.version = options.version;
-      }
-
-      if (options.developer !== undefined) {
-        basicInfoUpdates.developerName = options.developer;
-      }
-
-      const httpsUrlRegex = /^https:\/\/\S+$/i;
-
-      if (options.website !== undefined) {
-        if (!httpsUrlRegex.test(options.website)) {
-          console.log(pc.red("Website URL must start with https:// and include a domain"));
-          process.exit(1);
-        }
-        basicInfoUpdates.websiteUrl = options.website;
-      }
-
-      if (options.privacyUrl !== undefined) {
-        if (!httpsUrlRegex.test(options.privacyUrl)) {
-          console.log(pc.red("Privacy URL must start with https:// and include a domain"));
-          process.exit(1);
-        }
-        basicInfoUpdates.privacyUrl = options.privacyUrl;
-      }
-
-      if (options.termsUrl !== undefined) {
-        if (!httpsUrlRegex.test(options.termsUrl)) {
-          console.log(pc.red("Terms of use URL must start with https:// and include a domain"));
-          process.exit(1);
-        }
-        basicInfoUpdates.termsOfUseUrl = options.termsUrl;
-      }
-
-      if (Object.keys(basicInfoUpdates).length > 0) {
-        const spinner = createSilentSpinner("Updating app details...", silent).start();
-        try {
-          await updateAppDetails(token, appId, basicInfoUpdates);
-          spinner.success({ text: "App details updated successfully" });
-
-          if (options.json) {
-            const result: AppEditInfoOutput = {
-              teamsAppId: appId,
-              updated: basicInfoUpdates,
-            };
-            outputJson(result);
-          } else {
-            for (const [key, value] of Object.entries(basicInfoUpdates)) {
-              const label = key.replace(/([A-Z])/g, " $1").toLowerCase().trim();
-              console.log(`${pc.dim(label + ":")} ${value}`);
-            }
-          }
-        } catch (error) {
-          spinner.error({ text: "Failed to update app details" });
-          throw error;
-        }
-        return;
-      }
-    } catch (error) {
-      console.log(pc.red(error instanceof Error ? error.message : "Unknown error"));
-      process.exit(1);
+    // Interactive mode with --id: single edit session, "Back" exits
+    if (!hasMutationFlags) {
+      await showEditMenu(app, token);
+      return;
     }
-  });
+
+    // Scripting mode: mutation flags provided
+    if (options.endpoint) {
+      if (!app.bots || app.bots.length === 0) {
+        throw new CliError("NOT_FOUND_BOT", "This app has no bots.");
+      }
+
+      const botId = app.bots[0].botId;
+      const location = await getBotLocation(token, botId);
+
+      if (location === "azure") {
+        ensureAz();
+        const azContext = discoverAzureBot(botId, silent);
+        if (!azContext) {
+          throw new CliError("NOT_FOUND_AZURE_BOT", "Could not find this bot in Azure.", "Use `az bot update --name <name> --resource-group <rg> --endpoint <url>`");
+        }
+        const handler = createAzureBotHandler(azContext);
+        const updateSpinner = createSilentSpinner("Updating endpoint (Azure)...", silent).start();
+        await handler.updateEndpoint(botId, options.endpoint);
+        updateSpinner.success({ text: "Endpoint updated successfully" });
+        if (!options.json) {
+          console.log(`${pc.dim("New endpoint:")} ${options.endpoint}`);
+        }
+      } else {
+        const spinner = createSilentSpinner("Fetching bot details...", silent).start();
+        const bot = await fetchBot(token, botId);
+        spinner.stop();
+
+        if (!options.json) {
+          console.log(`${pc.dim("Current endpoint:")} ${bot.messagingEndpoint || pc.dim("(not set)")}`);
+        }
+
+        const updateSpinner = createSilentSpinner("Updating endpoint...", silent).start();
+        await updateBot(token, { ...bot, messagingEndpoint: options.endpoint });
+        updateSpinner.success({ text: "Endpoint updated successfully" });
+        if (!options.json) {
+          console.log(`${pc.dim("New endpoint:")} ${options.endpoint}`);
+        }
+      }
+
+      // Update validDomains with the new endpoint's domain
+      const details = await fetchAppDetailsV2(token, appId);
+      const domains = (details.validDomains as string[]) ?? [];
+      const domain = extractDomain(options.endpoint);
+      let validDomains = domains;
+      if (domain && !domains.includes(domain)) {
+        const domainSpinner = createSilentSpinner("Updating valid domains...", silent).start();
+        validDomains = [...domains, domain];
+        await updateAppDetails(token, appId, { validDomains });
+        domainSpinner.success({ text: `Added ${domain} to valid domains` });
+      }
+
+      if (options.json) {
+        const result: AppEditEndpointOutput = {
+          teamsAppId: appId,
+          botId: app.bots[0].botId,
+          updated: { endpoint: options.endpoint },
+          validDomains,
+        };
+        outputJson(result);
+      }
+      return;
+    }
+
+    // Handle basic info field updates
+    const basicInfoUpdates: Record<string, unknown> = {};
+
+    if (options.name !== undefined) {
+      if (options.name.length > 30) {
+        throw new CliError("VALIDATION_FORMAT", "Short name must be 30 characters or less.");
+      }
+      basicInfoUpdates.shortName = options.name;
+    }
+
+    if (options.longName !== undefined) {
+      if (options.longName.length > 100) {
+        throw new CliError("VALIDATION_FORMAT", "Long name must be 100 characters or less.");
+      }
+      basicInfoUpdates.longName = options.longName;
+    }
+
+    if (options.shortDescription !== undefined) {
+      if (options.shortDescription.length > 80) {
+        throw new CliError("VALIDATION_FORMAT", "Short description must be 80 characters or less.");
+      }
+      basicInfoUpdates.shortDescription = options.shortDescription;
+    }
+
+    if (options.longDescription !== undefined) {
+      if (options.longDescription.length > 4000) {
+        throw new CliError("VALIDATION_FORMAT", "Long description must be 4000 characters or less.");
+      }
+      basicInfoUpdates.longDescription = options.longDescription;
+    }
+
+    if (options.version !== undefined) {
+      basicInfoUpdates.version = options.version;
+    }
+
+    if (options.developer !== undefined) {
+      basicInfoUpdates.developerName = options.developer;
+    }
+
+    const httpsUrlRegex = /^https:\/\/\S+$/i;
+
+    if (options.website !== undefined) {
+      if (!httpsUrlRegex.test(options.website)) {
+        throw new CliError("VALIDATION_FORMAT", "Website URL must start with https:// and include a domain.");
+      }
+      basicInfoUpdates.websiteUrl = options.website;
+    }
+
+    if (options.privacyUrl !== undefined) {
+      if (!httpsUrlRegex.test(options.privacyUrl)) {
+        throw new CliError("VALIDATION_FORMAT", "Privacy URL must start with https:// and include a domain.");
+      }
+      basicInfoUpdates.privacyUrl = options.privacyUrl;
+    }
+
+    if (options.termsUrl !== undefined) {
+      if (!httpsUrlRegex.test(options.termsUrl)) {
+        throw new CliError("VALIDATION_FORMAT", "Terms of use URL must start with https:// and include a domain.");
+      }
+      basicInfoUpdates.termsOfUseUrl = options.termsUrl;
+    }
+
+    if (Object.keys(basicInfoUpdates).length > 0) {
+      const spinner = createSilentSpinner("Updating app details...", silent).start();
+      await updateAppDetails(token, appId, basicInfoUpdates);
+      spinner.success({ text: "App details updated successfully" });
+
+      if (options.json) {
+        const result: AppEditInfoOutput = {
+          teamsAppId: appId,
+          updated: basicInfoUpdates,
+        };
+        outputJson(result);
+      } else {
+        for (const [key, value] of Object.entries(basicInfoUpdates)) {
+          const label = key.replace(/([A-Z])/g, " $1").toLowerCase().trim();
+          console.log(`${pc.dim(label + ":")} ${value}`);
+        }
+      }
+    }
+  }));

@@ -25,6 +25,7 @@ import {
 	teamsDevPortalScopes,
 } from "../../auth/index.js";
 import { outputCredentials } from "../../utils/env.js";
+import { CliError, wrapAction } from "../../utils/errors.js";
 import { outputJson } from "../../utils/json-output.js";
 import { logger } from "../../utils/logger.js";
 import { isInteractive } from "../../utils/interactive.js";
@@ -76,24 +77,21 @@ export const appCreateCommand = new Command("create")
 	.option("--create-resource-group", "[OPTIONAL] Create the resource group if it doesn't exist")
 	.option("--region <name>", "[OPTIONAL] Azure region for resource group (default: westus2)")
 	.option("--json", "[OPTIONAL] Output as JSON")
-	.action(async (options: CreateOptions) => {
+	.action(wrapAction(async (options: CreateOptions) => {
 		const silent = !!options.json;
 		const account = await getAccount();
 		if (!account) {
-			logger.error(`Not logged in. Run ${pc.cyan("teams login")} first.`);
-			process.exit(1);
+			throw new CliError("AUTH_REQUIRED", "Not logged in.", "Run `teams login` first.");
 		}
 
 		// Validate options
 		if (options.manifest && options.package) {
-			logger.error("Cannot specify both --manifest and --package");
-			process.exit(1);
+			throw new CliError("VALIDATION_CONFLICT", "Cannot specify both --manifest and --package.");
 		}
 
 		// Validate conflicting flags
 		if (options.azure && options.bf) {
-			logger.error("Cannot specify both --azure and --bf");
-			process.exit(1);
+			throw new CliError("VALIDATION_CONFLICT", "Cannot specify both --azure and --bf.");
 		}
 
 		// Resolve bot location: explicit flag > config > default (bf)
@@ -124,8 +122,7 @@ export const appCreateCommand = new Command("create")
 		const interactive = isInteractive();
 
 		if (!interactive && !options.name && !options.package) {
-			logger.error("--name is required in non-interactive mode");
-			process.exit(1);
+			throw new CliError("VALIDATION_MISSING", "--name is required in non-interactive mode.");
 		}
 
 		// Determine if any flags were provided (scripting mode)
@@ -196,23 +193,20 @@ export const appCreateCommand = new Command("create")
 		const graphToken = await getTokenSilent(graphScopes);
 		if (!graphToken) {
 			spinner.error({ text: "Failed to get Graph token" });
-			logger.error(`Try ${pc.cyan("teams login")} again.`);
-			process.exit(1);
+			throw new CliError("AUTH_TOKEN_FAILED", "Failed to get Graph token.", "Try `teams login` again.");
 		}
 
 		const tdpToken = await getTokenSilent(teamsDevPortalScopes);
 		if (!tdpToken) {
 			spinner.error({ text: "Failed to get TDP token" });
-			logger.error(`Try ${pc.cyan("teams login")} again.`);
-			process.exit(1);
+			throw new CliError("AUTH_TOKEN_FAILED", "Failed to get TDP token.", "Try `teams login` again.");
 		}
 		spinner.success({ text: "Tokens acquired" });
 
-		try {
-			let clientId: string;
-			let secretText: string;
-			let zipBuffer: Buffer;
-			let teamsAppId: string;
+		let clientId: string;
+		let secretText: string;
+		let zipBuffer: Buffer;
+		let teamsAppId: string;
 
 			if (options.package) {
 				// Use existing package - read manifest to get bot ID
@@ -321,11 +315,4 @@ export const appCreateCommand = new Command("create")
 					TENANT_ID: account.tenantId,
 				}, "Credentials:");
 			}
-		} catch (error) {
-			spinner.error({ text: "Failed" });
-			logger.error(
-				error instanceof Error ? error.message : "Failed to create app",
-			);
-			process.exit(1);
-		}
-	});
+	}));

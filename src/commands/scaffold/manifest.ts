@@ -8,6 +8,7 @@ import {
   collectManifestCustomization,
   PLACEHOLDER_BOT_ID,
 } from "../../apps/index.js";
+import { CliError, wrapAction } from "../../utils/errors.js";
 import { outputJson } from "../../utils/json-output.js";
 import { logger } from "../../utils/logger.js";
 
@@ -33,13 +34,12 @@ export const scaffoldManifestCommand = new Command("manifest")
   .option("-b, --bot-id <id>", "[OPTIONAL] Bot ID (uses placeholder if not provided)")
   .option("-i, --interactive", "[OPTIONAL] Force interactive mode even when args provided")
   .option("--json", "[OPTIONAL] Output as JSON")
-  .action(async (options: ScaffoldManifestOptions) => {
+  .action(wrapAction(async (options: ScaffoldManifestOptions) => {
     const outputDir = options.path ?? process.cwd();
 
     // --json requires --name
     if (options.json && !options.name) {
-      logger.error("--name is required with --json");
-      process.exit(1);
+      throw new CliError("VALIDATION_MISSING", "--name is required with --json.");
     }
 
     // Determine if we need interactive mode (--json forces non-interactive)
@@ -90,8 +90,7 @@ export const scaffoldManifestCommand = new Command("manifest")
 
     // Validate name is not empty
     if (!name.trim()) {
-      logger.error("App name cannot be empty");
-      process.exit(1);
+      throw new CliError("VALIDATION_FORMAT", "App name cannot be empty.");
     }
 
     // Build endpoint from domain if provided (for validDomains)
@@ -132,4 +131,4 @@ export const scaffoldManifestCommand = new Command("manifest")
         );
       }
     }
-  });
+  }));

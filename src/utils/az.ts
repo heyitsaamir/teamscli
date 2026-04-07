@@ -1,6 +1,6 @@
 import { execFileSync } from "node:child_process";
-import pc from "picocolors";
 import { logger } from "./logger.js";
+import { CliError } from "./errors.js";
 
 export function isAzInstalled(): boolean {
   try {
@@ -25,19 +25,11 @@ export function isAzLoggedIn(): boolean {
  */
 export function ensureAz(): void {
   if (!isAzInstalled()) {
-    console.log(
-      pc.red("Azure CLI is not installed.") +
-        ` Install from ${pc.cyan("https://aka.ms/install-az")}`,
-    );
-    process.exit(1);
+    throw new CliError("TOOL_AZ_NOT_INSTALLED", "Azure CLI is not installed.", "Install from https://aka.ms/install-az");
   }
 
   if (!isAzLoggedIn()) {
-    console.log(
-      pc.red("Not logged in to Azure CLI.") +
-        ` Run ${pc.cyan("az login")} first.`,
-    );
-    process.exit(1);
+    throw new CliError("TOOL_AZ_NOT_LOGGED_IN", "Not logged in to Azure CLI.", "Run `az login` first.");
   }
 }
 
