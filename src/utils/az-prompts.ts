@@ -2,7 +2,7 @@ import { confirm, search, select } from "@inquirer/prompts";
 import pc from "picocolors";
 import { createSpinner } from "nanospinner";
 import { runAz } from "./az.js";
-import { isInteractive } from "./interactive.js";
+import { isAutoConfirm, isInteractive } from "./interactive.js";
 import { logger } from "./logger.js";
 import { CliError } from "./errors.js";
 
@@ -39,6 +39,11 @@ export async function resolveSubscription(flagValue?: string): Promise<string> {
   let spinner = createSpinner("Fetching Azure subscriptions...").start();
   const current = runAz<AzSubscription>(["account", "show"]);
   spinner.stop();
+
+  if (isAutoConfirm()) {
+    cachedSubscription = current;
+    return current.id;
+  }
 
   const useDefault = await confirm({
     message: `Azure subscription: ${pc.bold(current.name)} (${pc.dim(current.id)}). Use this?`,
