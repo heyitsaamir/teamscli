@@ -3,6 +3,7 @@ name: PR Teams Notification
 on:
   pull_request:
     types: [opened]
+  workflow_dispatch:
 
 jobs:
   notify:
@@ -23,11 +24,11 @@ jobs:
           CLIENT_SECRET: ${{ secrets.CLIENT_SECRET }}
           TENANT_ID: ${{ secrets.TENANT_ID }}
           TEAMS_CONVERSATION_ID: ${{ secrets.TEAMS_CONVERSATION_ID }}
-          PR_TITLE: ${{ github.event.pull_request.title }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
-          PR_URL: ${{ github.event.pull_request.html_url }}
+          PR_TITLE: ${{ github.event.pull_request.title || 'Test notification' }}
+          PR_NUMBER: ${{ github.event.pull_request.number || '0' }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login || github.actor }}
+          PR_URL: ${{ github.event.pull_request.html_url || github.server_url }}
           PR_REPO: ${{ github.repository }}
-          PR_BODY: ${{ github.event.pull_request.body }}
+          PR_BODY: ${{ github.event.pull_request.body || '' }}
           PR_LABELS: ${{ join(github.event.pull_request.labels.*.name, ', ') }}
         run: python .github/scripts/notify_pr.py
