@@ -4,7 +4,7 @@ import { getAccount, getTokenSilent, teamsDevPortalScopes } from "../../../auth/
 import { fetchAppDetailsV2, getBotLocation, discoverAzureBot, type AzureContext } from "../../../apps/index.js";
 import { pickApp } from "../../../utils/app-picker.js";
 import { ensureAz } from "../../../utils/az.js";
-import { isInteractive } from "../../../utils/interactive.js";
+import { isAutoConfirm, isInteractive } from "../../../utils/interactive.js";
 import { CliError } from "../../../utils/errors.js";
 import { logger } from "../../../utils/logger.js";
 import { botMigrateCommand } from "../bot/migrate.js";
@@ -51,7 +51,15 @@ export async function requireAzureBot(appIdArg?: string, silent = false): Promis
   const location = await getBotLocation(token, botId);
 
   if (location === "bf") {
-    if (isInteractive()) {
+    if (isAutoConfirm() && isInteractive()) {
+      logger.warn(pc.yellow("This feature requires an Azure bot. Auto-confirming migration..."));
+      await botMigrateCommand.parseAsync([appId], { from: "user" });
+
+      const newLocation = await getBotLocation(token, botId);
+      if (newLocation !== "azure") {
+        throw new CliError("API_ERROR", "Migration did not complete. Cannot proceed.");
+      }
+    } else if (isInteractive()) {
       logger.warn(pc.yellow("This feature requires an Azure bot."));
 
       const migrate = await confirm({

@@ -9,7 +9,7 @@ import { selfUpdateCommand } from "./commands/self-update.js";
 import { configCommand } from "./commands/config/index.js";
 import { CliError } from "./utils/errors.js";
 import { logger, setVerbose } from "./utils/logger.js";
-import { isInteractive } from "./utils/interactive.js";
+import { isInteractive, setAutoConfirm } from "./utils/interactive.js";
 import { checkForUpdates } from "./utils/update-check.js";
 import pc from "picocolors";
 
@@ -32,6 +32,7 @@ program
   .description("CLI for scaffolding Teams applications")
   .version(version)
   .option("-v, --verbose", "[OPTIONAL] Enable verbose logging")
+  .option("-y, --yes", "[OPTIONAL] Auto-confirm prompts (for CI/agent use)")
   .option("--disable-auto-update", "[OPTIONAL] Disable automatic updates")
   .addHelpText("after", () => {
     const status = isInteractive() ? pc.green("on") : pc.yellow("off");
@@ -41,6 +42,9 @@ program
     const opts = thisCommand.optsWithGlobals();
     if (opts.verbose) {
       setVerbose(true);
+    }
+    if (opts.yes) {
+      setAutoConfirm(true);
     }
     if (actionCommand.name() !== "self-update") {
       await checkForUpdates({ autoUpdate: !opts.disableAutoUpdate });

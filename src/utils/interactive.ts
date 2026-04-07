@@ -6,3 +6,13 @@ export function isInteractive(): boolean {
   if (process.env.TEAMS_NO_INTERACTIVE) return false;
   return !!process.stdin.isTTY;
 }
+
+let autoConfirm = false;
+
+export function setAutoConfirm(value: boolean): void {
+  autoConfirm = value;
+}
+
+export function isAutoConfirm(): boolean {
+  return autoConfirm;
+}

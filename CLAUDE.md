@@ -53,6 +53,10 @@ Prefix truly optional flags with `[OPTIONAL]` in their description:
 
 Do NOT mark as `[OPTIONAL]` if the value will be prompted interactively when not provided. Those are required inputs, just with an alternative input method.
 
+## Auto-Confirm (`--yes` / `-y`)
+
+The `--yes` global flag skips interactive confirmation prompts (for CI/agent use). State is managed via `setAutoConfirm`/`isAutoConfirm` in `src/utils/interactive.ts`. Before any `confirm()` call, check `isAutoConfirm()` and accept the default action if true.
+
 ## Code Reuse
 
 Before implementing logic, check if a shared function already exists for it. Extract reusable logic into shared modules (e.g., `src/utils/`, action files like `manifest/actions.ts`, `secret/generate.ts`). Never duplicate business logic across interactive menus and CLI subcommands — both should call the same shared function.
