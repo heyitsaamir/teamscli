@@ -1,20 +1,36 @@
 import { Command } from "commander";
 import { select, input } from "@inquirer/prompts";
 import pc from "picocolors";
-import { createSpinner } from "nanospinner";
 import { getAccount, getTokenSilent, teamsDevPortalScopes } from "../../auth/index.js";
 import { fetchApp, fetchBot, updateBot, updateAppDetails, fetchAppDetailsV2, showBasicInfoEditor, getBotLocation, createTdpBotHandler, createAzureBotHandler, discoverAzureBot, extractDomain } from "../../apps/index.js";
 import { ensureAz } from "../../utils/az.js";
+import { outputJson } from "../../utils/json-output.js";
 import { pickApp } from "../../utils/app-picker.js";
+import { createSilentSpinner } from "../../utils/spinner.js";
+import { logger } from "../../utils/logger.js";
 import type { AppSummary, AppDetails } from "../../apps/types.js";
 import type { BotDetails } from "../../apps/tdp.js";
 import type { BotLocation } from "../../apps/bot-location.js";
+
+interface AppEditEndpointOutput {
+  teamsAppId: string;
+  botId: string;
+  updated: {
+    endpoint: string;
+  };
+  validDomains: string[];
+}
+
+interface AppEditInfoOutput {
+  teamsAppId: string;
+  updated: Record<string, unknown>;
+}
 
 /**
  * Interactive edit menu for a single app. Returns when user selects "Back".
  */
 export async function showEditMenu(app: AppSummary, token: string): Promise<void> {
-  const spinner = createSpinner("Fetching details...").start();
+  const spinner = createSilentSpinner("Fetching details...").start();
 
   let appDetails: AppDetails;
   try {
@@ -99,7 +115,7 @@ export async function showEditMenu(app: AppSummary, token: string): Promise<void
           continue;
         }
         const handler = createAzureBotHandler(azContext);
-        const updateSpinner = createSpinner("Updating endpoint (Azure)...").start();
+        const updateSpinner = createSilentSpinner("Updating endpoint (Azure)...").start();
         await handler.updateEndpoint(botId, newEndpoint.trim());
         updateSpinner.success({ text: "Endpoint updated successfully" });
 
@@ -108,7 +124,7 @@ export async function showEditMenu(app: AppSummary, token: string): Promise<void
         if (domain) {
           const domains = (appDetails.validDomains as string[]) ?? [];
           if (!domains.includes(domain)) {
-            const domainSpinner = createSpinner("Updating valid domains...").start();
+            const domainSpinner = createSilentSpinner("Updating valid domains...").start();
             await updateAppDetails(token, app.teamsAppId, { validDomains: [...domains, domain] });
             domainSpinner.success({ text: `Added ${domain} to valid domains` });
           }
@@ -127,7 +143,7 @@ export async function showEditMenu(app: AppSummary, token: string): Promise<void
           continue;
         }
 
-        const updateSpinner = createSpinner("Updating endpoint...").start();
+        const updateSpinner = createSilentSpinner("Updating endpoint...").start();
         await updateBot(token, { ...bot, messagingEndpoint: newEndpoint.trim() });
         updateSpinner.success({ text: "Endpoint updated successfully" });
         bot = { ...bot, messagingEndpoint: newEndpoint.trim() };
@@ -137,7 +153,7 @@ export async function showEditMenu(app: AppSummary, token: string): Promise<void
         if (domain) {
           const domains = (appDetails.validDomains as string[]) ?? [];
           if (!domains.includes(domain)) {
-            const domainSpinner = createSpinner("Updating valid domains...").start();
+            const domainSpinner = createSilentSpinner("Updating valid domains...").start();
             await updateAppDetails(token, app.teamsAppId, { validDomains: [...domains, domain] });
             domainSpinner.success({ text: `Added ${domain} to valid domains` });
           }
@@ -161,7 +177,10 @@ export const appEditCommand = new Command("edit")
   .option("--website <url>", "[OPTIONAL] Set the website URL (HTTPS required)")
   .option("--privacy-url <url>", "[OPTIONAL] Set the privacy policy URL (HTTPS required)")
   .option("--terms-url <url>", "[OPTIONAL] Set the terms of use URL (HTTPS required)")
+  .option("--json", "[OPTIONAL] Output as JSON")
   .action(async (appIdArg: string | undefined, options) => {
+    const silent = !!options.json;
+
     // Check if any mutation flags were provided
     const hasMutationFlags = options.endpoint !== undefined
       || options.name !== undefined
@@ -173,6 +192,12 @@ export const appEditCommand = new Command("edit")
       || options.website !== undefined
       || options.privacyUrl !== undefined
       || options.termsUrl !== undefined;
+
+    // --json requires mutation flags
+    if (options.json && !hasMutationFlags) {
+      logger.error("--json requires at least one mutation flag (--name, --endpoint, etc.)");
+      process.exit(1);
+    }
 
     // Interactive mode (no appId, no mutation flags): picker loop
     if (!appIdArg && !hasMutationFlags) {
@@ -241,40 +266,56 @@ export const appEditCommand = new Command("edit")
 
         if (location === "azure") {
           ensureAz();
-          const azContext = discoverAzureBot(botId);
+          const azContext = discoverAzureBot(botId, silent);
           if (!azContext) {
             console.log(pc.red("Could not find this bot in Azure."));
             console.log(`Use: ${pc.cyan("az bot update --name <name> --resource-group <rg> --endpoint <url>")}`);
             process.exit(1);
           }
           const handler = createAzureBotHandler(azContext);
-          const updateSpinner = createSpinner("Updating endpoint (Azure)...").start();
+          const updateSpinner = createSilentSpinner("Updating endpoint (Azure)...", silent).start();
           await handler.updateEndpoint(botId, options.endpoint);
           updateSpinner.success({ text: "Endpoint updated successfully" });
-          console.log(`${pc.dim("New endpoint:")} ${options.endpoint}`);
+          if (!options.json) {
+            console.log(`${pc.dim("New endpoint:")} ${options.endpoint}`);
+          }
         } else {
-          const spinner = createSpinner("Fetching bot details...").start();
+          const spinner = createSilentSpinner("Fetching bot details...", silent).start();
           const bot = await fetchBot(token, botId);
           spinner.stop();
 
-          console.log(`${pc.dim("Current endpoint:")} ${bot.messagingEndpoint || pc.dim("(not set)")}`);
+          if (!options.json) {
+            console.log(`${pc.dim("Current endpoint:")} ${bot.messagingEndpoint || pc.dim("(not set)")}`);
+          }
 
-          const updateSpinner = createSpinner("Updating endpoint...").start();
+          const updateSpinner = createSilentSpinner("Updating endpoint...", silent).start();
           await updateBot(token, { ...bot, messagingEndpoint: options.endpoint });
           updateSpinner.success({ text: "Endpoint updated successfully" });
-          console.log(`${pc.dim("New endpoint:")} ${options.endpoint}`);
+          if (!options.json) {
+            console.log(`${pc.dim("New endpoint:")} ${options.endpoint}`);
+          }
         }
 
         // Update validDomains with the new endpoint's domain
+        const details = await fetchAppDetailsV2(token, appId);
+        const domains = (details.validDomains as string[]) ?? [];
         const domain = extractDomain(options.endpoint);
-        if (domain) {
-          const details = await fetchAppDetailsV2(token, appId);
-          const domains = (details.validDomains as string[]) ?? [];
-          if (!domains.includes(domain)) {
-            const domainSpinner = createSpinner("Updating valid domains...").start();
-            await updateAppDetails(token, appId, { validDomains: [...domains, domain] });
-            domainSpinner.success({ text: `Added ${domain} to valid domains` });
-          }
+        let validDomains = domains;
+        if (domain && !domains.includes(domain)) {
+          const domainSpinner = createSilentSpinner("Updating valid domains...", silent).start();
+          validDomains = [...domains, domain];
+          await updateAppDetails(token, appId, { validDomains });
+          domainSpinner.success({ text: `Added ${domain} to valid domains` });
+        }
+
+        if (options.json) {
+          const result: AppEditEndpointOutput = {
+            teamsAppId: appId,
+            botId: app.bots[0].botId,
+            updated: { endpoint: options.endpoint },
+            validDomains,
+          };
+          outputJson(result);
         }
         return;
       }
@@ -349,14 +390,22 @@ export const appEditCommand = new Command("edit")
       }
 
       if (Object.keys(basicInfoUpdates).length > 0) {
-        const spinner = createSpinner("Updating app details...").start();
+        const spinner = createSilentSpinner("Updating app details...", silent).start();
         try {
           await updateAppDetails(token, appId, basicInfoUpdates);
           spinner.success({ text: "App details updated successfully" });
 
-          for (const [key, value] of Object.entries(basicInfoUpdates)) {
-            const label = key.replace(/([A-Z])/g, " $1").toLowerCase().trim();
-            console.log(`${pc.dim(label + ":")} ${value}`);
+          if (options.json) {
+            const result: AppEditInfoOutput = {
+              teamsAppId: appId,
+              updated: basicInfoUpdates,
+            };
+            outputJson(result);
+          } else {
+            for (const [key, value] of Object.entries(basicInfoUpdates)) {
+              const label = key.replace(/([A-Z])/g, " $1").toLowerCase().trim();
+              console.log(`${pc.dim(label + ":")} ${value}`);
+            }
           }
         } catch (error) {
           spinner.error({ text: "Failed to update app details" });

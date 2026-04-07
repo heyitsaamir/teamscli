@@ -19,7 +19,7 @@ export interface AzureBotInfo {
  * Handles: auth check, app selection, bot location check, Azure discovery.
  * In interactive mode, offers to migrate if bot is in BF.
  */
-export async function requireAzureBot(appIdArg?: string): Promise<AzureBotInfo> {
+export async function requireAzureBot(appIdArg?: string, silent = false): Promise<AzureBotInfo> {
   const account = await getAccount();
   if (!account) {
     console.log(pc.red("Not logged in.") + ` Run ${pc.cyan("teams login")} first.`);
@@ -79,7 +79,7 @@ export async function requireAzureBot(appIdArg?: string): Promise<AzureBotInfo> 
   }
 
   ensureAz();
-  const azure = discoverAzureBot(botId);
+  const azure = discoverAzureBot(botId, silent);
   if (!azure) {
     console.log(pc.red("Could not find this bot in Azure."));
     process.exit(1);

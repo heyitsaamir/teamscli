@@ -1,5 +1,4 @@
 import { input } from "@inquirer/prompts";
-import { createSpinner } from "nanospinner";
 import pc from "picocolors";
 import {
 	createClientSecret,
@@ -12,6 +11,18 @@ import {
 	graphScopes,
 } from "../../../../auth/index.js";
 import { outputCredentials } from "../../../../utils/env.js";
+import { outputJson } from "../../../../utils/json-output.js";
+import { createSilentSpinner } from "../../../../utils/spinner.js";
+
+interface SecretGenerateOutput {
+	botId: string;
+	aadAppName: string;
+	credentials: {
+		CLIENT_ID: string;
+		CLIENT_SECRET: string;
+		TENANT_ID: string;
+	};
+}
 
 interface GenerateSecretOptions {
 	/** TDP auth token */
@@ -22,6 +33,8 @@ interface GenerateSecretOptions {
 	envPath?: string;
 	/** When true, prompt for .env path if not provided */
 	interactive?: boolean;
+	/** When true, output JSON instead of human-readable text */
+	json?: boolean;
 }
 
 /**
@@ -31,6 +44,7 @@ interface GenerateSecretOptions {
  * Throws on failure. Caller decides how to handle errors.
  */
 export async function generateSecret(opts: GenerateSecretOptions): Promise<void> {
+	const silent = !!opts.json;
 	let envPath = opts.envPath;
 
 	if (envPath === undefined && opts.interactive) {
@@ -44,7 +58,7 @@ export async function generateSecret(opts: GenerateSecretOptions): Promise<void>
 		throw new Error(`Not logged in. Run ${pc.cyan("teams login")} first.`);
 	}
 
-	let spinner = createSpinner("Acquiring Graph token...").start();
+	let spinner = createSilentSpinner("Acquiring Graph token...", silent).start();
 	const graphToken = await getTokenSilent(graphScopes);
 	if (!graphToken) {
 		spinner.error({ text: "Failed to get Graph token" });
@@ -52,7 +66,7 @@ export async function generateSecret(opts: GenerateSecretOptions): Promise<void>
 	}
 	spinner.success({ text: "Graph token acquired" });
 
-	spinner = createSpinner("Fetching app details...").start();
+	spinner = createSilentSpinner("Fetching app details...", silent).start();
 	const app = await fetchApp(opts.tdpToken, opts.appId);
 
 	if (!app.bots || app.bots.length === 0) {
@@ -63,17 +77,30 @@ export async function generateSecret(opts: GenerateSecretOptions): Promise<void>
 	const clientId = app.bots[0].botId;
 	spinner.success({ text: `Found bot (${clientId})` });
 
-	spinner = createSpinner("Looking up AAD app...").start();
+	spinner = createSilentSpinner("Looking up AAD app...", silent).start();
 	const aadApp = await getAadAppByClientId(graphToken, clientId);
 	spinner.success({ text: `Found AAD app (${aadApp.displayName})` });
 
-	spinner = createSpinner("Generating client secret...").start();
+	spinner = createSilentSpinner("Generating client secret...", silent).start();
 	const secret = await createClientSecret(graphToken, aadApp.id);
 	spinner.success({ text: "Generated client secret" });
 
-	outputCredentials(envPath, {
-		CLIENT_ID: clientId,
-		CLIENT_SECRET: secret.secretText,
-		TENANT_ID: account.tenantId,
-	}, "Secret generated successfully!");
+	if (opts.json) {
+		const result: SecretGenerateOutput = {
+			botId: clientId,
+			aadAppName: aadApp.displayName,
+			credentials: {
+				CLIENT_ID: clientId,
+				CLIENT_SECRET: secret.secretText,
+				TENANT_ID: account.tenantId,
+			},
+		};
+		outputJson(result);
+	} else {
+		outputCredentials(envPath, {
+			CLIENT_ID: clientId,
+			CLIENT_SECRET: secret.secretText,
+			TENANT_ID: account.tenantId,
+		}, "Secret generated successfully!");
+	}
 }

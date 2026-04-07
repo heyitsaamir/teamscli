@@ -1,7 +1,7 @@
 import { writeFileSync, unlinkSync, mkdtempSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
-import { createSpinner } from "nanospinner";
+import { createSilentSpinner } from "../utils/spinner.js";
 import { registerBot, fetchBot, updateBot } from "./tdp.js";
 import { runAz } from "../utils/az.js";
 import { logger } from "../utils/logger.js";
@@ -166,8 +166,8 @@ export function createAzureBotHandler(context: AzureContext): BotHandler {
  * Discover the Azure context for an existing bot by looking up its resource.
  * The bot resource name is always the client ID (set at creation time).
  */
-export function discoverAzureBot(botId: string): AzureContext | null {
-  const spinner = createSpinner("Discovering Azure bot...").start();
+export function discoverAzureBot(botId: string, silent = false): AzureContext | null {
+  const spinner = createSilentSpinner("Discovering Azure bot...", silent).start();
   try {
     const results = runAz<Array<{ resourceGroup: string; location: string }>>(
       ["resource", "list",

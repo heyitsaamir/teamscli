@@ -1,23 +1,34 @@
 import { Command } from "commander";
 import { input } from "@inquirer/prompts";
 import pc from "picocolors";
-import { createSpinner } from "nanospinner";
 import { getTokenSilent, graphScopes } from "../../../../auth/index.js";
 import { getAadAppByClientId, getAadAppFull, updateAadApp, createClientSecret } from "../../../../apps/graph.js";
 import { updateAppDetails, fetchAppDetailsV2 } from "../../../../apps/api.js";
 import { runAz } from "../../../../utils/az.js";
 import { isInteractive } from "../../../../utils/interactive.js";
+import { outputJson } from "../../../../utils/json-output.js";
 import { logger } from "../../../../utils/logger.js";
+import { createSilentSpinner } from "../../../../utils/spinner.js";
 import { requireAzureBot } from "../require-azure.js";
 
 // Teams client IDs to pre-authorize for SSO
 const TEAMS_DESKTOP_CLIENT = "1fec8e78-bce4-4aaf-ab1b-5451cc387264";
 const TEAMS_WEB_CLIENT = "5e3ce6c0-2b1f-4285-8d4b-75ee78787346";
 
+interface SsoSetupOutput {
+  botId: string;
+  connectionName: string;
+  identifierUri: string;
+  scopes: string;
+  clientSecretCreated: boolean;
+  manifestUpdated: boolean;
+}
+
 interface SsoOptions {
   connectionName?: string;
   scopes?: string;
   clientSecret?: string;
+  json?: boolean;
 }
 
 interface OAuth2Scope {
@@ -35,18 +46,20 @@ export const ssoSetupCommand = new Command("setup")
   .option("--connection-name <name>", "[OPTIONAL] OAuth connection name (default: sso)")
   .option("--scopes <scopes>", "[OPTIONAL] Scopes (default: User.Read)")
   .option("--client-secret <secret>", "AAD app client secret")
+  .option("--json", "[OPTIONAL] Output as JSON")
   .action(async (appIdArg: string | undefined, options: SsoOptions) => {
-    const { token, appId, botId, azure } = await requireAzureBot(appIdArg);
+    const silent = !!options.json;
+    const { token, appId, botId, azure } = await requireAzureBot(appIdArg, silent);
     const interactive = isInteractive();
 
     let connectionName = options.connectionName;
-    if (!connectionName && interactive) {
+    if (!connectionName && interactive && !options.json) {
       connectionName = await input({ message: "Connection name:", default: "sso" });
     }
     connectionName = connectionName ?? "sso";
 
     let scopes = options.scopes;
-    if (!scopes && interactive) {
+    if (!scopes && interactive && !options.json) {
       scopes = await input({ message: "Scopes:", default: "User.Read" });
     }
     scopes = scopes ?? "User.Read";
@@ -60,26 +73,34 @@ export const ssoSetupCommand = new Command("setup")
 
     // Client secret — use provided, prompt, or create new
     let clientSecret = options.clientSecret;
+    let clientSecretCreated = false;
     if (!clientSecret) {
-      if (!interactive) {
-        logger.error("--client-secret is required in non-interactive mode");
-        process.exit(1);
-      }
-      clientSecret = await input({
-        message: "AAD app client secret (leave empty to create a new one):",
-      });
-
-      if (!clientSecret) {
-        const secretSpinner = createSpinner("Creating new client secret...").start();
+      if (!interactive || options.json) {
+        // In non-interactive or JSON mode, auto-create a secret
+        const secretSpinner = createSilentSpinner("Creating new client secret...", silent).start();
         const aadApp = await getAadAppByClientId(graphToken, botId);
         const secret = await createClientSecret(graphToken, aadApp.id);
         clientSecret = secret.secretText;
+        clientSecretCreated = true;
         secretSpinner.success({ text: "Client secret created" });
+      } else {
+        clientSecret = await input({
+          message: "AAD app client secret (leave empty to create a new one):",
+        });
+
+        if (!clientSecret) {
+          const secretSpinner = createSilentSpinner("Creating new client secret...", silent).start();
+          const aadApp = await getAadAppByClientId(graphToken, botId);
+          const secret = await createClientSecret(graphToken, aadApp.id);
+          clientSecret = secret.secretText;
+          clientSecretCreated = true;
+          secretSpinner.success({ text: "Client secret created" });
+        }
       }
     }
 
     // Step 1: Update AAD app registration
-    const aadSpinner = createSpinner("Configuring AAD app for SSO...").start();
+    const aadSpinner = createSilentSpinner("Configuring AAD app for SSO...", silent).start();
     try {
       // Look up Graph object ID
       const aadApp = await getAadAppByClientId(graphToken, botId);
@@ -158,7 +179,7 @@ export const ssoSetupCommand = new Command("setup")
     }
 
     // Step 2: Create OAuth connection for SSO
-    const oauthSpinner = createSpinner("Creating SSO connection...").start();
+    const oauthSpinner = createSilentSpinner("Creating SSO connection...", silent).start();
     try {
       runAz([
         "bot", "authsetting", "create",
@@ -182,7 +203,8 @@ export const ssoSetupCommand = new Command("setup")
     }
 
     // Step 3: Update TDP manifest with webApplicationInfo
-    const manifestSpinner = createSpinner("Updating manifest...").start();
+    let manifestUpdated = false;
+    const manifestSpinner = createSilentSpinner("Updating manifest...", silent).start();
     try {
       const details = await fetchAppDetailsV2(token, appId);
       const validDomains = (details.validDomains as string[]) ?? [];
@@ -197,14 +219,27 @@ export const ssoSetupCommand = new Command("setup")
 
       await updateAppDetails(token, appId, updates);
       manifestSpinner.success({ text: "Manifest updated with SSO configuration" });
+      manifestUpdated = true;
     } catch (error) {
       manifestSpinner.error({ text: "Failed to update manifest" });
       logger.error(error instanceof Error ? error.message : "Unknown error");
       // Non-fatal — SSO connection was created, manifest can be updated manually
     }
 
-    console.log(pc.bold(pc.green("\nSSO configured!")));
-    console.log(`${pc.dim("Connection name:")} ${connectionName}`);
-    console.log(`${pc.dim("Identifier URI:")} api://${botId}`);
-    console.log(`${pc.dim("Scopes:")} ${scopes}`);
+    if (options.json) {
+      const result: SsoSetupOutput = {
+        botId,
+        connectionName,
+        identifierUri: `api://botid-${botId}`,
+        scopes,
+        clientSecretCreated,
+        manifestUpdated,
+      };
+      outputJson(result);
+    } else {
+      console.log(pc.bold(pc.green("\nSSO configured!")));
+      console.log(`${pc.dim("Connection name:")} ${connectionName}`);
+      console.log(`${pc.dim("Identifier URI:")} api://${botId}`);
+      console.log(`${pc.dim("Scopes:")} ${scopes}`);
+    }
   });
