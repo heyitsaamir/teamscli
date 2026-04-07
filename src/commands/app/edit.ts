@@ -6,6 +6,7 @@ import { fetchApp, fetchBot, updateBot, updateAppDetails, fetchAppDetailsV2, sho
 import { ensureAz } from "../../utils/az.js";
 import { CliError, wrapAction } from "../../utils/errors.js";
 import { outputJson } from "../../utils/json-output.js";
+import { logger } from "../../utils/logger.js";
 import { pickApp } from "../../utils/app-picker.js";
 import { createSilentSpinner } from "../../utils/spinner.js";
 import type { AppSummary, AppDetails } from "../../apps/types.js";
@@ -70,13 +71,13 @@ export async function showEditMenu(app: AppSummary, token: string): Promise<void
   spinner.stop();
 
   while (true) {
-    console.log(`\n${pc.bold(appDetails.shortName || "Unnamed")}`);
-    console.log(`${pc.dim("ID:")} ${appDetails.teamsAppId}`);
+    logger.info(`\n${pc.bold(appDetails.shortName || "Unnamed")}`);
+    logger.info(`${pc.dim("ID:")} ${appDetails.teamsAppId}`);
     if (bot) {
-      console.log(`${pc.dim("Endpoint:")} ${bot.messagingEndpoint || pc.yellow("(not set)")}`);
+      logger.info(`${pc.dim("Endpoint:")} ${bot.messagingEndpoint || pc.yellow("(not set)")}`);
     }
     if (botLocation) {
-      console.log(`${pc.dim("Bot location:")} ${botLocation === "bf" ? "BF tenant" : "Azure"}`);
+      logger.info(`${pc.dim("Bot location:")} ${botLocation === "bf" ? "BF tenant" : "Azure"}`);
     }
 
     const showEndpoint = bot || botLocation === "azure";
@@ -104,14 +105,14 @@ export async function showEditMenu(app: AppSummary, token: string): Promise<void
         });
 
         if (!newEndpoint.trim()) {
-          console.log(pc.dim("\nNo changes made."));
+          logger.info(pc.dim("\nNo changes made."));
           continue;
         }
 
         ensureAz();
         const azContext = discoverAzureBot(botId);
         if (!azContext) {
-          console.log(pc.red("Could not find this bot in Azure."));
+          logger.error(pc.red("Could not find this bot in Azure."));
           continue;
         }
         const handler = createAzureBotHandler(azContext);
@@ -139,7 +140,7 @@ export async function showEditMenu(app: AppSummary, token: string): Promise<void
         });
 
         if (newEndpoint.trim() === bot.messagingEndpoint) {
-          console.log(pc.dim("\nNo changes made."));
+          logger.info(pc.dim("\nNo changes made."));
           continue;
         }
 
@@ -256,7 +257,7 @@ export const appEditCommand = new Command("edit")
         await handler.updateEndpoint(botId, options.endpoint);
         updateSpinner.success({ text: "Endpoint updated successfully" });
         if (!options.json) {
-          console.log(`${pc.dim("New endpoint:")} ${options.endpoint}`);
+          logger.info(`${pc.dim("New endpoint:")} ${options.endpoint}`);
         }
       } else {
         const spinner = createSilentSpinner("Fetching bot details...", silent).start();
@@ -264,14 +265,14 @@ export const appEditCommand = new Command("edit")
         spinner.stop();
 
         if (!options.json) {
-          console.log(`${pc.dim("Current endpoint:")} ${bot.messagingEndpoint || pc.dim("(not set)")}`);
+          logger.info(`${pc.dim("Current endpoint:")} ${bot.messagingEndpoint || pc.dim("(not set)")}`);
         }
 
         const updateSpinner = createSilentSpinner("Updating endpoint...", silent).start();
         await updateBot(token, { ...bot, messagingEndpoint: options.endpoint });
         updateSpinner.success({ text: "Endpoint updated successfully" });
         if (!options.json) {
-          console.log(`${pc.dim("New endpoint:")} ${options.endpoint}`);
+          logger.info(`${pc.dim("New endpoint:")} ${options.endpoint}`);
         }
       }
 
@@ -375,7 +376,7 @@ export const appEditCommand = new Command("edit")
       } else {
         for (const [key, value] of Object.entries(basicInfoUpdates)) {
           const label = key.replace(/([A-Z])/g, " $1").toLowerCase().trim();
-          console.log(`${pc.dim(label + ":")} ${value}`);
+          logger.info(`${pc.dim(label + ":")} ${value}`);
         }
       }
     }

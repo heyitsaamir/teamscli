@@ -5,24 +5,24 @@ import { getAccount, getTokenSilent, teamsDevPortalScopes } from "../../../auth/
 import { fetchApp, fetchAppDetailsV2, getBotLocation } from "../../../apps/index.js";
 import { pickApp } from "../../../utils/app-picker.js";
 import { isInteractive } from "../../../utils/interactive.js";
+import { CliError, wrapAction } from "../../../utils/errors.js";
+import { logger } from "../../../utils/logger.js";
 
 export const botStatusCommand = new Command("status")
   .description("Show bot location (BF tenant or Azure)")
   .argument("[appId]", "App ID")
-  .action(async (appIdArg?: string) => {
+  .action(wrapAction(async (appIdArg?: string) => {
     let token: string;
     let appId: string;
 
     if (appIdArg) {
       const account = await getAccount();
       if (!account) {
-        console.log(pc.red("Not logged in.") + ` Run ${pc.cyan("teams login")} first.`);
-        process.exit(1);
+        throw new CliError("AUTH_REQUIRED", "Not logged in.", "Run `teams login` first.");
       }
       token = (await getTokenSilent(teamsDevPortalScopes))!;
       if (!token) {
-        console.log(pc.red("Failed to get token.") + ` Try ${pc.cyan("teams login")} again.`);
-        process.exit(1);
+        throw new CliError("AUTH_TOKEN_FAILED", "Failed to get token.", "Try `teams login` again.");
       }
       appId = appIdArg;
     } else {
@@ -33,8 +33,7 @@ export const botStatusCommand = new Command("status")
 
     const details = await fetchAppDetailsV2(token, appId);
     if (!details.bots || details.bots.length === 0) {
-      console.log(pc.red("This app has no bots."));
-      process.exit(1);
+      throw new CliError("NOT_FOUND_BOT", "This app has no bots.");
     }
 
     const botId = details.bots[0].botId;
@@ -44,10 +43,10 @@ export const botStatusCommand = new Command("status")
 
     if (isInteractive()) {
       const label = location === "bf" ? "BF tenant" : "Azure";
-      console.log(`${pc.dim("Bot ID:")} ${botId}`);
-      console.log(`${pc.dim("Location:")} ${label}`);
+      logger.info(`${pc.dim("Bot ID:")} ${botId}`);
+      logger.info(`${pc.dim("Location:")} ${label}`);
     } else {
       // Plain output for scripting
-      console.log(location);
+      logger.info(location);
     }
-  });
+  }));

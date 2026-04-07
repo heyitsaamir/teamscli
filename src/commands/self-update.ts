@@ -2,6 +2,7 @@ import { Command } from "commander";
 import { execSync } from "node:child_process";
 import { createSpinner } from "nanospinner";
 import pc from "picocolors";
+import { logger } from "../utils/logger.js";
 
 const INSTALL_URL =
   "https://github.com/heyitsaamir/teamscli/releases/latest/download/teamscli.tgz";
@@ -18,17 +19,17 @@ export function runSelfUpdate(): boolean {
 
     try {
       const version = execSync("teams --version", { encoding: "utf-8" }).trim();
-      console.log(`${pc.dim("Version:")} ${version}`);
+      logger.info(`${pc.dim("Version:")} ${version}`);
     } catch {
       // version check is best-effort
     }
     return true;
   } catch (error) {
     spinner.error({ text: "Update failed" });
-    console.log(
+    logger.error(
       pc.red(error instanceof Error ? error.message : "Unknown error"),
     );
-    console.log(
+    logger.info(
       `\nTry manually: ${pc.cyan(`npm install -g ${INSTALL_URL}`)}`,
     );
     return false;

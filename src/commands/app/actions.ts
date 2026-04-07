@@ -4,6 +4,7 @@ import { writeFile } from "node:fs/promises";
 import { createSpinner } from "nanospinner";
 import { showEditMenu } from "./edit.js";
 import { showAppDetail, downloadAppPackage } from "../../apps/index.js";
+import { logger } from "../../utils/logger.js";
 import { downloadManifest, uploadManifestFromFile } from "./manifest/actions.js";
 import { generateSecret } from "./auth/secret/generate.js";
 import { oauthAddCommand } from "./auth/oauth/add.js";
@@ -127,7 +128,7 @@ export async function showAppActions(app: AppSummary, token: string): Promise<vo
       const packageBuffer = await downloadAppPackage(token, app.appId);
       spinner.stop();
       await writeFile(outputPath, packageBuffer);
-      console.log(pc.green(`Package saved to ${outputPath}`));
+      logger.info(pc.green(`Package saved to ${outputPath}`));
     } else if (action === "manifest") {
       const manifestAction = await select({
         message: `${app.appName ?? "Unnamed"} — manifest:`,
@@ -146,7 +147,7 @@ export async function showAppActions(app: AppSummary, token: string): Promise<vo
         try {
           await downloadManifest(token, app.appId, savePath || undefined);
         } catch (error) {
-          console.log(pc.red(error instanceof Error ? error.message : "Unknown error"));
+          logger.error(pc.red(error instanceof Error ? error.message : "Unknown error"));
         }
       } else if (manifestAction === "upload") {
         const filePath = await input({
@@ -156,28 +157,28 @@ export async function showAppActions(app: AppSummary, token: string): Promise<vo
         try {
           await uploadManifestFromFile(token, app.teamsAppId, filePath);
         } catch (error) {
-          console.log(pc.red(error instanceof Error ? error.message : "Unknown error"));
+          logger.error(pc.red(error instanceof Error ? error.message : "Unknown error"));
         }
       }
     } else if (action === "secret") {
       try {
         await generateSecret({ tdpToken: token, appId: app.teamsAppId, interactive: true });
       } catch (error) {
-        console.log(pc.red(error instanceof Error ? error.message : "Unknown error"));
+        logger.error(pc.red(error instanceof Error ? error.message : "Unknown error"));
       }
     } else if (action === "auth") {
       try {
         await showAuthMenu(app.teamsAppId, token);
       } catch (error) {
         if (error instanceof Error && error.name === "ExitPromptError") continue;
-        console.log(pc.red(error instanceof Error ? error.message : "Unknown error"));
+        logger.error(pc.red(error instanceof Error ? error.message : "Unknown error"));
       }
     } else if (action === "doctor") {
       try {
         await appDoctorCommand.parseAsync([app.teamsAppId], { from: "user" });
       } catch (error) {
         if (error instanceof Error && error.name === "ExitPromptError") continue;
-        console.log(pc.red(error instanceof Error ? error.message : "Unknown error"));
+        logger.error(pc.red(error instanceof Error ? error.message : "Unknown error"));
       }
     }
   }

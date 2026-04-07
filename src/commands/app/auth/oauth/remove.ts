@@ -5,6 +5,7 @@ import { createSpinner } from "nanospinner";
 import { runAz } from "../../../../utils/az.js";
 import { isInteractive } from "../../../../utils/interactive.js";
 import { logger } from "../../../../utils/logger.js";
+import { CliError, wrapAction } from "../../../../utils/errors.js";
 import { requireAzureBot } from "../require-azure.js";
 
 interface AuthSetting {
@@ -18,14 +19,13 @@ export const oauthRemoveCommand = new Command("remove")
   .description("Remove an OAuth connection from an Azure bot")
   .argument("[appId]", "App ID")
   .option("--connection-name <name>", "OAuth connection name to remove")
-  .action(async (appIdArg: string | undefined, options: { connectionName?: string }) => {
+  .action(wrapAction(async (appIdArg: string | undefined, options: { connectionName?: string }) => {
     const { botId, azure } = await requireAzureBot(appIdArg);
 
     let connectionName = options.connectionName;
     if (!connectionName) {
       if (!isInteractive()) {
-        logger.error("--connection-name is required in non-interactive mode");
-        process.exit(1);
+        throw new CliError("VALIDATION_MISSING", "--connection-name is required in non-interactive mode.");
       }
 
       // List connections and let user pick
@@ -39,7 +39,7 @@ export const oauthRemoveCommand = new Command("remove")
       listSpinner.stop();
 
       if (settings.length === 0) {
-        console.log(pc.dim("No OAuth connections to remove."));
+        logger.info(pc.dim("No OAuth connections to remove."));
         return;
       }
 
@@ -73,7 +73,6 @@ export const oauthRemoveCommand = new Command("remove")
       spinner.success({ text: `OAuth connection "${connectionName}" removed` });
     } catch (error) {
       spinner.error({ text: "Failed to remove OAuth connection" });
-      logger.error(error instanceof Error ? error.message : "Unknown error");
-      process.exit(1);
+      throw new CliError("API_ERROR", error instanceof Error ? error.message : "Failed to remove OAuth connection");
     }
-  });
+  }));

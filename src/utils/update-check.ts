@@ -6,6 +6,7 @@ import pc from "picocolors";
 import { paths } from "../auth/config.js";
 import { isInteractive } from "./interactive.js";
 import { runSelfUpdate } from "../commands/self-update.js";
+import { logger } from "./logger.js";
 
 const STATE_FILE = join(paths.cache, "update-check.json");
 const CHECK_INTERVAL_MS = 24 * 60 * 60 * 1000; // 24 hours
@@ -117,7 +118,7 @@ function showUpdateHint(latestVersion: string): void {
   const { version: currentVersion } = require("../../package.json");
   if (!isNewer(latestVersion, currentVersion)) return;
 
-  console.log(
+  logger.info(
     pc.yellow(`\nUpdate available: ${pc.dim(currentVersion)} → ${pc.bold(latestVersion)}`) +
     `  Run ${pc.cyan("teams self-update")} to update.\n`
   );

@@ -33,7 +33,7 @@ export async function createCachePlugin(): Promise<ICachePlugin | undefined> {
       return new PersistenceCachePlugin(persistence);
     } catch {
       // libsecret unavailable — fall back to plaintext file with a warning
-      console.warn(
+      logger.warn(
         pc.yellow(
           "Warning: libsecret not found — token cache will be stored unencrypted.\n" +
             "Install it for secure storage: sudo apt install libsecret-1-dev"

@@ -1,5 +1,6 @@
 import { Configuration, LogLevel } from "@azure/msal-node";
 import envPaths from "env-paths";
+import { logger } from "../utils/logger.js";
 
 // Client ID from Microsoft 365 Agents Toolkit - shared public client for CLI auth
 // https://github.com/OfficeDev/microsoft-365-agents-toolkit
@@ -19,7 +20,7 @@ export const msalConfig: Configuration = {
       logLevel: LogLevel.Warning,
       loggerCallback: (level, message) => {
         if (level === LogLevel.Error) {
-          console.error(message);
+          logger.error(message);
         }
       },
     },

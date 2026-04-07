@@ -3,12 +3,14 @@ import { select } from "@inquirer/prompts";
 import pc from "picocolors";
 import { getConfig, setConfig } from "../../utils/config.js";
 import { isInteractive } from "../../utils/interactive.js";
+import { CliError, wrapAction } from "../../utils/errors.js";
+import { logger } from "../../utils/logger.js";
 import type { BotLocation } from "../../apps/bot-location.js";
 
 const botLocationCommand = new Command("default-bot-location")
   .description("Default bot location for app create (bf or azure)")
   .argument("[value]", "Set to 'bf' or 'azure'. Omit to show current value or pick interactively.")
-  .action(async (value?: string) => {
+  .action(wrapAction(async (value?: string) => {
     const current = ((await getConfig("default-bot-location")) as BotLocation) ?? "bf";
 
     if (!value && isInteractive()) {
@@ -23,23 +25,22 @@ const botLocationCommand = new Command("default-bot-location")
     }
 
     if (!value) {
-      console.log(current);
+      logger.info(current);
       return;
     }
 
     if (value !== "bf" && value !== "azure") {
-      console.log(pc.red(`Invalid value: ${value}. Must be 'bf' or 'azure'.`));
-      process.exit(1);
+      throw new CliError("VALIDATION_FORMAT", `Invalid value: ${value}. Must be 'bf' or 'azure'.`);
     }
 
     if (value === current) {
-      console.log(pc.dim(`default-bot-location is already ${value}`));
+      logger.info(pc.dim(`default-bot-location is already ${value}`));
       return;
     }
 
     await setConfig("default-bot-location", value);
-    console.log(`${pc.dim("default-bot-location")} = ${pc.bold(pc.green(value))}`);
-  });
+    logger.info(`${pc.dim("default-bot-location")} = ${pc.bold(pc.green(value))}`);
+  }));
 
 export const configCommand = new Command("config")
   .description("Manage CLI configuration")

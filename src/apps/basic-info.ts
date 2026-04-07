@@ -3,6 +3,7 @@ import pc from "picocolors";
 import { createSpinner } from "nanospinner";
 import type { AppDetails } from "./types.js";
 import { updateAppDetails } from "./api.js";
+import { logger } from "../utils/logger.js";
 
 interface FieldConfig {
   key: keyof AppDetails;
@@ -63,7 +64,7 @@ async function editField(
 ): Promise<AppDetails | null> {
   const field = FIELDS.find((f) => f.key === fieldKey);
   if (!field) {
-    console.log(pc.red(`Unknown field: ${String(fieldKey)}`));
+    logger.error(pc.red(`Unknown field: ${String(fieldKey)}`));
     return null;
   }
 
@@ -91,7 +92,7 @@ async function editField(
   });
 
   if (newValue === currentValue) {
-    console.log(pc.dim("\nNo changes made."));
+    logger.info(pc.dim("\nNo changes made."));
     return null;
   }
 
@@ -139,6 +140,6 @@ export async function showBasicInfoEditor(
       currentDetails = updated;
     }
 
-    console.log(); // Add spacing before next prompt
+    logger.info(); // Add spacing before next prompt
   }
 }

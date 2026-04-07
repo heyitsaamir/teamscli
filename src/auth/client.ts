@@ -1,6 +1,7 @@
 import { PublicClientApplication, AccountInfo, DeviceCodeRequest } from "@azure/msal-node";
 import { msalConfig, loginScopes } from "./config.js";
 import { createCachePlugin } from "./cache.js";
+import { logger } from "../utils/logger.js";
 
 let msalClient: PublicClientApplication | null = null;
 
@@ -32,7 +33,7 @@ export async function login(): Promise<AccountInfo> {
   const deviceCodeRequest: DeviceCodeRequest = {
     scopes: loginScopes,
     deviceCodeCallback: (response) => {
-      console.log(response.message);
+      logger.info(response.message);
     },
   };
 

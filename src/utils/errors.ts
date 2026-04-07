@@ -1,5 +1,6 @@
 import pc from "picocolors";
 import { outputJson } from "./json-output.js";
+import { logger } from "./logger.js";
 
 export type ErrorCode =
 	// Auth
@@ -59,9 +60,9 @@ export function handleError(error: unknown, json: boolean): never {
 				},
 			});
 		} else {
-			console.log(pc.red(error.message));
+			logger.error(pc.red(error.message));
 			if (error.suggestion) {
-				console.log(error.suggestion);
+				logger.error(error.suggestion);
 			}
 		}
 	} else {
@@ -72,7 +73,7 @@ export function handleError(error: unknown, json: boolean): never {
 				error: { code: "UNKNOWN" as ErrorCode, message },
 			});
 		} else {
-			console.log(pc.red(message));
+			logger.error(pc.red(message));
 		}
 	}
 	process.exit(1);

@@ -51,7 +51,7 @@ function printResults(results: CheckResult[]): void {
   for (const r of results) {
     const icon = STATUS_ICONS[r.status];
     const detail = r.detail ? ` ${pc.dim(`(${r.detail})`)}` : "";
-    console.log(`  ${icon} ${r.label}${detail}`);
+    logger.info(`  ${icon} ${r.label}${detail}`);
   }
 }
 
@@ -59,14 +59,14 @@ function printSummary(allResults: CheckResult[]): void {
   const issues = allResults.filter((r) => r.status === "fail").length;
   const warnings = allResults.filter((r) => r.status === "warn").length;
 
-  console.log();
+  logger.info();
   if (issues === 0 && warnings === 0) {
-    console.log(pc.green("No issues found."));
+    logger.info(pc.green("No issues found."));
   } else {
     const parts: string[] = [];
     if (issues > 0) parts.push(pc.red(`${issues} issue${issues > 1 ? "s" : ""}`));
     if (warnings > 0) parts.push(pc.yellow(`${warnings} warning${warnings > 1 ? "s" : ""}`));
-    console.log(`${parts.join(", ")} found.`);
+    logger.info(`${parts.join(", ")} found.`);
   }
 }
 
@@ -491,7 +491,7 @@ async function runDoctor(appIdArg: string | undefined, json?: boolean): Promise<
 
   const appName = details.shortName || details.appId;
   if (!json) {
-    console.log(`\nDiagnosing: ${pc.bold(appName)} ${pc.dim(`(${details.appId})`)}`);
+    logger.info(`\nDiagnosing: ${pc.bold(appName)} ${pc.dim(`(${details.appId})`)}`);
   }
 
   const allResults: CheckResult[] = [];
@@ -502,7 +502,7 @@ async function runDoctor(appIdArg: string | undefined, json?: boolean): Promise<
   const botInfo = await checkBotRegistration(botResults, details, tdpToken, silent);
   spinner.stop();
   if (!json) {
-    console.log(`\n${pc.bold("Bot Registration")}`);
+    logger.info(`\n${pc.bold("Bot Registration")}`);
     printResults(botResults);
   }
   allResults.push(...botResults);
@@ -536,7 +536,7 @@ async function runDoctor(appIdArg: string | undefined, json?: boolean): Promise<
   }
   spinner.stop();
   if (!json) {
-    console.log(`\n${pc.bold("AAD App")}`);
+    logger.info(`\n${pc.bold("AAD App")}`);
     printResults(aadResults);
   }
   allResults.push(...aadResults);
@@ -548,7 +548,7 @@ async function runDoctor(appIdArg: string | undefined, json?: boolean): Promise<
     : undefined;
   checkManifest(manifestResults, details, botId, endpoint);
   if (!json) {
-    console.log(`\n${pc.bold("Manifest")}`);
+    logger.info(`\n${pc.bold("Manifest")}`);
     printResults(manifestResults);
   }
   allResults.push(...manifestResults);
@@ -560,7 +560,7 @@ async function runDoctor(appIdArg: string | undefined, json?: boolean): Promise<
     await checkSso(ssoResults, details, botId, fullAadApp, azure);
     spinner.stop();
     if (!json) {
-      console.log(`\n${pc.bold("SSO")}`);
+      logger.info(`\n${pc.bold("SSO")}`);
       printResults(ssoResults);
     }
     allResults.push(...ssoResults);

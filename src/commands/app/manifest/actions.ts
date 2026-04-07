@@ -5,6 +5,7 @@ import { createSpinner } from "nanospinner";
 import { downloadAppPackage, uploadManifest } from "../../../apps/index.js";
 import type { TeamsManifest } from "../../../apps/api.js";
 import type { AppDetails } from "../../../apps/types.js";
+import { logger } from "../../../utils/logger.js";
 
 /**
  * Download manifest from an app package. Saves to file or prints to stdout.
@@ -29,9 +30,9 @@ export async function downloadManifest(token: string, appId: string, filePath?: 
 
   if (filePath) {
     await writeFile(filePath, JSON.stringify(manifestJson, null, 2));
-    console.log(pc.green(`Manifest saved to ${filePath}`));
+    logger.info(pc.green(`Manifest saved to ${filePath}`));
   } else {
-    console.log(JSON.stringify(manifestJson, null, 2));
+    logger.info(JSON.stringify(manifestJson, null, 2));
   }
 }
 
@@ -65,8 +66,8 @@ export async function uploadManifestFromFile(token: string, teamsAppId: string, 
   try {
     const result = await uploadManifest(token, teamsAppId, manifest);
     spinner.success({ text: "Manifest uploaded successfully" });
-    console.log(`${pc.dim("App:")} ${result.shortName}`);
-    console.log(`${pc.dim("Version:")} ${result.version}`);
+    logger.info(`${pc.dim("App:")} ${result.shortName}`);
+    logger.info(`${pc.dim("Version:")} ${result.version}`);
     return result;
   } catch (error) {
     spinner.error({ text: "Failed to upload manifest" });

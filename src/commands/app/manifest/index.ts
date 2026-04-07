@@ -5,6 +5,7 @@ import { fetchApp } from "../../../apps/index.js";
 import { pickApp } from "../../../utils/app-picker.js";
 import { isInteractive } from "../../../utils/interactive.js";
 import { downloadManifest, uploadManifestFromFile } from "./actions.js";
+import { logger } from "../../../utils/logger.js";
 import { manifestDownloadCommand } from "./download.js";
 import { manifestUploadCommand } from "./upload.js";
 
@@ -42,7 +43,7 @@ export const appManifestCommand = new Command("manifest")
             try {
               await downloadManifest(picked.token, app.appId, savePath || undefined);
             } catch (error) {
-              console.log(pc.red(error instanceof Error ? error.message : "Unknown error"));
+              logger.error(pc.red(error instanceof Error ? error.message : "Unknown error"));
             }
             continue;
           }
@@ -56,7 +57,7 @@ export const appManifestCommand = new Command("manifest")
             try {
               await uploadManifestFromFile(picked.token, app.teamsAppId, filePath);
             } catch (error) {
-              console.log(pc.red(error instanceof Error ? error.message : "Unknown error"));
+              logger.error(pc.red(error instanceof Error ? error.message : "Unknown error"));
             }
             continue;
           }

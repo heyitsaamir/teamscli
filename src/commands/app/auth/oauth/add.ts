@@ -5,6 +5,7 @@ import { createSpinner } from "nanospinner";
 import { runAz } from "../../../../utils/az.js";
 import { isInteractive } from "../../../../utils/interactive.js";
 import { logger } from "../../../../utils/logger.js";
+import { CliError, wrapAction } from "../../../../utils/errors.js";
 import { requireAzureBot } from "../require-azure.js";
 
 interface OAuthAddOptions {
@@ -32,7 +33,7 @@ export const oauthAddCommand = new Command("add")
   .option("--client-secret <secret>", "Provider client secret")
   .option("--scopes <scopes>", "Provider scopes (space-delimited)")
   .option("--parameters <params>", "[OPTIONAL] Extra provider params (key=value key=value)")
-  .action(async (appIdArg: string | undefined, options: OAuthAddOptions) => {
+  .action(wrapAction(async (appIdArg: string | undefined, options: OAuthAddOptions) => {
     const { botId, azure } = await requireAzureBot(appIdArg);
     const interactive = isInteractive();
 
@@ -40,8 +41,7 @@ export const oauthAddCommand = new Command("add")
     let provider = options.provider;
     if (!provider) {
       if (!interactive) {
-        logger.error("--provider is required in non-interactive mode");
-        process.exit(1);
+        throw new CliError("VALIDATION_MISSING", "--provider is required in non-interactive mode.");
       }
       const providerSpinner = createSpinner("Fetching OAuth providers...").start();
       const providers = runAz<{ value: ServiceProvider[] }>(["bot", "authsetting", "list-providers"]);
@@ -66,8 +66,7 @@ export const oauthAddCommand = new Command("add")
     let connectionName = options.connectionName;
     if (!connectionName) {
       if (!interactive) {
-        logger.error("--connection-name is required in non-interactive mode");
-        process.exit(1);
+        throw new CliError("VALIDATION_MISSING", "--connection-name is required in non-interactive mode.");
       }
       connectionName = await input({ message: "Connection name:", default: provider!.toLowerCase() });
     }
@@ -76,8 +75,7 @@ export const oauthAddCommand = new Command("add")
     let clientId = options.clientId;
     if (!clientId) {
       if (!interactive) {
-        logger.error("--client-id is required in non-interactive mode");
-        process.exit(1);
+        throw new CliError("VALIDATION_MISSING", "--client-id is required in non-interactive mode.");
       }
       clientId = await input({ message: "Client ID:" });
     }
@@ -86,8 +84,7 @@ export const oauthAddCommand = new Command("add")
     let clientSecret = options.clientSecret;
     if (!clientSecret) {
       if (!interactive) {
-        logger.error("--client-secret is required in non-interactive mode");
-        process.exit(1);
+        throw new CliError("VALIDATION_MISSING", "--client-secret is required in non-interactive mode.");
       }
       clientSecret = await input({ message: "Client secret:" });
     }
@@ -96,8 +93,7 @@ export const oauthAddCommand = new Command("add")
     let scopes = options.scopes;
     if (!scopes) {
       if (!interactive) {
-        logger.error("--scopes is required in non-interactive mode");
-        process.exit(1);
+        throw new CliError("VALIDATION_MISSING", "--scopes is required in non-interactive mode.");
       }
       scopes = await input({ message: "Scopes (space-delimited):" });
     }
@@ -127,7 +123,6 @@ export const oauthAddCommand = new Command("add")
       spinner.success({ text: `OAuth connection "${connectionName}" created` });
     } catch (error) {
       spinner.error({ text: "Failed to create OAuth connection" });
-      logger.error(error instanceof Error ? error.message : "Unknown error");
-      process.exit(1);
+      throw new CliError("API_ERROR", error instanceof Error ? error.message : "Failed to create OAuth connection");
     }
-  });
+  }));
