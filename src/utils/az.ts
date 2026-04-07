@@ -4,7 +4,7 @@ import { CliError } from "./errors.js";
 
 export function isAzInstalled(): boolean {
   try {
-    execFileSync("az", ["version"], { stdio: "pipe" });
+    execFileSync("az", ["version"], { stdio: "pipe", shell: true });
     return true;
   } catch {
     return false;
@@ -13,7 +13,7 @@ export function isAzInstalled(): boolean {
 
 export function isAzLoggedIn(): boolean {
   try {
-    execFileSync("az", ["account", "show"], { stdio: "pipe" });
+    execFileSync("az", ["account", "show"], { stdio: "pipe", shell: true });
     return true;
   } catch {
     return false;
@@ -42,6 +42,7 @@ export function runAz<T = unknown>(args: string[]): T {
   const output = execFileSync("az", [...args, "--output", "json"], {
     encoding: "utf-8",
     stdio: ["pipe", "pipe", "pipe"],
+    shell: true,
   });
   const trimmed = output.trim();
   if (!trimmed) return undefined as T;
