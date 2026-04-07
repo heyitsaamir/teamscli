@@ -64,7 +64,7 @@ async function editField(
 ): Promise<AppDetails | null> {
   const field = FIELDS.find((f) => f.key === fieldKey);
   if (!field) {
-    logger.info(pc.red(`Unknown field: ${String(fieldKey)}`));
+    logger.error(pc.red(`Unknown field: ${String(fieldKey)}`));
     return null;
   }
 

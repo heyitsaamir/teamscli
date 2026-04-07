@@ -112,7 +112,7 @@ export async function showEditMenu(app: AppSummary, token: string): Promise<void
         ensureAz();
         const azContext = discoverAzureBot(botId);
         if (!azContext) {
-          logger.info(pc.red("Could not find this bot in Azure."));
+          logger.error(pc.red("Could not find this bot in Azure."));
           continue;
         }
         const handler = createAzureBotHandler(azContext);

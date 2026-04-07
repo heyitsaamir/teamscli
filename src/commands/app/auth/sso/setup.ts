@@ -191,7 +191,7 @@ export const ssoSetupCommand = new Command("setup")
         "--provider-scope-string", scopes,
         "--parameters",
         `tenantId=${azure.tenantId}`,
-        `tokenExchangeUrl=api://${botId}`,
+        `tokenExchangeUrl=api://botid-${botId}`,
         "--subscription", azure.subscription,
       ]);
       oauthSpinner.success({ text: `SSO connection "${connectionName}" created` });
@@ -237,7 +237,7 @@ export const ssoSetupCommand = new Command("setup")
     } else {
       logger.info(pc.bold(pc.green("\nSSO configured!")));
       logger.info(`${pc.dim("Connection name:")} ${connectionName}`);
-      logger.info(`${pc.dim("Identifier URI:")} api://${botId}`);
+      logger.info(`${pc.dim("Identifier URI:")} api://botid-${botId}`);
       logger.info(`${pc.dim("Scopes:")} ${scopes}`);
     }
   }));

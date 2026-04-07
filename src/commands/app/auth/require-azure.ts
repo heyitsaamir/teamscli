@@ -52,7 +52,7 @@ export async function requireAzureBot(appIdArg?: string, silent = false): Promis
 
   if (location === "bf") {
     if (isInteractive()) {
-      logger.info(pc.yellow("This feature requires an Azure bot."));
+      logger.warn(pc.yellow("This feature requires an Azure bot."));
 
       const migrate = await confirm({
         message: "Would you like to migrate this bot to Azure now?",

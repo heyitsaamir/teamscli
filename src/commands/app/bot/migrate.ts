@@ -202,8 +202,8 @@ export const botMigrateCommand = new Command("migrate")
         if (options.json) {
           outputJson({ ok: false, error: { code: "API_ARM_ERROR", message: "Migration failed and rollback failed" }, rolledBack: false });
         } else {
-          logger.info(pc.red("Could not restore BF registration. Re-register manually:"));
-          logger.info(pc.cyan(`  teams app create --name "${botName}" --bf`));
+          logger.error(pc.red("Could not restore BF registration. Re-register manually:"));
+          logger.error(pc.cyan(`  teams app create --name "${botName}" --bf`));
         }
       }
       process.exit(1);

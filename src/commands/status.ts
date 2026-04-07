@@ -3,12 +3,13 @@ import { createSpinner } from "nanospinner";
 import pc from "picocolors";
 import { getAccount, paths } from "../auth/index.js";
 import { isAzInstalled, isAzLoggedIn, runAz } from "../utils/az.js";
+import { wrapAction } from "../utils/errors.js";
 import { logger } from "../utils/logger.js";
 
 export const statusCommand = new Command("status")
     .description("Show current CLI status")
     .option("-v, --verbose", "[OPTIONAL] Show additional details")
-    .action(async (options: { verbose?: boolean }) => {
+    .action(wrapAction(async (options: { verbose?: boolean }) => {
         const spinner = createSpinner("Checking status...").start();
         const account = await getAccount();
 
@@ -40,4 +41,4 @@ export const statusCommand = new Command("status")
                 logger.info(`\n${pc.dim("Azure CLI:")} installed, ${pc.yellow("status unknown")}`);
             }
         }
-    });
+    }));

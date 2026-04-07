@@ -4,6 +4,7 @@ import { createSpinner } from "nanospinner";
 import { runAz } from "../../../../utils/az.js";
 import { logger } from "../../../../utils/logger.js";
 import { CliError, wrapAction } from "../../../../utils/errors.js";
+import { outputJson } from "../../../../utils/json-output.js";
 import { requireAzureBot } from "../require-azure.js";
 
 interface AuthSetting {
@@ -33,7 +34,7 @@ export const oauthListCommand = new Command("list")
       spinner.stop();
 
       if (options.json) {
-        logger.info(JSON.stringify(settings, null, 2));
+        outputJson(settings);
         return;
       }
 
