@@ -8,19 +8,40 @@ This is a TypeScript CLI tool (`teams`) for managing Microsoft Teams apps. It us
 
 - Avoid `as unknown as X` double-casts and `any` types. Prefer fixing the underlying type (adding a field to an interface, using a proper generic, etc.) over casting.
 - Use `Intl.DateTimeFormat` via `formatDate()` from `src/utils/date.ts` for dates — no `moment` or `date-fns`.
-- Use `logger` from `src/utils/logger.ts` for logging. `--verbose` enables `logger.debug()`.
 - Use `picocolors` (`pc`) for terminal styling:
   - Success/username: `pc.bold(pc.green(...))`
   - Warning: `pc.yellow(...)`
   - Command hints: `pc.cyan(...)`
   - Labels: `pc.dim(...)`
   - Errors: `pc.red(...)`
-- Use `nanospinner` for async operations. Always include descriptive text.
+
+### Logging & Errors
+
+Use `logger` from `src/utils/logger.ts` for all output. Never use `console.log`/`console.error` directly (except inside `logger.ts` and `json-output.ts`).
+
+- `logger.info(...)` — general output (stdout)
+- `logger.warn(...)` — warnings (stderr)
+- `logger.error(...)` — errors (stderr)
+- `logger.debug(...)` — verbose-only, gated by `--verbose`
+
+For error conditions, throw `CliError` from `src/utils/errors.ts`. Wrap command `.action()` handlers with `wrapAction()` — it catches `CliError` and unknown errors, routes to JSON or human output, and handles `ExitPromptError` gracefully.
+
+### Spinners
+
+Use `createSilentSpinner()` from `src/utils/spinner.ts` (not `createSpinner` from nanospinner directly). Pass `silent = true` when `--json` is active to suppress visual output. Always include descriptive text.
 
 ### CLI Options
 
 - Prefix truly optional flags with `[OPTIONAL]` in their description.
 - Do NOT mark as `[OPTIONAL]` if the value will be prompted interactively when not provided.
+
+### Auto-Confirm (`--yes` / `-y`)
+
+The `--yes` global flag skips interactive confirmation prompts (for CI/agent use). State is managed via `setAutoConfirm`/`isAutoConfirm` in `src/utils/interactive.ts`. Before any `confirm()` call, check `isAutoConfirm()` and accept the default action if true.
+
+### JSON Output
+
+Every command MUST support `--json` (boolean flag, marked `[OPTIONAL]`). Each command defines a typed output interface in its own file (e.g., `AppCreateOutput`). Use `outputJson()` from `src/utils/json-output.ts`. Guard all human output (`logger.info`, `outputCredentials`) with `if (!options.json)`. Skip interactive prompts in JSON mode — use defaults or require flags.
 
 ### Commander Patterns
 
@@ -32,6 +53,10 @@ This is a TypeScript CLI tool (`teams`) for managing Microsoft Teams apps. It us
 - Check if a shared function already exists before implementing logic.
 - Extract reusable logic into shared modules (`src/utils/`, action files like `manifest/actions.ts`, `secret/generate.ts`).
 - Never duplicate business logic across interactive menus and CLI subcommands — both should call the same shared function.
+
+### Build
+
+Always run `pnpm build` after changes — the CLI runs from `dist/`, not source. `tsc --noEmit` only type-checks.
 
 ## Architecture
 
