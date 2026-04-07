@@ -24,7 +24,7 @@ Use `logger` from `src/utils/logger.ts`. `--verbose` enables `logger.debug()`.
 
 ## Spinners
 
-Use `nanospinner` for async operations. Always include descriptive text.
+Use `createSilentSpinner()` from `src/utils/spinner.ts` (not `createSpinner` from nanospinner directly). Pass `silent = true` when `--json` is active to suppress visual output. Always include descriptive text.
 
 ## TypeScript
 
@@ -47,6 +47,10 @@ Before implementing logic, check if a shared function already exists for it. Ext
 ## Build
 
 Always run `npm run build` after changes — the CLI runs from `dist/`, not source. `tsc --noEmit` only type-checks.
+
+## JSON Output
+
+Every command MUST support `--json` (boolean flag, marked `[OPTIONAL]`). Each command defines a typed output interface in its own file (e.g., `AppCreateOutput`). Use `outputJson()` from `src/utils/json-output.ts`. Guard all human output (`console.log`, `logger.info`, `outputCredentials`) with `if (!options.json)`. Skip interactive prompts in JSON mode — use defaults or require flags.
 
 ## Commander Patterns
 
