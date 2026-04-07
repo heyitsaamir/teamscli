@@ -27,9 +27,15 @@ process.on("unhandledRejection", (error) => {
 const require = createRequire(import.meta.url);
 const { version } = require("../package.json");
 
+// Teams brand purple (#7B83EB) via truecolor escape
+function teamsColor(text: string): string {
+  if (!process.stdout.isTTY) return text;
+  return `\x1b[38;2;123;131;235m${text}\x1b[39m`;
+}
+
 program
   .name("teams")
-  .description("CLI for scaffolding Teams applications")
+  .addHelpText("beforeAll", `${pc.bold(teamsColor("Teams CLI"))} ${pc.bold(pc.yellow("[Beta]"))}\nWork seamlessly with Teams apps from the command line.\n`)
   .version(version)
   .option("-v, --verbose", "[OPTIONAL] Enable verbose logging")
   .option("-y, --yes", "[OPTIONAL] Auto-confirm prompts (for CI/agent use)")
