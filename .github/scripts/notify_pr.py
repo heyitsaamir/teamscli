@@ -27,8 +27,10 @@ def build_pr_card() -> AdaptiveCard:
     body = os.environ.get("PR_BODY", "") or ""
     labels = os.environ.get("PR_LABELS", "") or ""
 
-    # Truncate body for the card
-    summary = body[:200] + "..." if len(body) > 200 else body
+    # Replace markdown headers with bold text for the card
+    import re
+    clean = re.sub(r"^#{1,6}\s+(.+)$", r"**\1**", body, flags=re.MULTILINE)
+    summary = clean[:200] + "..." if len(clean) > 200 else clean
 
     facts = [
         Fact(title="Author", value=f"@{author}"),

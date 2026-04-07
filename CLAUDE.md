@@ -63,7 +63,7 @@ Before implementing logic, check if a shared function already exists for it. Ext
 
 ## Build
 
-Always run `npm run build` after changes — the CLI runs from `dist/`, not source. `tsc --noEmit` only type-checks.
+Always run `pnpm build` after changes — the CLI runs from `dist/`, not source. `tsc --noEmit` only type-checks.
 
 ## JSON Output
 
