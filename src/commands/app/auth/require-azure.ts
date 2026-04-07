@@ -51,7 +51,7 @@ export async function requireAzureBot(appIdArg?: string, silent = false): Promis
   const location = await getBotLocation(token, botId);
 
   if (location === "bf") {
-    if (isAutoConfirm()) {
+    if (isAutoConfirm() && isInteractive()) {
       logger.warn(pc.yellow("This feature requires an Azure bot. Auto-confirming migration..."));
       await botMigrateCommand.parseAsync([appId], { from: "user" });
 
