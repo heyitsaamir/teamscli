@@ -1,6 +1,6 @@
 # SSO Architecture
 
-Single Sign-On (SSO) lets your Teams bot authenticate users silently using their existing Teams identity. This page explains the architecture and what `teams app auth sso setup` configures.
+Single Sign-On (SSO) lets your Teams bot authenticate users silently using their existing Teams identity. This page explains the architecture and what `teams app user-auth sso setup` configures.
 
 ## Overview
 
@@ -12,7 +12,7 @@ SSO for Teams bots involves three systems working together:
 
 ## What SSO Setup Configures
 
-`teams app auth sso setup` performs three steps in sequence:
+`teams app user-auth sso setup` performs three steps in sequence:
 
 ### Step 1: AAD App Configuration
 

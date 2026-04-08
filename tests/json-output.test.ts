@@ -361,12 +361,12 @@ describe("--json lifecycle (requires Azure)", () => {
     });
   });
 
-  describe("app auth sso setup --json", () => {
+  describe("app user-auth sso setup --json", () => {
     it("configures SSO with all expected fields", () => {
       if (!hasAzure) return;
 
       const { data, exitCode } = runJson(
-        `${CLI} app auth sso setup "${createdAppId}" ` +
+        `${CLI} app user-auth sso setup "${createdAppId}" ` +
           `--connection-name "sso-vitest" --json`
       );
       expect(exitCode).toBe(0);
@@ -385,7 +385,7 @@ describe("--json lifecycle (requires Azure)", () => {
       if (!hasAzure) return;
 
       const { data, exitCode } = runJson(
-        `${CLI} app auth sso setup "${createdAppId}" ` +
+        `${CLI} app user-auth sso setup "${createdAppId}" ` +
           `--connection-name "sso-vitest-auto" --json`
       );
       expect(exitCode).toBe(0);
@@ -396,7 +396,7 @@ describe("--json lifecycle (requires Azure)", () => {
       if (!hasAzure) return;
 
       const { stdout } = run(
-        `${CLI} app auth sso setup "${createdAppId}" ` +
+        `${CLI} app user-auth sso setup "${createdAppId}" ` +
           `--connection-name "sso-vitest-clean" --json`
       );
       const parsed = JSON.parse(stdout);

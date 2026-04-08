@@ -58,6 +58,6 @@ teams app doctor <appId>
 ### When to Use
 
 - After `app create` to verify everything was set up correctly
-- After `app auth sso setup` to confirm SSO wiring
+- After `app user-auth sso setup` to confirm SSO wiring
 - After `app bot migrate` to check the new Azure bot
 - When debugging authentication or token issues

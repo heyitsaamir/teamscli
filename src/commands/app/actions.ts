@@ -6,15 +6,15 @@ import { showEditMenu } from "./edit.js";
 import { showAppDetail, downloadAppPackage } from "../../apps/index.js";
 import { logger } from "../../utils/logger.js";
 import { downloadManifest } from "./manifest/actions.js";
-import { generateSecret } from "./auth/secret/generate.js";
-import { oauthAddCommand } from "./auth/oauth/add.js";
-import { oauthListCommand } from "./auth/oauth/list.js";
-import { oauthRemoveCommand } from "./auth/oauth/remove.js";
-import { ssoSetupCommand } from "./auth/sso/setup.js";
-import { ssoEditCommand } from "./auth/sso/edit.js";
-import { ssoRemoveCommand } from "./auth/sso/remove.js";
-import { requireAzureBot } from "./auth/require-azure.js";
+import { oauthAddCommand } from "./user-auth/oauth/add.js";
+import { oauthListCommand } from "./user-auth/oauth/list.js";
+import { oauthRemoveCommand } from "./user-auth/oauth/remove.js";
+import { ssoSetupCommand } from "./user-auth/sso/setup.js";
+import { ssoEditCommand } from "./user-auth/sso/edit.js";
+import { ssoRemoveCommand } from "./user-auth/sso/remove.js";
+import { requireAzureBot } from "./user-auth/require-azure.js";
 import { runAz } from "../../utils/az.js";
+import { authCommand } from "./auth/index.js";
 import { appDoctorCommand } from "./doctor.js";
 import type { AppSummary } from "../../apps/types.js";
 
@@ -109,8 +109,8 @@ export async function showAppActions(app: AppSummary, token: string): Promise<vo
         { name: "Edit", value: "edit" },
         { name: "Download package", value: "package" },
         { name: "Download manifest", value: "manifest" },
-        { name: "Generate secret", value: "secret" },
-        { name: "User Auth (OAuth/SSO)", value: "auth" },
+        { name: "Auth (secrets)", value: "credentials" },
+        { name: "User Auth (OAuth/SSO)", value: "user-auth" },
         { name: "Doctor (diagnostics)", value: "doctor" },
         { name: "Back", value: "back" },
       ],
@@ -139,13 +139,14 @@ export async function showAppActions(app: AppSummary, token: string): Promise<vo
       } catch (error) {
         logger.error(pc.red(error instanceof Error ? error.message : "Unknown error"));
       }
-    } else if (action === "secret") {
+    } else if (action === "credentials") {
       try {
-        await generateSecret({ tdpToken: token, appId: app.teamsAppId, interactive: true });
+        await authCommand.parseAsync([app.teamsAppId], { from: "user" });
       } catch (error) {
+        if (error instanceof Error && error.name === "ExitPromptError") continue;
         logger.error(pc.red(error instanceof Error ? error.message : "Unknown error"));
       }
-    } else if (action === "auth") {
+    } else if (action === "user-auth") {
       try {
         await showAuthMenu(app.teamsAppId, token);
       } catch (error) {
