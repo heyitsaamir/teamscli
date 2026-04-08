@@ -110,7 +110,7 @@ export async function showAppActions(app: AppSummary, token: string): Promise<vo
         { name: "Download package", value: "package" },
         { name: "Download manifest", value: "manifest" },
         { name: "Generate secret", value: "secret" },
-        { name: "Auth (OAuth/SSO)", value: "auth" },
+        { name: "User Auth (OAuth/SSO)", value: "auth" },
         { name: "Doctor (diagnostics)", value: "doctor" },
         { name: "Back", value: "back" },
       ],

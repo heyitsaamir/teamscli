@@ -6,7 +6,7 @@ import { ssoCommand } from "./sso/index.js";
 import { isInteractive } from "../../../utils/interactive.js";
 
 export const authCommand = new Command("auth")
-  .description("Manage app authentication")
+  .description("Manage user authentication")
   .action(async function (this: Command) {
     if (!isInteractive()) {
       this.help();
