@@ -1,5 +1,4 @@
 import AdmZip from "adm-zip";
-import * as fs from "node:fs";
 
 export interface ManifestOptions {
   botId: string;
@@ -109,27 +108,3 @@ export function createManifestZip(options: ManifestOptions): Buffer {
   return zip.toBuffer();
 }
 
-export function readManifestFile(filePath: string): Manifest {
-  const content = fs.readFileSync(filePath, "utf-8");
-  return JSON.parse(content) as Manifest;
-}
-
-export function updateManifestBotId(manifest: Manifest, botId: string): Manifest {
-  const updated = { ...manifest, id: botId };
-  if (updated.bots && updated.bots.length > 0) {
-    updated.bots = updated.bots.map((bot) => ({ ...bot, botId }));
-  }
-  return updated;
-}
-
-export function createZipFromManifest(manifest: Manifest): Buffer {
-  const zip = new AdmZip();
-  zip.addFile("manifest.json", Buffer.from(JSON.stringify(manifest, null, 2)));
-  zip.addFile("color.png", createPlaceholderPng());
-  zip.addFile("outline.png", createPlaceholderPng());
-  return zip.toBuffer();
-}
-
-export function readZipFile(filePath: string): Buffer {
-  return fs.readFileSync(filePath);
-}

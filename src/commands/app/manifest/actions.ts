@@ -1,10 +1,8 @@
 import AdmZip from "adm-zip";
-import { readFile, writeFile } from "node:fs/promises";
+import { writeFile } from "node:fs/promises";
 import pc from "picocolors";
 import { createSpinner } from "nanospinner";
-import { downloadAppPackage, uploadManifest } from "../../../apps/index.js";
-import type { TeamsManifest } from "../../../apps/api.js";
-import type { AppDetails } from "../../../apps/types.js";
+import { downloadAppPackage } from "../../../apps/index.js";
 import { logger } from "../../../utils/logger.js";
 
 /**
@@ -33,44 +31,5 @@ export async function downloadManifest(token: string, appId: string, filePath?: 
     logger.info(pc.green(`Manifest saved to ${filePath}`));
   } else {
     logger.info(JSON.stringify(manifestJson, null, 2));
-  }
-}
-
-/**
- * Read, validate, and upload a manifest.json to update an existing app.
- * Returns updated app details. Throws on failure.
- */
-export async function uploadManifestFromFile(token: string, teamsAppId: string, filePath: string): Promise<AppDetails> {
-  let manifest: TeamsManifest;
-  try {
-    const content = await readFile(filePath, "utf-8");
-    manifest = JSON.parse(content) as TeamsManifest;
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === "ENOENT") {
-      throw new Error(`File not found: ${filePath}`);
-    } else if (error instanceof SyntaxError) {
-      throw new Error(`Invalid JSON in ${filePath}: ${error.message}`);
-    }
-    throw new Error(`Failed to read ${filePath}: ${error instanceof Error ? error.message : "Unknown error"}`);
-  }
-
-  if (!manifest.name?.short) {
-    throw new Error("Invalid manifest: missing name.short");
-  }
-  if (!manifest.version) {
-    throw new Error("Invalid manifest: missing version");
-  }
-
-  const spinner = createSpinner("Uploading manifest...").start();
-
-  try {
-    const result = await uploadManifest(token, teamsAppId, manifest);
-    spinner.success({ text: "Manifest uploaded successfully" });
-    logger.info(`${pc.dim("App:")} ${result.shortName}`);
-    logger.info(`${pc.dim("Version:")} ${result.version}`);
-    return result;
-  } catch (error) {
-    spinner.error({ text: "Failed to upload manifest" });
-    throw error;
   }
 }
