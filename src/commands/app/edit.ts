@@ -2,9 +2,10 @@ import { Command } from "commander";
 import { select, input } from "@inquirer/prompts";
 import pc from "picocolors";
 import { getAccount, getTokenSilent, teamsDevPortalScopes } from "../../auth/index.js";
-import { fetchApp, fetchBot, updateBot, updateAppDetails, fetchAppDetailsV2, showBasicInfoEditor, getBotLocation, createTdpBotHandler, createAzureBotHandler, discoverAzureBot, extractDomain } from "../../apps/index.js";
+import { fetchApp, fetchBot, updateBot, updateAppDetails, fetchAppDetailsV2, showBasicInfoEditor, getBotLocation, createTdpBotHandler, createAzureBotHandler, discoverAzureBot, extractDomain, uploadIcon } from "../../apps/index.js";
 import { ensureAz } from "../../utils/az.js";
 import { CliError, wrapAction } from "../../utils/errors.js";
+import { readAndValidateIcon } from "../../utils/icon.js";
 import { outputJson } from "../../utils/json-output.js";
 import { logger } from "../../utils/logger.js";
 import { pickApp } from "../../utils/app-picker.js";
@@ -13,18 +14,38 @@ import type { AppSummary, AppDetails } from "../../apps/types.js";
 import type { BotDetails } from "../../apps/tdp.js";
 import type { BotLocation } from "../../apps/bot-location.js";
 
-interface AppEditEndpointOutput {
-  teamsAppId: string;
-  botId: string;
-  updated: {
-    endpoint: string;
-  };
-  validDomains: string[];
+interface EditOptions {
+  endpoint?: string;
+  name?: string;
+  longName?: string;
+  shortDescription?: string;
+  longDescription?: string;
+  version?: string;
+  developer?: string;
+  website?: string;
+  privacyUrl?: string;
+  termsUrl?: string;
+  colorIcon?: string;
+  outlineIcon?: string;
+  json?: boolean;
 }
 
-interface AppEditInfoOutput {
+interface AppEditOutput {
   teamsAppId: string;
-  updated: Record<string, unknown>;
+  updated: {
+    endpoint?: string;
+    shortName?: string;
+    longName?: string;
+    shortDescription?: string;
+    longDescription?: string;
+    version?: string;
+    developerName?: string;
+    websiteUrl?: string;
+    privacyUrl?: string;
+    termsOfUseUrl?: string;
+    colorIcon?: boolean;
+    outlineIcon?: boolean;
+  };
 }
 
 /**
@@ -83,6 +104,7 @@ export async function showEditMenu(app: AppSummary, token: string): Promise<void
       choices: [
         { name: "Basic info", value: "edit-basic-info" },
         ...(showEndpoint ? [{ name: "Endpoint", value: "edit-endpoint" }] : []),
+        { name: "Icons", value: "edit-icons" },
         { name: "Back", value: "back" },
       ],
     });
@@ -91,6 +113,35 @@ export async function showEditMenu(app: AppSummary, token: string): Promise<void
 
     if (action === "edit-basic-info") {
       appDetails = await showBasicInfoEditor(appDetails, token);
+      continue;
+    }
+
+    if (action === "edit-icons") {
+      const colorPath = (await input({
+        message: "Color icon path (192x192 PNG, leave empty to skip):",
+      })) || undefined;
+
+      if (colorPath) {
+        const { base64 } = readAndValidateIcon(colorPath, 192);
+        const iconSpinner = createSilentSpinner("Uploading color icon...").start();
+        await uploadIcon(token, app.teamsAppId, "color", base64);
+        iconSpinner.success({ text: "Color icon uploaded" });
+      }
+
+      const outlinePath = (await input({
+        message: "Outline icon path (32x32 PNG, leave empty to skip):",
+      })) || undefined;
+
+      if (outlinePath) {
+        const { base64 } = readAndValidateIcon(outlinePath, 32);
+        const iconSpinner = createSilentSpinner("Uploading outline icon...").start();
+        await uploadIcon(token, app.teamsAppId, "outline", base64);
+        iconSpinner.success({ text: "Outline icon uploaded" });
+      }
+
+      if (!colorPath && !outlinePath) {
+        logger.info(pc.dim("\nNo changes made."));
+      }
       continue;
     }
 
@@ -175,8 +226,10 @@ export const appEditCommand = new Command("edit")
   .option("--website <url>", "[OPTIONAL] Set the website URL (HTTPS required)")
   .option("--privacy-url <url>", "[OPTIONAL] Set the privacy policy URL (HTTPS required)")
   .option("--terms-url <url>", "[OPTIONAL] Set the terms of use URL (HTTPS required)")
+  .option("--color-icon <path>", "[OPTIONAL] Set the color icon (192x192 PNG)")
+  .option("--outline-icon <path>", "[OPTIONAL] Set the outline icon (32x32 PNG)")
   .option("--json", "[OPTIONAL] Output as JSON")
-  .action(wrapAction(async (appIdArg: string | undefined, options) => {
+  .action(wrapAction(async (appIdArg: string | undefined, options: EditOptions) => {
     const silent = !!options.json;
 
     // Check if any mutation flags were provided
@@ -189,7 +242,9 @@ export const appEditCommand = new Command("edit")
       || options.developer !== undefined
       || options.website !== undefined
       || options.privacyUrl !== undefined
-      || options.termsUrl !== undefined;
+      || options.termsUrl !== undefined
+      || options.colorIcon !== undefined
+      || options.outlineIcon !== undefined;
 
     // --json requires mutation flags
     if (options.json && !hasMutationFlags) {
@@ -234,7 +289,10 @@ export const appEditCommand = new Command("edit")
       return;
     }
 
-    // Scripting mode: mutation flags provided
+    // Scripting mode: apply all mutation flags
+    const allUpdates: AppEditOutput["updated"] = {};
+
+    // --- Endpoint ---
     if (options.endpoint) {
       if (!app.bots || app.bots.length === 0) {
         throw new CliError("NOT_FOUND_BOT", "This app has no bots.");
@@ -277,63 +335,50 @@ export const appEditCommand = new Command("edit")
       const details = await fetchAppDetailsV2(token, appId);
       const domains = (details.validDomains as string[]) ?? [];
       const domain = extractDomain(options.endpoint);
-      let validDomains = domains;
       if (domain && !domains.includes(domain)) {
         const domainSpinner = createSilentSpinner("Updating valid domains...", silent).start();
-        validDomains = [...domains, domain];
-        await updateAppDetails(token, appId, { validDomains });
+        await updateAppDetails(token, appId, { validDomains: [...domains, domain] });
         domainSpinner.success({ text: `Added ${domain} to valid domains` });
       }
 
-      if (options.json) {
-        const result: AppEditEndpointOutput = {
-          teamsAppId: appId,
-          botId: app.bots[0].botId,
-          updated: { endpoint: options.endpoint },
-          validDomains,
-        };
-        outputJson(result);
-      }
-      return;
+      allUpdates.endpoint = options.endpoint;
     }
 
-    // Handle basic info field updates
-    const basicInfoUpdates: Record<string, unknown> = {};
-
+    // --- Basic info fields ---
     if (options.name !== undefined) {
       if (options.name.length > 30) {
         throw new CliError("VALIDATION_FORMAT", "Short name must be 30 characters or less.");
       }
-      basicInfoUpdates.shortName = options.name;
+      allUpdates.shortName = options.name;
     }
 
     if (options.longName !== undefined) {
       if (options.longName.length > 100) {
         throw new CliError("VALIDATION_FORMAT", "Long name must be 100 characters or less.");
       }
-      basicInfoUpdates.longName = options.longName;
+      allUpdates.longName = options.longName;
     }
 
     if (options.shortDescription !== undefined) {
       if (options.shortDescription.length > 80) {
         throw new CliError("VALIDATION_FORMAT", "Short description must be 80 characters or less.");
       }
-      basicInfoUpdates.shortDescription = options.shortDescription;
+      allUpdates.shortDescription = options.shortDescription;
     }
 
     if (options.longDescription !== undefined) {
       if (options.longDescription.length > 4000) {
         throw new CliError("VALIDATION_FORMAT", "Long description must be 4000 characters or less.");
       }
-      basicInfoUpdates.longDescription = options.longDescription;
+      allUpdates.longDescription = options.longDescription;
     }
 
     if (options.version !== undefined) {
-      basicInfoUpdates.version = options.version;
+      allUpdates.version = options.version;
     }
 
     if (options.developer !== undefined) {
-      basicInfoUpdates.developerName = options.developer;
+      allUpdates.developerName = options.developer;
     }
 
     const httpsUrlRegex = /^https:\/\/\S+$/i;
@@ -342,39 +387,61 @@ export const appEditCommand = new Command("edit")
       if (!httpsUrlRegex.test(options.website)) {
         throw new CliError("VALIDATION_FORMAT", "Website URL must start with https:// and include a domain.");
       }
-      basicInfoUpdates.websiteUrl = options.website;
+      allUpdates.websiteUrl = options.website;
     }
 
     if (options.privacyUrl !== undefined) {
       if (!httpsUrlRegex.test(options.privacyUrl)) {
         throw new CliError("VALIDATION_FORMAT", "Privacy URL must start with https:// and include a domain.");
       }
-      basicInfoUpdates.privacyUrl = options.privacyUrl;
+      allUpdates.privacyUrl = options.privacyUrl;
     }
 
     if (options.termsUrl !== undefined) {
       if (!httpsUrlRegex.test(options.termsUrl)) {
         throw new CliError("VALIDATION_FORMAT", "Terms of use URL must start with https:// and include a domain.");
       }
-      basicInfoUpdates.termsOfUseUrl = options.termsUrl;
+      allUpdates.termsOfUseUrl = options.termsUrl;
     }
 
+    // Apply basic info updates (endpoint and icons use separate API calls)
+    const { endpoint: _ep, colorIcon: _ci, outlineIcon: _oi, ...basicInfoUpdates } = allUpdates;
     if (Object.keys(basicInfoUpdates).length > 0) {
       const spinner = createSilentSpinner("Updating app details...", silent).start();
       await updateAppDetails(token, appId, basicInfoUpdates);
       spinner.success({ text: "App details updated successfully" });
 
-      if (options.json) {
-        const result: AppEditInfoOutput = {
-          teamsAppId: appId,
-          updated: basicInfoUpdates,
-        };
-        outputJson(result);
-      } else {
+      if (!options.json) {
         for (const [key, value] of Object.entries(basicInfoUpdates)) {
           const label = key.replace(/([A-Z])/g, " $1").toLowerCase().trim();
           logger.info(`${pc.dim(label + ":")} ${value}`);
         }
       }
+    }
+
+    // --- Icons ---
+    if (options.colorIcon) {
+      const { base64 } = readAndValidateIcon(options.colorIcon, 192);
+      const spinner = createSilentSpinner("Uploading color icon...", silent).start();
+      await uploadIcon(token, appId, "color", base64);
+      spinner.success({ text: "Color icon uploaded" });
+      allUpdates.colorIcon = true;
+    }
+
+    if (options.outlineIcon) {
+      const { base64 } = readAndValidateIcon(options.outlineIcon, 32);
+      const spinner = createSilentSpinner("Uploading outline icon...", silent).start();
+      await uploadIcon(token, appId, "outline", base64);
+      spinner.success({ text: "Outline icon uploaded" });
+      allUpdates.outlineIcon = true;
+    }
+
+    // Single JSON output for all updates
+    if (options.json) {
+      const result: AppEditOutput = {
+        teamsAppId: appId,
+        updated: allUpdates,
+      };
+      outputJson(result);
     }
   }));

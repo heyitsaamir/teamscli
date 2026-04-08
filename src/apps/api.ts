@@ -187,6 +187,42 @@ function manifestToAppDetails(manifest: TeamsManifest): Partial<AppDetails> {
 }
 
 /**
+ * Upload an icon to a Teams app via TDP.
+ * Two-step process: upload bytes, then write the returned URL back to the app definition.
+ */
+export async function uploadIcon(
+  token: string,
+  teamsAppId: string,
+  iconType: "color" | "outline",
+  base64String: string,
+): Promise<void> {
+  // Step 1: Upload icon bytes
+  const uploadResponse = await apiFetch(`${TDP_BASE_URL}/appdefinitions/${teamsAppId}/image`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      type: iconType,
+      name: "",
+      base64String,
+    }),
+  });
+
+  if (!uploadResponse.ok) {
+    const error = await uploadResponse.text();
+    throw new Error(`Failed to upload ${iconType} icon: ${uploadResponse.status} ${error}`);
+  }
+
+  const iconUrl: string = await uploadResponse.json();
+
+  // Step 2: Write URL back to app definition (read-modify-write to preserve the other icon)
+  const field = iconType === "color" ? "colorIcon" : "outlineIcon";
+  await updateAppDetails(token, teamsAppId, { [field]: iconUrl });
+}
+
+/**
  * Upload a manifest.json to update an existing app.
  * Uses read-modify-write pattern to preserve server-side fields.
  */

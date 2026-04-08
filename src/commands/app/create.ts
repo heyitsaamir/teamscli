@@ -22,6 +22,7 @@ import {
 } from "../../auth/index.js";
 import { outputCredentials } from "../../utils/env.js";
 import { CliError, wrapAction } from "../../utils/errors.js";
+import { readAndValidateIcon } from "../../utils/icon.js";
 import { outputJson } from "../../utils/json-output.js";
 import { logger } from "../../utils/logger.js";
 import { isInteractive } from "../../utils/interactive.js";
@@ -48,6 +49,8 @@ interface CreateOptions {
 	name?: string;
 	endpoint?: string;
 	env?: string;
+	colorIcon?: string;
+	outlineIcon?: string;
 	azure?: boolean;
 	teamsManaged?: boolean;
 	subscription?: string;
@@ -68,6 +71,8 @@ export const appCreateCommand = new Command("create")
 	.option("--resource-group <name>", "Azure resource group (required for --azure)")
 	.option("--create-resource-group", "[OPTIONAL] Create the resource group if it doesn't exist")
 	.option("--region <name>", "[OPTIONAL] Azure region for resource group (default: westus2)")
+	.option("--color-icon <path>", "[OPTIONAL] Path to color icon (192x192 PNG)")
+	.option("--outline-icon <path>", "[OPTIONAL] Path to outline icon (32x32 PNG)")
 	.option("--json", "[OPTIONAL] Output as JSON")
 	.action(wrapAction(async (options: CreateOptions) => {
 		const silent = !!options.json;
@@ -163,6 +168,27 @@ export const appCreateCommand = new Command("create")
 			developerOpts = customization.developer;
 		}
 
+		// Get icon paths (prompt only in full interactive mode)
+		const colorIconPath =
+			options.colorIcon ??
+			(interactive && !hasFlags
+				? (await input({
+						message: "Color icon path (192x192 PNG, leave empty to skip):",
+				  })) || undefined
+				: undefined);
+
+		const outlineIconPath =
+			options.outlineIcon ??
+			(interactive && !hasFlags
+				? (await input({
+						message: "Outline icon path (32x32 PNG, leave empty to skip):",
+				  })) || undefined
+				: undefined);
+
+		// Validate icons upfront (before any API calls)
+		const colorIcon = colorIconPath ? readAndValidateIcon(colorIconPath, 192) : undefined;
+		const outlineIcon = outlineIconPath ? readAndValidateIcon(outlineIconPath, 32) : undefined;
+
 		// ===== All inputs gathered, now do async work =====
 
 		// Get tokens
@@ -195,6 +221,8 @@ export const appCreateCommand = new Command("create")
 			description: descriptionOpts,
 			scopes: scopeChoices,
 			developer: developerOpts,
+			colorIconBuffer: colorIcon?.buffer,
+			outlineIconBuffer: outlineIcon?.buffer,
 		};
 
 		const zipBuffer = createManifestZip(manifestOpts);

@@ -14,6 +14,7 @@ Be extremely concise — sacrifice grammar for brevity. Every comment MUST inclu
 
 ### TypeScript
 
+- Strong, precise types are extremely important. Every interface, output shape, and function signature must be explicitly typed — never fall back to `Record<string, unknown>`, `any`, or untyped parameters when a concrete type is possible. Define dedicated interfaces for command options, JSON output shapes, and API responses.
 - Avoid `as unknown as X` double-casts and `any` types. Prefer fixing the underlying type (adding a field to an interface, using a proper generic, etc.) over casting.
 - Use `Intl.DateTimeFormat` via `formatDate()` from `src/utils/date.ts` for dates — no `moment` or `date-fns`.
 - Use `picocolors` (`pc`) for terminal styling:

@@ -12,6 +12,8 @@ export interface ManifestOptions {
     privacyUrl: string;
     termsOfUseUrl: string;
   };
+  colorIconBuffer?: Buffer;
+  outlineIconBuffer?: Buffer;
 }
 
 export function extractDomain(url: string): string | null {
@@ -102,8 +104,8 @@ export function createManifestZip(options: ManifestOptions): Buffer {
   const zip = new AdmZip();
 
   zip.addFile("manifest.json", Buffer.from(JSON.stringify(manifest, null, 2)));
-  zip.addFile("color.png", createPlaceholderPng());
-  zip.addFile("outline.png", createPlaceholderPng());
+  zip.addFile("color.png", options.colorIconBuffer ?? createPlaceholderPng());
+  zip.addFile("outline.png", options.outlineIconBuffer ?? createPlaceholderPng());
 
   return zip.toBuffer();
 }

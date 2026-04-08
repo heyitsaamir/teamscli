@@ -10,6 +10,7 @@ export type ErrorCode =
 	| "VALIDATION_CONFLICT"
 	| "VALIDATION_MISSING"
 	| "VALIDATION_FORMAT"
+	| "INVALID_ICON"
 	// Not found
 	| "NOT_FOUND_BOT"
 	| "NOT_FOUND_AAD"
