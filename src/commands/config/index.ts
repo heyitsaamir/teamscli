@@ -8,16 +8,16 @@ import { logger } from "../../utils/logger.js";
 import type { BotLocation } from "../../apps/bot-location.js";
 
 const botLocationCommand = new Command("default-bot-location")
-  .description("Default bot location for app create (bf or azure)")
-  .argument("[value]", "Set to 'bf' or 'azure'. Omit to show current value or pick interactively.")
+  .description("Default bot location for app create (teams-managed or azure)")
+  .argument("[value]", "Set to 'teams-managed' or 'azure'. Omit to show current value or pick interactively.")
   .action(wrapAction(async (value?: string) => {
-    const current = ((await getConfig("default-bot-location")) as BotLocation) ?? "bf";
+    const current = ((await getConfig("default-bot-location")) as BotLocation) ?? "tm";
 
     if (!value && isInteractive()) {
       value = await select({
         message: "Default bot location",
         choices: [
-          { name: "BF tenant (no Azure subscription needed)", value: "bf" },
+          { name: "Teams managed (no Azure subscription needed)", value: "tm" },
           { name: "Azure (requires az CLI + subscription)", value: "azure" },
         ],
         default: current,
@@ -25,21 +25,26 @@ const botLocationCommand = new Command("default-bot-location")
     }
 
     if (!value) {
-      logger.info(current);
+      logger.info(current === "tm" ? "teams-managed" : "azure");
       return;
     }
 
-    if (value !== "bf" && value !== "azure") {
-      throw new CliError("VALIDATION_FORMAT", `Invalid value: ${value}. Must be 'bf' or 'azure'.`);
+    // Accept "teams-managed" as alias for internal "tm" value
+    if (value === "teams-managed") value = "tm";
+
+    if (value !== "tm" && value !== "azure") {
+      throw new CliError("VALIDATION_FORMAT", `Invalid value: ${value}. Must be 'teams-managed' or 'azure'.`);
     }
 
     if (value === current) {
-      logger.info(pc.dim(`default-bot-location is already ${value}`));
+      const displayValue = value === "tm" ? "teams-managed" : "azure";
+      logger.info(pc.dim(`default-bot-location is already ${displayValue}`));
       return;
     }
 
     await setConfig("default-bot-location", value);
-    logger.info(`${pc.dim("default-bot-location")} = ${pc.bold(pc.green(value))}`);
+    const displayValue = value === "tm" ? "teams-managed" : "azure";
+    logger.info(`${pc.dim("default-bot-location")} = ${pc.bold(pc.green(displayValue))}`);
   }));
 
 export const configCommand = new Command("config")
@@ -51,13 +56,13 @@ export const configCommand = new Command("config")
     }
 
     while (true) {
-      const current = ((await getConfig("default-bot-location")) as BotLocation) ?? "bf";
+      const current = ((await getConfig("default-bot-location")) as BotLocation) ?? "tm";
 
       try {
         const setting = await select({
           message: "Configure",
           choices: [
-            { name: `Default bot location ${pc.dim(`(${current})`)}`, value: "default-bot-location" },
+            { name: `Default bot location ${pc.dim(`(${current === "tm" ? "teams-managed" : "azure"})`)}`, value: "default-bot-location" },
             { name: "Back", value: "back" },
           ],
         });

@@ -51,7 +51,7 @@ Configures Single Sign-On (SSO) for a Teams bot in a single command. This is one
 
 ### Prerequisites
 
-- Bot must be in **Azure** (not BF tenant). If it's in BF, migrate first: `teams app bot migrate`
+- Bot must be in **Azure**. If it isn't, migrate first: `teams app bot migrate`
 - Azure CLI (`az`) installed and logged in
 - You need the app's client secret (pass via `--client-secret`)
 

@@ -26,7 +26,7 @@ The CLI will prompt you for a name and handle everything else: AAD app registrat
 teams app create --name "My Bot" --endpoint https://mybot.azurewebsites.net/api/messages
 ```
 
-This creates a bot in the default BF (Bot Framework) tenant. To use Azure instead:
+This creates a Teams-managed bot (no Azure subscription needed). To use Azure instead:
 
 ```bash
 teams app create --name "My Bot" --azure --resource-group my-rg --endpoint https://mybot.azurewebsites.net/api/messages
@@ -75,4 +75,4 @@ teams app
 - [Edit your app's properties](/commands/app/edit) — name, endpoint, version
 - [Download the manifest](/commands/app/manifest-download) to customize it locally
 - [Set up SSO](/commands/app/auth-sso-setup) for single sign-on
-- [Understand bot locations](/concepts/bot-locations) — BF tenant vs Azure
+- [Understand bot locations](/concepts/bot-locations) — Teams-managed vs Azure

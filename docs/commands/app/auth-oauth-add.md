@@ -34,7 +34,7 @@ teams app auth oauth add [appId] [options]
 
 ## Details
 
-Adds an OAuth connection setting to an Azure bot. Requires the bot to be in Azure (not BF tenant).
+Adds an OAuth connection setting to an Azure bot. Requires the bot to be in Azure.
 
 ### Interactive Mode
 

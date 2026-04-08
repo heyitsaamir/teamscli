@@ -73,11 +73,11 @@ The user sees no login prompt — it's completely silent.
 
 ## Requirements
 
-- Bot must be in **Azure** (not BF tenant) — SSO requires OAuth connection management
+- Bot must be in **Azure** — SSO requires OAuth connection management
 - Azure CLI (`az`) must be installed and logged in
 - AAD app must exist (created automatically by `teams app create`)
 
-If your bot is in the BF tenant, [migrate it first](/commands/app/bot-migrate):
+If your bot is Teams-managed, [migrate it first](/commands/app/bot-migrate):
 
 ```bash
 teams app bot migrate <appId> --resource-group my-rg

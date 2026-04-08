@@ -264,7 +264,7 @@ describe("--json lifecycle (requires Azure)", () => {
   describe("app create --json", () => {
     it("returns app details with all expected fields", () => {
       const { data, exitCode } = runJson(
-        `${CLI} app create --name "Vitest JSON Bot" --bf --json`
+        `${CLI} app create --name "Vitest JSON Bot" --teams-managed --json`
       );
       expect(exitCode).toBe(0);
 
@@ -272,7 +272,7 @@ describe("--json lifecycle (requires Azure)", () => {
       expect(typeof data.teamsAppId).toBe("string");
       expect(typeof data.botId).toBe("string");
       expect(data.endpoint).toBeNull();
-      expect(data.botLocation).toBe("bf");
+      expect(data.botLocation).toBe("teams-managed");
 
       // Install link includes the app ID
       expect(typeof data.installLink).toBe("string");
@@ -286,7 +286,7 @@ describe("--json lifecycle (requires Azure)", () => {
     it("includes all three credential fields", () => {
       // Run again to also test endpoint is included when provided
       const { data, exitCode } = runJson(
-        `${CLI} app create --name "Vitest EP Bot" --endpoint "https://ep.example.com/api/messages" --bf --json`
+        `${CLI} app create --name "Vitest EP Bot" --endpoint "https://ep.example.com/api/messages" --teams-managed --json`
       );
       expect(exitCode).toBe(0);
 
@@ -302,7 +302,7 @@ describe("--json lifecycle (requires Azure)", () => {
 
     it("produces no non-JSON output (no spinner leakage)", () => {
       const { stdout } = run(
-        `${CLI} app create --name "Vitest Clean Bot" --bf --json`
+        `${CLI} app create --name "Vitest Clean Bot" --teams-managed --json`
       );
       const parsed = JSON.parse(stdout);
       expect(stdout.trim()).toBe(JSON.stringify(parsed, null, 2));
@@ -310,7 +310,7 @@ describe("--json lifecycle (requires Azure)", () => {
   });
 
   describe("app bot migrate --json", () => {
-    it("migrates BF bot to Azure with full output", () => {
+    it("migrates bot to Azure with full output", () => {
       if (!hasAzure) return;
 
       const rg = env.TEST_AZ_RESOURCE_GROUP ?? "teams-cli-test";
@@ -324,7 +324,7 @@ describe("--json lifecycle (requires Azure)", () => {
 
       expect(data.botId).toBe(createdBotId);
       expect(data.appName).toBe("Vitest JSON Bot");
-      expect(data.from).toBe("bf");
+      expect(data.from).toBe("teams-managed");
       expect(data.to).toBe("azure");
       expect(data.subscription).toBe(env.TEST_AZ_SUBSCRIPTION);
       expect(data.resourceGroup).toBe(rg);

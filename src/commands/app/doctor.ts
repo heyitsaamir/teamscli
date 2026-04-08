@@ -107,7 +107,7 @@ async function checkBotRegistration(
   details: AppDetails,
   tdpToken: string,
   silent = false,
-): Promise<{ botId: string; location: BotLocation; bfBot: BotDetails | null; azure: AzureContext | null } | null> {
+): Promise<{ botId: string; location: BotLocation; tmBot: BotDetails | null; azure: AzureContext | null } | null> {
   const cat = "Bot Registration";
 
   if (!details.bots || details.bots.length === 0) {
@@ -122,32 +122,32 @@ async function checkBotRegistration(
   let location: BotLocation;
   try {
     location = await getBotLocation(tdpToken, botId);
-    results.push({ category: cat, label: `Bot location: ${location === "bf" ? "BF tenant" : "Azure"}`, status: "pass" });
+    results.push({ category: cat, label: `Bot location: ${location === "tm" ? "Teams (managed)" : "Azure"}`, status: "pass" });
   } catch (e) {
     results.push({ category: cat, label: "Could not detect bot location", status: "fail", detail: e instanceof Error ? e.message : undefined });
     return null;
   }
 
-  let bfBot: BotDetails | null = null;
+  let tmBot: BotDetails | null = null;
   let azure: AzureContext | null = null;
 
-  if (location === "bf") {
-    // BF-specific checks
+  if (location === "tm") {
+    // Teams-managed specific checks
     try {
-      bfBot = await fetchBot(tdpToken, botId);
-      results.push({ category: cat, label: "BF bot details fetchable", status: "pass" });
+      tmBot = await fetchBot(tdpToken, botId);
+      results.push({ category: cat, label: "Bot details fetchable", status: "pass" });
 
       // Teams channel
-      if (bfBot.configuredChannels?.includes("msteams")) {
+      if (tmBot.configuredChannels?.includes("msteams")) {
         results.push({ category: cat, label: "Teams channel enabled", status: "pass" });
       } else {
         results.push({ category: cat, label: "Teams channel not enabled", status: "fail", detail: "Add msteams to configuredChannels" });
       }
 
       // Endpoint
-      if (bfBot.messagingEndpoint) {
-        results.push({ category: cat, label: `Endpoint: ${bfBot.messagingEndpoint}`, status: "pass" });
-        const reachable = await checkEndpointReachable(bfBot.messagingEndpoint);
+      if (tmBot.messagingEndpoint) {
+        results.push({ category: cat, label: `Endpoint: ${tmBot.messagingEndpoint}`, status: "pass" });
+        const reachable = await checkEndpointReachable(tmBot.messagingEndpoint);
         if (reachable) {
           results.push({ category: cat, label: "Endpoint reachable", status: "pass" });
         } else {
@@ -157,7 +157,7 @@ async function checkBotRegistration(
         results.push({ category: cat, label: "Messaging endpoint not set", status: "warn" });
       }
     } catch (e) {
-      results.push({ category: cat, label: "Could not fetch BF bot details", status: "fail", detail: e instanceof Error ? e.message : undefined });
+      results.push({ category: cat, label: "Could not fetch bot details", status: "fail", detail: e instanceof Error ? e.message : undefined });
     }
   } else {
     // Azure-specific checks
@@ -214,7 +214,7 @@ async function checkBotRegistration(
     }
   }
 
-  return { botId, location, bfBot, azure };
+  return { botId, location, tmBot, azure };
 }
 
 // --- AAD App checks ---
@@ -378,14 +378,14 @@ async function checkSso(
     results.push({ category: cat, label: "Teams clients not pre-authorized", status: "fail", detail: `Missing: ${missing.join(", ")}` });
   }
 
-  // BF redirect URI
+  // Bot Framework redirect URI
   const web = fullAadApp.web as { redirectUris?: string[] } | undefined;
   const redirectUris = web?.redirectUris ?? [];
-  const bfRedirect = "https://token.botframework.com/.auth/web/redirect";
-  if (redirectUris.includes(bfRedirect)) {
-    results.push({ category: cat, label: "BF redirect URI present", status: "pass" });
+  const botFrameworkRedirect = "https://token.botframework.com/.auth/web/redirect";
+  if (redirectUris.includes(botFrameworkRedirect)) {
+    results.push({ category: cat, label: "Bot Framework redirect URI present", status: "pass" });
   } else {
-    results.push({ category: cat, label: "BF redirect URI missing", status: "fail", detail: bfRedirect });
+    results.push({ category: cat, label: "Bot Framework redirect URI missing", status: "fail", detail: botFrameworkRedirect });
   }
 
   // OAuth connection check (Azure only)
@@ -516,7 +516,7 @@ async function runDoctor(appIdArg: string | undefined, json?: boolean): Promise<
     return;
   }
 
-  const { botId, location, bfBot, azure } = botInfo;
+  const { botId, location, tmBot, azure } = botInfo;
 
   // 2. AAD App
   spinner.update({ text: "Checking AAD app..." }).start();
@@ -543,8 +543,8 @@ async function runDoctor(appIdArg: string | undefined, json?: boolean): Promise<
 
   // 3. Manifest
   const manifestResults: CheckResult[] = [];
-  const endpoint = location === "bf"
-    ? bfBot?.messagingEndpoint
+  const endpoint = location === "tm"
+    ? tmBot?.messagingEndpoint
     : undefined;
   checkManifest(manifestResults, details, botId, endpoint);
   if (!json) {

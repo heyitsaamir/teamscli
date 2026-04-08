@@ -27,7 +27,7 @@ export interface AzureContext {
 }
 
 /**
- * Bot handler that creates/manages bots in the BF tenant via TDP.
+ * Bot handler that creates/manages Teams-managed bots via TDP.
  */
 class TdpBotHandler implements BotHandler {
   constructor(private token: string) {}

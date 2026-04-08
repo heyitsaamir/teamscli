@@ -9,7 +9,7 @@ import { CliError, wrapAction } from "../../../utils/errors.js";
 import { logger } from "../../../utils/logger.js";
 
 export const botStatusCommand = new Command("status")
-  .description("Show bot location (BF tenant or Azure)")
+  .description("Show bot registration details")
   .argument("[appId]", "App ID")
   .action(wrapAction(async (appIdArg?: string) => {
     let token: string;
@@ -42,7 +42,7 @@ export const botStatusCommand = new Command("status")
     spinner.stop();
 
     if (isInteractive()) {
-      const label = location === "bf" ? "BF tenant" : "Azure";
+      const label = location === "tm" ? "Teams (managed)" : "Azure";
       logger.info(`${pc.dim("Bot ID:")} ${botId}`);
       logger.info(`${pc.dim("Location:")} ${label}`);
     } else {

@@ -19,7 +19,7 @@ export interface AzureBotInfo {
 /**
  * Shared preamble for commands that require an Azure bot.
  * Handles: auth check, app selection, bot location check, Azure discovery.
- * In interactive mode, offers to migrate if bot is in BF.
+ * In interactive mode, offers to migrate if bot is not in Azure.
  */
 export async function requireAzureBot(appIdArg?: string, silent = false): Promise<AzureBotInfo> {
   const account = await getAccount();
@@ -50,7 +50,7 @@ export async function requireAzureBot(appIdArg?: string, silent = false): Promis
   const botId = details.bots[0].botId;
   const location = await getBotLocation(token, botId);
 
-  if (location === "bf") {
+  if (location === "tm") {
     if (isAutoConfirm() && isInteractive()) {
       logger.warn(pc.yellow("This feature requires an Azure bot. Auto-confirming migration..."));
       await botMigrateCommand.parseAsync([appId], { from: "user" });

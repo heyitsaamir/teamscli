@@ -53,4 +53,4 @@ SSO setup in the portal requires jumping between three different UIs:
 
 ### Bot Migration
 
-The portal doesn't support migrating a bot from the BF tenant to Azure. `teams app bot migrate` handles the full lifecycle: validation, BF deletion, Azure creation, and automatic rollback on failure.
+The portal doesn't support migrating a bot to Azure. `teams app bot migrate` handles the full lifecycle: validation, removal of the old registration, Azure creation, and automatic rollback on failure.

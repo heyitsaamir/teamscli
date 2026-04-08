@@ -79,6 +79,6 @@ Always output `CLIENT_ID`, `CLIENT_SECRET`, and `TENANT_ID` together. The `TENAN
 
 ### Bot Location
 
-- Detection uses `getBotLocation(token, botId)` in `src/apps/bot-location.ts` — calls `/botframework/{botId}`, 200 = "bf", 404 = "azure".
-- Default location is BF tenant, overridable via `--azure`/`--bf` flags or `teams config set default-bot-location`.
+- Detection uses `getBotLocation(token, botId)` in `src/apps/bot-location.ts` — calls `/botframework/{botId}`, 200 = "tm" (Teams-managed), 404 = "azure".
+- Default location is Teams-managed, overridable via `--azure`/`--teams-managed` flags or `teams config set default-bot-location`.
 - SSO URI must be `api://botid-{botId}` — Teams regex requires `botid-` prefix.
