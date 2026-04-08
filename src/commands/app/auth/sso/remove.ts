@@ -1,7 +1,7 @@
 import { Command } from "commander";
 import { search } from "@inquirer/prompts";
 import pc from "picocolors";
-import { createSpinner } from "nanospinner";
+import { createSilentSpinner } from "../../../../utils/spinner.js";
 import { runAz } from "../../../../utils/az.js";
 import { isInteractive } from "../../../../utils/interactive.js";
 import { logger } from "../../../../utils/logger.js";
@@ -30,8 +30,8 @@ export const ssoRemoveCommand = new Command("remove")
       }
 
       // List SSO connections and let user pick
-      const listSpinner = createSpinner("Fetching SSO connections...").start();
-      const settings = runAz<AuthSetting[]>([
+      const listSpinner = createSilentSpinner("Fetching SSO connections...").start();
+      const settings = await runAz<AuthSetting[]>([
         "bot", "authsetting", "list",
         "--name", botId,
         "--resource-group", azure.resourceGroup,
@@ -65,9 +65,9 @@ export const ssoRemoveCommand = new Command("remove")
     }
 
     // Remove the OAuth connection
-    const spinner = createSpinner(`Removing SSO connection "${connectionName}"...`).start();
+    const spinner = createSilentSpinner(`Removing SSO connection "${connectionName}"...`).start();
     try {
-      runAz([
+      await runAz([
         "bot", "authsetting", "delete",
         "--name", botId,
         "--resource-group", azure.resourceGroup,

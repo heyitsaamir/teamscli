@@ -161,18 +161,18 @@ async function checkBotRegistration(
     }
   } else {
     // Azure-specific checks
-    if (!isAzInstalled()) {
+    if (!await isAzInstalled()) {
       results.push({ category: cat, label: "Azure CLI not installed", status: "warn", detail: "Install from https://aka.ms/install-az" });
-    } else if (!isAzLoggedIn()) {
+    } else if (!await isAzLoggedIn()) {
       results.push({ category: cat, label: "Azure CLI not logged in", status: "warn", detail: "Run az login" });
     } else {
-      azure = discoverAzureBot(botId, silent);
+      azure = await discoverAzureBot(botId, silent);
       if (azure) {
         results.push({ category: cat, label: "Azure bot discoverable", status: "pass", detail: azure.resourceGroup });
 
         // Check Teams channel + endpoint via az bot show
         try {
-          const azBot = runAz<{ properties?: { endpoint?: string } }>([
+          const azBot = await runAz<{ properties?: { endpoint?: string } }>([
             "bot", "show",
             "--name", botId,
             "--resource-group", azure.resourceGroup,
@@ -181,7 +181,7 @@ async function checkBotRegistration(
 
           // Check Teams channel
           try {
-            runAz([
+            await runAz([
               "bot", "msteams", "show",
               "--name", botId,
               "--resource-group", azure.resourceGroup,
@@ -399,7 +399,7 @@ async function checkSso(
         };
       }
 
-      const settings = runAz<AuthSetting[]>([
+      const settings = await runAz<AuthSetting[]>([
         "bot", "authsetting", "list",
         "--name", botId,
         "--resource-group", azure.resourceGroup,
@@ -418,7 +418,7 @@ async function checkSso(
           const connName = conn.name.split("/").pop() ?? conn.name;
 
           // List endpoint returns parameters: null — fetch full details via show
-          const fullConn = runAz<AuthSetting>([
+          const fullConn = await runAz<AuthSetting>([
             "bot", "authsetting", "show",
             "--name", botId,
             "--resource-group", azure.resourceGroup,

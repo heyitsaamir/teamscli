@@ -1,7 +1,7 @@
 import { select, input } from "@inquirer/prompts";
 import pc from "picocolors";
 import { writeFile } from "node:fs/promises";
-import { createSpinner } from "nanospinner";
+import { createSilentSpinner } from "../../utils/spinner.js";
 import { showEditMenu } from "./edit.js";
 import { showAppDetail, downloadAppPackage } from "../../apps/index.js";
 import { logger } from "../../utils/logger.js";
@@ -56,8 +56,8 @@ async function showAuthMenu(appId: string, _token: string): Promise<void> {
 
     const { botId, azure } = await requireAzureBot(appId);
 
-    const ssoSpinner = createSpinner("Fetching SSO connections...").start();
-    const settings = runAz<AuthSetting[]>([
+    const ssoSpinner = createSilentSpinner("Fetching SSO connections...").start();
+    const settings = await runAz<AuthSetting[]>([
       "bot", "authsetting", "list",
       "--name", botId,
       "--resource-group", azure.resourceGroup,
@@ -124,7 +124,7 @@ export async function showAppActions(app: AppSummary, token: string): Promise<vo
       await showEditMenu(app, token);
     } else if (action === "package") {
       const outputPath = `${(app.appName || app.appId).replace(/\s+/g, "-")}.zip`;
-      const spinner = createSpinner("Downloading package...").start();
+      const spinner = createSilentSpinner("Downloading package...").start();
       const packageBuffer = await downloadAppPackage(token, app.appId);
       spinner.stop();
       await writeFile(outputPath, packageBuffer);

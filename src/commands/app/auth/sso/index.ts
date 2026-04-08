@@ -1,7 +1,7 @@
 import { Command } from "commander";
 import { select } from "@inquirer/prompts";
 import pc from "picocolors";
-import { createSpinner } from "nanospinner";
+import { createSilentSpinner } from "../../../../utils/spinner.js";
 import { ssoSetupCommand } from "./setup.js";
 import { ssoListCommand } from "./list.js";
 import { ssoEditCommand } from "./edit.js";
@@ -31,8 +31,8 @@ export const ssoCommand = new Command("sso")
       const { appId, botId, azure } = await requireAzureBot();
 
       // Fetch existing SSO connections
-      const listSpinner = createSpinner("Fetching SSO connections...").start();
-      const settings = runAz<AuthSetting[]>([
+      const listSpinner = createSilentSpinner("Fetching SSO connections...").start();
+      const settings = await runAz<AuthSetting[]>([
         "bot", "authsetting", "list",
         "--name", botId,
         "--resource-group", azure.resourceGroup,

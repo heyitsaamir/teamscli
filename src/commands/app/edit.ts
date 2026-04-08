@@ -106,8 +106,8 @@ export async function showEditMenu(app: AppSummary, token: string): Promise<void
           continue;
         }
 
-        ensureAz();
-        const azContext = discoverAzureBot(botId);
+        await ensureAz();
+        const azContext = await discoverAzureBot(botId);
         if (!azContext) {
           logger.error(pc.red("Could not find this bot in Azure."));
           continue;
@@ -244,8 +244,8 @@ export const appEditCommand = new Command("edit")
       const location = await getBotLocation(token, botId);
 
       if (location === "azure") {
-        ensureAz();
-        const azContext = discoverAzureBot(botId, silent);
+        await ensureAz();
+        const azContext = await discoverAzureBot(botId, silent);
         if (!azContext) {
           throw new CliError("NOT_FOUND_AZURE_BOT", "Could not find this bot in Azure.", "Use `az bot update --name <name> --resource-group <rg> --endpoint <url>`");
         }

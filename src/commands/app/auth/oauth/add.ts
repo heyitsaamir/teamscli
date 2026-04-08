@@ -1,7 +1,7 @@
 import { Command } from "commander";
 import { input, search } from "@inquirer/prompts";
 import pc from "picocolors";
-import { createSpinner } from "nanospinner";
+import { createSilentSpinner } from "../../../../utils/spinner.js";
 import { runAz } from "../../../../utils/az.js";
 import { isInteractive } from "../../../../utils/interactive.js";
 import { logger } from "../../../../utils/logger.js";
@@ -43,8 +43,8 @@ export const oauthAddCommand = new Command("add")
       if (!interactive) {
         throw new CliError("VALIDATION_MISSING", "--provider is required in non-interactive mode.");
       }
-      const providerSpinner = createSpinner("Fetching OAuth providers...").start();
-      const providers = runAz<{ value: ServiceProvider[] }>(["bot", "authsetting", "list-providers"]);
+      const providerSpinner = createSilentSpinner("Fetching OAuth providers...").start();
+      const providers = await runAz<{ value: ServiceProvider[] }>(["bot", "authsetting", "list-providers"]);
       providerSpinner.stop();
       const providerList = providers.value.map((p) => ({
         name: p.properties.displayName,
@@ -99,7 +99,7 @@ export const oauthAddCommand = new Command("add")
     }
 
     // Create the connection
-    const spinner = createSpinner("Creating OAuth connection...").start();
+    const spinner = createSilentSpinner("Creating OAuth connection...").start();
     try {
       const args = [
         "bot", "authsetting", "create",
@@ -119,7 +119,7 @@ export const oauthAddCommand = new Command("add")
         args.push("--parameters", ...params.split(" "));
       }
 
-      runAz(args);
+      await runAz(args);
       spinner.success({ text: `OAuth connection "${connectionName}" created` });
     } catch (error) {
       spinner.error({ text: "Failed to create OAuth connection" });

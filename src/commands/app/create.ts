@@ -103,14 +103,14 @@ export const appCreateCommand = new Command("create")
 		// Gather Azure context if needed
 		let azureContext: AzureContext | undefined;
 		if (location === "azure") {
-			ensureAz();
+			await ensureAz();
 			const subscription = await resolveSubscription(options.subscription);
 			const resourceGroup = await resolveResourceGroup(subscription, options.resourceGroup);
 
 			if (options.createResourceGroup) {
 				const rgRegion = options.region ?? "westus2";
 				const rgSpinner = createSilentSpinner(`Creating resource group ${resourceGroup}...`, silent).start();
-				runAz(["group", "create", "--name", resourceGroup, "--location", rgRegion, "--subscription", subscription]);
+				await runAz(["group", "create", "--name", resourceGroup, "--location", rgRegion, "--subscription", subscription]);
 				rgSpinner.success({ text: `Resource group ${resourceGroup} ready` });
 			}
 
