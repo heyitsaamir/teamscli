@@ -6,13 +6,9 @@ import {
 	createAadAppViaTdp,
 	createClientSecret,
 	createManifestZip,
-	createZipFromManifest,
 	getAadAppByClientId,
 	importAppPackage,
 	type ManifestOptions,
-	readManifestFile,
-	readZipFile,
-	updateManifestBotId,
 	createTdpBotHandler,
 	createAzureBotHandler,
 	type AzureContext,
@@ -51,8 +47,6 @@ interface AppCreateOutput {
 interface CreateOptions {
 	name?: string;
 	endpoint?: string;
-	manifest?: string;
-	package?: string;
 	env?: string;
 	azure?: boolean;
 	teamsManaged?: boolean;
@@ -67,8 +61,6 @@ export const appCreateCommand = new Command("create")
 	.description("Create a new Teams app with bot")
 	.option("-n, --name <name>", "App/bot name")
 	.option("-e, --endpoint <url>", "[OPTIONAL] Bot messaging endpoint URL")
-	.option("-m, --manifest <path>", "[OPTIONAL] Path to manifest.json")
-	.option("-p, --package <path>", "[OPTIONAL] Path to app package zip")
 	.option("--env <path>", "[OPTIONAL] Path to .env file to write credentials")
 	.option("--azure", "[OPTIONAL] Create bot in Azure (requires az CLI)")
 	.option("--teams-managed", "[OPTIONAL] Create bot managed by Teams (default)")
@@ -82,11 +74,6 @@ export const appCreateCommand = new Command("create")
 		const account = await getAccount();
 		if (!account) {
 			throw new CliError("AUTH_REQUIRED", "Not logged in.", "Run `teams login` first.");
-		}
-
-		// Validate options
-		if (options.manifest && options.package) {
-			throw new CliError("VALIDATION_CONFLICT", "Cannot specify both --manifest and --package.");
 		}
 
 		// Validate conflicting flags
@@ -121,31 +108,23 @@ export const appCreateCommand = new Command("create")
 		// ===== Gather all inputs upfront =====
 		const interactive = isInteractive();
 
-		if (!interactive && !options.name && !options.package) {
+		if (!interactive && !options.name) {
 			throw new CliError("VALIDATION_MISSING", "--name is required in non-interactive mode.");
 		}
 
 		// Determine if any flags were provided (scripting mode)
-		const hasFlags = !!(options.name || options.manifest || options.package);
+		const hasFlags = !!options.name;
 
-		// Get manifest path (skip prompt if --name provided — implies generation)
-		const manifestPath =
-			options.manifest ??
-			options.package ??
-			(interactive && !hasFlags
-				? (await input({
-						message: "Path to manifest.json (leave empty to generate):",
-				  })) || undefined
-				: undefined);
-
-		// Get name if not using existing package/manifest
+		// Get name
 		const name =
 			options.name ??
-			(options.package
-				? undefined
-				: interactive && !hasFlags
-					? await input({ message: "App name:" })
-					: undefined);
+			(interactive && !hasFlags
+				? await input({ message: "App name:" })
+				: undefined);
+
+		if (!name?.trim()) {
+			throw new CliError("VALIDATION_MISSING", "App name cannot be empty.");
+		}
 
 		// Get endpoint (prompt only in full interactive mode)
 		const endpoint =
@@ -165,8 +144,7 @@ export const appCreateCommand = new Command("create")
 				  })) || undefined
 				: undefined);
 
-		// If generating manifest, collect customization options
-		const needsGeneratedManifest = !options.package && !manifestPath;
+		// Collect manifest customization options
 		let descriptionOpts: { short: string; full?: string } | undefined;
 		let scopeChoices: string[] | undefined;
 		let developerOpts:
@@ -178,7 +156,7 @@ export const appCreateCommand = new Command("create")
 			  }
 			| undefined;
 
-		if (needsGeneratedManifest && interactive && !hasFlags) {
+		if (interactive && !hasFlags) {
 			const customization = await collectManifestCustomization();
 			descriptionOpts = customization.description;
 			scopeChoices = customization.scopes;
@@ -203,115 +181,88 @@ export const appCreateCommand = new Command("create")
 		}
 		spinner.success({ text: "Tokens acquired" });
 
-		let clientId: string;
-		let secretText: string;
-		let zipBuffer: Buffer;
-		let teamsAppId: string;
+		// Create AAD app via TDP (creates service principal server-side)
+		spinner = createSilentSpinner("Creating Azure AD app...", silent).start();
+		const aadApp = await createAadAppViaTdp(tdpToken, name!);
+		const clientId = aadApp.appId;
+		spinner.success({ text: `Created Azure AD app (${clientId})` });
 
-			if (options.package) {
-				// Use existing package - read manifest to get bot ID
-				spinner = createSilentSpinner("Reading package...", silent).start();
-				zipBuffer = readZipFile(options.package);
-				spinner.success({ text: "Package loaded" });
+		// Generate manifest
+		const manifestOpts: ManifestOptions = {
+			botId: clientId,
+			botName: name!,
+			endpoint,
+			description: descriptionOpts,
+			scopes: scopeChoices,
+			developer: developerOpts,
+		};
 
-				// Create AAD app via TDP (creates service principal server-side)
-				spinner = createSilentSpinner("Creating Azure AD app...", silent).start();
-				const aadApp = await createAadAppViaTdp(tdpToken, name ?? "Bot");
-				clientId = aadApp.appId;
-				spinner.success({ text: `Created Azure AD app (${clientId})` });
-			} else {
-				// Create AAD app via TDP (creates service principal server-side)
-				spinner = createSilentSpinner("Creating Azure AD app...", silent).start();
-				const aadApp = await createAadAppViaTdp(tdpToken, name!);
-				clientId = aadApp.appId;
-				spinner.success({ text: `Created Azure AD app (${clientId})` });
+		const zipBuffer = createManifestZip(manifestOpts);
 
-				// Create zip from manifest or generate new one
-				if (manifestPath) {
-					spinner = createSilentSpinner("Processing manifest...", silent).start();
-					const manifest = readManifestFile(manifestPath);
-					const updatedManifest = updateManifestBotId(manifest, clientId);
-					zipBuffer = createZipFromManifest(updatedManifest);
-					spinner.success({ text: "Manifest processed" });
-				} else {
-					// Generate manifest with pre-collected options
-					const manifestOpts: ManifestOptions = {
-						botId: clientId,
-						botName: name!,
-						endpoint,
-						description: descriptionOpts,
-						scopes: scopeChoices,
-						developer: developerOpts,
-					};
-
-					zipBuffer = createManifestZip(manifestOpts);
-				}
+		// Look up Graph object ID (TDP returns a different ID; retry for replication lag)
+		spinner = createSilentSpinner("Generating client secret...", silent).start();
+		let graphApp: { id: string } | null = null;
+		for (let i = 0; i < 10; i++) {
+			try {
+				graphApp = await getAadAppByClientId(graphToken, clientId);
+				break;
+			} catch {
+				await new Promise((r) => setTimeout(r, 3000));
 			}
+		}
+		if (!graphApp) {
+			throw new Error("AAD app not yet available in Graph API. Try again shortly.");
+		}
+		const secret = await createClientSecret(graphToken, graphApp.id);
+		const secretText = secret.secretText;
+		spinner.success({ text: "Generated client secret" });
 
-			// Look up Graph object ID (TDP returns a different ID; retry for replication lag)
-			spinner = createSilentSpinner("Generating client secret...", silent).start();
-			let graphApp: { id: string } | null = null;
-			for (let i = 0; i < 10; i++) {
-				try {
-					graphApp = await getAadAppByClientId(graphToken, clientId);
-					break;
-				} catch {
-					await new Promise((r) => setTimeout(r, 3000));
-				}
-			}
-			if (!graphApp) {
-				throw new Error("AAD app not yet available in Graph API. Try again shortly.");
-			}
-			const secret = await createClientSecret(graphToken, graphApp.id);
-			secretText = secret.secretText;
-			spinner.success({ text: "Generated client secret" });
+		// Import to Teams
+		spinner = createSilentSpinner("Creating Teams app...", silent).start();
+		const importedApp = await importAppPackage(tdpToken, zipBuffer);
+		const teamsAppId = importedApp.teamsAppId;
+		spinner.success({ text: `Created Teams app (${teamsAppId})` });
 
-			// Import to Teams
-			spinner = createSilentSpinner("Creating Teams app...", silent).start();
-			const importedApp = await importAppPackage(tdpToken, zipBuffer);
-			teamsAppId = importedApp.teamsAppId;
-			spinner.success({ text: `Created Teams app (${teamsAppId})` });
+		// Register bot
+		spinner = createSilentSpinner("Registering bot...", silent).start();
+		const handler = location === "tm"
+			? createTdpBotHandler(tdpToken)
+			: createAzureBotHandler(azureContext!);
+		await handler.createBot({ botId: clientId, name: name!, endpoint });
+		spinner.success({ text: "Bot registered" });
 
-			// Register bot
-			spinner = createSilentSpinner("Registering bot...", silent).start();
-			const handler = location === "tm"
-				? createTdpBotHandler(tdpToken)
-				: createAzureBotHandler(azureContext!);
-			await handler.createBot({ botId: clientId, name: name ?? "Bot", endpoint });
-			spinner.success({ text: "Bot registered" });
+		// Output results
+		const installLink = `https://teams.microsoft.com/l/app/${teamsAppId}?installAppPackage=true`;
 
-			// Output results
-			const installLink = `https://teams.microsoft.com/l/app/${teamsAppId}?installAppPackage=true`;
-
-			if (options.json) {
-				const result: AppCreateOutput = {
-					appName: name ?? "Bot",
-					teamsAppId,
-					botId: clientId,
-					endpoint: endpoint ?? null,
-					installLink,
-					botLocation: location === "tm" ? "teams-managed" : "azure",
-					credentials: {
-						CLIENT_ID: clientId,
-						CLIENT_SECRET: secretText,
-						TENANT_ID: account.tenantId,
-					},
-				};
-				outputJson(result);
-			} else {
-				logger.info(pc.bold(pc.green("\nApp created successfully!")));
-				logger.info(`${pc.dim("Name:")} ${name ?? "Bot"}`);
-				logger.info(`${pc.dim("Teams App ID:")} ${teamsAppId}`);
-				logger.info(`${pc.dim("Bot ID:")} ${clientId}`);
-				if (endpoint) {
-					logger.info(`${pc.dim("Endpoint:")} ${endpoint}`);
-				}
-				logger.info(`${pc.dim("Install link:")} ${installLink}`);
-
-				outputCredentials(envPath, {
+		if (options.json) {
+			const result: AppCreateOutput = {
+				appName: name!,
+				teamsAppId,
+				botId: clientId,
+				endpoint: endpoint ?? null,
+				installLink,
+				botLocation: location === "tm" ? "teams-managed" : "azure",
+				credentials: {
 					CLIENT_ID: clientId,
 					CLIENT_SECRET: secretText,
 					TENANT_ID: account.tenantId,
-				}, "Credentials:");
+				},
+			};
+			outputJson(result);
+		} else {
+			logger.info(pc.bold(pc.green("\nApp created successfully!")));
+			logger.info(`${pc.dim("Name:")} ${name!}`);
+			logger.info(`${pc.dim("Teams App ID:")} ${teamsAppId}`);
+			logger.info(`${pc.dim("Bot ID:")} ${clientId}`);
+			if (endpoint) {
+				logger.info(`${pc.dim("Endpoint:")} ${endpoint}`);
 			}
+			logger.info(`${pc.dim("Install link:")} ${installLink}`);
+
+			outputCredentials(envPath, {
+				CLIENT_ID: clientId,
+				CLIENT_SECRET: secretText,
+				TENANT_ID: account.tenantId,
+			}, "Credentials:");
+		}
 	}));

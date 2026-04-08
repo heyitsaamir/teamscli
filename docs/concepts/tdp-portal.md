@@ -11,7 +11,6 @@ The Teams Developer Portal (TDP) is the web UI at [dev.teams.microsoft.com](http
 | `teams app view` | Apps → select app → overview |
 | `teams app edit` | Apps → select app → Basic information |
 | `teams app manifest download` | Apps → select app → App package → Download |
-| `teams app manifest upload` | Apps → select app → App package → Upload (manifest only) |
 | `teams app package download` | Apps → select app → App package → Download (full zip) |
 | `teams app doctor` | *No portal equivalent* |
 | `teams app bot status` | Apps → select app → App features → Bot (location shown) |

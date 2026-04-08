@@ -20,8 +20,6 @@ teams app create [options]
 |------|-------------|
 | `-n, --name <name>` | App/bot name |
 | `-e, --endpoint <url>` | [OPTIONAL] Bot messaging endpoint URL |
-| `-m, --manifest <path>` | [OPTIONAL] Path to manifest.json |
-| `-p, --package <path>` | [OPTIONAL] Path to app package zip |
 | `--env <path>` | [OPTIONAL] Path to .env file to write credentials |
 | `--azure` | [OPTIONAL] Create bot in Azure (requires az CLI) |
 | `--teams-managed` | [OPTIONAL] Create bot managed by Teams (default) |
@@ -43,16 +41,6 @@ By default, the bot is Teams-managed (no Azure subscription needed). Use `--azur
 
 See [Bot Locations](/concepts/bot-locations) for details on the trade-offs.
 
-### Manifest Options
-
-You can provide your own manifest in three ways:
-
-- **Default** — teams generates a manifest from the app name
-- `--manifest <path>` — provide a `manifest.json` file (icons are auto-generated)
-- `--package <path>` — provide a complete app package zip (manifest + icons)
-
-`--manifest` and `--package` are mutually exclusive.
-
 ### Examples
 
 Create with defaults (Teams-managed, generated manifest):
@@ -65,12 +53,6 @@ Create with Azure bot and write credentials to `.env`:
 
 ```bash
 teams app create --name "My Bot" --azure --resource-group my-rg --env .env
-```
-
-Create with a custom manifest:
-
-```bash
-teams app create --name "My Bot" --manifest ./manifest.json
 ```
 
 ### Output

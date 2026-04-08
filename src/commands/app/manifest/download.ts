@@ -31,7 +31,7 @@ export const manifestDownloadCommand = new Command("download")
       appId = appIdArg;
     } else {
       const picked = await pickApp();
-      appId = picked.app.teamsAppId;
+      appId = picked.app.appId;
       token = picked.token;
     }
 

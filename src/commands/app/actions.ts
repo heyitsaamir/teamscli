@@ -5,7 +5,7 @@ import { createSilentSpinner } from "../../utils/spinner.js";
 import { showEditMenu } from "./edit.js";
 import { showAppDetail, downloadAppPackage } from "../../apps/index.js";
 import { logger } from "../../utils/logger.js";
-import { downloadManifest, uploadManifestFromFile } from "./manifest/actions.js";
+import { downloadManifest } from "./manifest/actions.js";
 import { generateSecret } from "./auth/secret/generate.js";
 import { oauthAddCommand } from "./auth/oauth/add.js";
 import { oauthListCommand } from "./auth/oauth/list.js";
@@ -108,7 +108,7 @@ export async function showAppActions(app: AppSummary, token: string): Promise<vo
         { name: "View", value: "view" },
         { name: "Edit", value: "edit" },
         { name: "Download package", value: "package" },
-        { name: "Manifest", value: "manifest" },
+        { name: "Download manifest", value: "manifest" },
         { name: "Generate secret", value: "secret" },
         { name: "Auth (OAuth/SSO)", value: "auth" },
         { name: "Doctor (diagnostics)", value: "doctor" },
@@ -130,35 +130,14 @@ export async function showAppActions(app: AppSummary, token: string): Promise<vo
       await writeFile(outputPath, packageBuffer);
       logger.info(pc.green(`Package saved to ${outputPath}`));
     } else if (action === "manifest") {
-      const manifestAction = await select({
-        message: `${app.appName ?? "Unnamed"} — manifest:`,
-        choices: [
-          { name: "Download", value: "download" },
-          { name: "Upload", value: "upload" },
-          { name: "Back", value: "back" },
-        ],
+      const savePath = await input({
+        message: `${app.appName ?? "Unnamed"} — save manifest to (leave empty to print):`,
+        default: "",
       });
-
-      if (manifestAction === "download") {
-        const savePath = await input({
-          message: "Save to (leave empty to print):",
-          default: "",
-        });
-        try {
-          await downloadManifest(token, app.appId, savePath || undefined);
-        } catch (error) {
-          logger.error(pc.red(error instanceof Error ? error.message : "Unknown error"));
-        }
-      } else if (manifestAction === "upload") {
-        const filePath = await input({
-          message: "Path to manifest.json:",
-          default: "manifest.json",
-        });
-        try {
-          await uploadManifestFromFile(token, app.teamsAppId, filePath);
-        } catch (error) {
-          logger.error(pc.red(error instanceof Error ? error.message : "Unknown error"));
-        }
+      try {
+        await downloadManifest(token, app.appId, savePath || undefined);
+      } catch (error) {
+        logger.error(pc.red(error instanceof Error ? error.message : "Unknown error"));
       }
     } else if (action === "secret") {
       try {
