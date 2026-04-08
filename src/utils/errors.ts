@@ -1,6 +1,7 @@
 import pc from "picocolors";
 import { outputJson } from "./json-output.js";
 import { logger } from "./logger.js";
+import { logToSession } from "./session-log.js";
 
 export type ErrorCode =
 	// Auth
@@ -51,6 +52,7 @@ export class CliError extends Error {
 export function handleError(error: unknown, json: boolean): never {
 	if (error instanceof CliError) {
 		if (json) {
+			logToSession("ERROR", `${error.code}: ${error.message}${error.suggestion ? ` — ${error.suggestion}` : ""}`);
 			outputJson({
 				ok: false,
 				error: {
@@ -68,6 +70,7 @@ export function handleError(error: unknown, json: boolean): never {
 	} else {
 		const message = error instanceof Error ? error.message : "Unknown error";
 		if (json) {
+			logToSession("ERROR", message);
 			outputJson({
 				ok: false,
 				error: { code: "UNKNOWN" as ErrorCode, message },

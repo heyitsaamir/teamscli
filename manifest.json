@@ -1,0 +1,40 @@
+{
+  "$schema": "https://developer.microsoft.com/en-us/json-schemas/teams/v1.16/MicrosoftTeams.schema.json",
+  "manifestVersion": "1.16",
+  "version": "1.0.0",
+  "id": "abc123",
+  "packageName": "com.teams.abc123",
+  "developer": {
+    "name": "Developer",
+    "websiteUrl": "https://www.example.com",
+    "privacyUrl": "https://www.example.com/privacy",
+    "termsOfUseUrl": "https://www.example.com/terms"
+  },
+  "icons": {
+    "color": "color.png",
+    "outline": "outline.png"
+  },
+  "name": {
+    "short": "Test Bot",
+    "full": "Test Bot"
+  },
+  "description": {
+    "short": "Test Bot",
+    "full": "Test Bot"
+  },
+  "accentColor": "#FFFFFF",
+  "bots": [
+    {
+      "botId": "abc123",
+      "scopes": [
+        "personal",
+        "team",
+        "groupchat"
+      ],
+      "supportsFiles": false,
+      "isNotificationOnly": false
+    }
+  ],
+  "permissions": [],
+  "validDomains": []
+}

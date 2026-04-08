@@ -7,11 +7,16 @@ import { appCommand, appsCommand } from "./commands/app/index.js";
 import { scaffoldCommand } from "./commands/scaffold/index.js";
 import { selfUpdateCommand } from "./commands/self-update.js";
 import { configCommand } from "./commands/config/index.js";
+import { logsCommand } from "./commands/logs.js";
 import { CliError } from "./utils/errors.js";
 import { logger, setVerbose } from "./utils/logger.js";
 import { isInteractive, setAutoConfirm } from "./utils/interactive.js";
 import { checkForUpdates } from "./utils/update-check.js";
+import { initSessionLog, logToSession } from "./utils/session-log.js";
 import pc from "picocolors";
+
+// Start a new session log for this invocation immediately, before any other work.
+initSessionLog();
 
 // Safety net: catch CliError thrown from shared utilities in non-wrapped commands
 process.on("unhandledRejection", (error) => {
@@ -52,6 +57,17 @@ program
     if (opts.yes) {
       setAutoConfirm(true);
     }
+
+    // Log the resolved command path (e.g. "app create", "auth login") for tracing.
+    const parts: string[] = [];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let cmd: any = actionCommand;
+    while (cmd && cmd.name() && cmd.name() !== "teams") {
+      parts.unshift(cmd.name() as string);
+      cmd = cmd.parent;
+    }
+    logToSession("CMD", `executing: ${parts.join(" ") || actionCommand.name()}`);
+
     if (actionCommand.name() !== "self-update") {
       await checkForUpdates({ autoUpdate: !opts.disableAutoUpdate });
     }
@@ -65,5 +81,6 @@ program.addCommand(appsCommand);
 program.addCommand(scaffoldCommand);
 program.addCommand(selfUpdateCommand);
 program.addCommand(configCommand);
+program.addCommand(logsCommand);
 
 program.parse();
