@@ -32,6 +32,8 @@ interface EditOptions {
 
 interface AppEditOutput {
   teamsAppId: string;
+  botId?: string;
+  validDomains?: string[];
   updated: {
     endpoint?: string;
     shortName?: string;
@@ -251,6 +253,10 @@ export const appEditCommand = new Command("edit")
       throw new CliError("VALIDATION_MISSING", "--json requires at least one mutation flag (--name, --endpoint, etc.).");
     }
 
+    // Validate icons upfront (before auth/API calls)
+    const colorIconData = options.colorIcon ? readAndValidateIcon(options.colorIcon, 192) : undefined;
+    const outlineIconData = options.outlineIcon ? readAndValidateIcon(options.outlineIcon, 32) : undefined;
+
     // Interactive mode (no appId, no mutation flags): picker loop
     if (!appIdArg && !hasMutationFlags) {
       while (true) {
@@ -291,6 +297,8 @@ export const appEditCommand = new Command("edit")
 
     // Scripting mode: apply all mutation flags
     const allUpdates: AppEditOutput["updated"] = {};
+    let endpointBotId: string | undefined;
+    let endpointValidDomains: string[] | undefined;
 
     // --- Endpoint ---
     if (options.endpoint) {
@@ -299,6 +307,7 @@ export const appEditCommand = new Command("edit")
       }
 
       const botId = app.bots[0].botId;
+      endpointBotId = botId;
       const location = await getBotLocation(token, botId);
 
       if (location === "azure") {
@@ -335,9 +344,11 @@ export const appEditCommand = new Command("edit")
       const details = await fetchAppDetailsV2(token, appId);
       const domains = (details.validDomains as string[]) ?? [];
       const domain = extractDomain(options.endpoint);
+      endpointValidDomains = domains;
       if (domain && !domains.includes(domain)) {
         const domainSpinner = createSilentSpinner("Updating valid domains...", silent).start();
-        await updateAppDetails(token, appId, { validDomains: [...domains, domain] });
+        endpointValidDomains = [...domains, domain];
+        await updateAppDetails(token, appId, { validDomains: endpointValidDomains });
         domainSpinner.success({ text: `Added ${domain} to valid domains` });
       }
 
@@ -420,18 +431,16 @@ export const appEditCommand = new Command("edit")
     }
 
     // --- Icons ---
-    if (options.colorIcon) {
-      const { base64 } = readAndValidateIcon(options.colorIcon, 192);
+    if (colorIconData) {
       const spinner = createSilentSpinner("Uploading color icon...", silent).start();
-      await uploadIcon(token, appId, "color", base64);
+      await uploadIcon(token, appId, "color", colorIconData.base64);
       spinner.success({ text: "Color icon uploaded" });
       allUpdates.colorIcon = true;
     }
 
-    if (options.outlineIcon) {
-      const { base64 } = readAndValidateIcon(options.outlineIcon, 32);
+    if (outlineIconData) {
       const spinner = createSilentSpinner("Uploading outline icon...", silent).start();
-      await uploadIcon(token, appId, "outline", base64);
+      await uploadIcon(token, appId, "outline", outlineIconData.base64);
       spinner.success({ text: "Outline icon uploaded" });
       allUpdates.outlineIcon = true;
     }
@@ -440,6 +449,8 @@ export const appEditCommand = new Command("edit")
     if (options.json) {
       const result: AppEditOutput = {
         teamsAppId: appId,
+        ...(endpointBotId ? { botId: endpointBotId } : {}),
+        ...(endpointValidDomains ? { validDomains: endpointValidDomains } : {}),
         updated: allUpdates,
       };
       outputJson(result);

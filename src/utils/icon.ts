@@ -41,7 +41,19 @@ export function readAndValidateIcon(
     throw new CliError("INVALID_ICON", `Icon file not found: ${resolved}`);
   }
 
-  const buffer = fs.readFileSync(resolved);
+  let buffer: Buffer;
+  try {
+    buffer = fs.readFileSync(resolved);
+  } catch (error) {
+    const err = error as NodeJS.ErrnoException;
+    if (err.code === "EACCES" || err.code === "EPERM") {
+      throw new CliError("INVALID_ICON", `Icon file is not readable: ${resolved}`);
+    }
+    if (err.code === "EISDIR") {
+      throw new CliError("INVALID_ICON", `Icon path is a directory, not a file: ${resolved}`);
+    }
+    throw new CliError("INVALID_ICON", `Unable to read icon file: ${resolved}`);
+  }
   validatePngIcon(buffer, expectedSize);
 
   return { buffer, base64: buffer.toString("base64") };

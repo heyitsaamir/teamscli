@@ -102,6 +102,71 @@ describe("--json validation (offline)", () => {
       expect(exitCode).toBe(1);
     });
   });
+
+  describe("icon validation (offline)", () => {
+    it("rejects non-PNG file with INVALID_ICON error", () => {
+      const { data, exitCode } = runJson(
+        `${CLI} app edit some-app-id --color-icon /tmp/vitest-icon-fake.txt --json`
+      );
+      expect(exitCode).toBe(1);
+      expect((data as Record<string, unknown>).error).toBeDefined();
+      const error = (data as Record<string, { code: string; message: string }>).error;
+      expect(error.code).toBe("INVALID_ICON");
+    });
+
+    it("rejects PNG with wrong dimensions", () => {
+      // Create a valid 1x1 PNG for testing
+      const fs = require("node:fs");
+      const png1x1 = Buffer.from([
+        0x89,0x50,0x4e,0x47,0x0d,0x0a,0x1a,0x0a,0x00,0x00,0x00,0x0d,
+        0x49,0x48,0x44,0x52,0x00,0x00,0x00,0x01,0x00,0x00,0x00,0x01,
+        0x08,0x06,0x00,0x00,0x00,0x1f,0x15,0xc4,0x89,0x00,0x00,0x00,
+        0x0a,0x49,0x44,0x41,0x54,0x78,0x9c,0x63,0x00,0x01,0x00,0x00,
+        0x05,0x00,0x01,0x0d,0x0a,0x2d,0xb4,0x00,0x00,0x00,0x00,0x49,
+        0x45,0x4e,0x44,0xae,0x42,0x60,0x82,
+      ]);
+      fs.writeFileSync("/tmp/vitest-icon-1x1.png", png1x1);
+
+      const { data, exitCode } = runJson(
+        `${CLI} app edit some-app-id --color-icon /tmp/vitest-icon-1x1.png --json`
+      );
+      expect(exitCode).toBe(1);
+      const error = (data as Record<string, { code: string; message: string }>).error;
+      expect(error.code).toBe("INVALID_ICON");
+      expect(error.message).toMatch(/192x192px.*1x1px/);
+    });
+
+    it("rejects missing icon file", () => {
+      const { data, exitCode } = runJson(
+        `${CLI} app edit some-app-id --color-icon /tmp/vitest-nonexistent-icon.png --json`
+      );
+      expect(exitCode).toBe(1);
+      const error = (data as Record<string, { code: string; message: string }>).error;
+      expect(error.code).toBe("INVALID_ICON");
+      expect(error.message).toMatch(/not found/);
+    });
+
+    it("rejects wrong dimensions for outline icon (expects 32x32)", () => {
+      const fs = require("node:fs");
+      const png1x1 = Buffer.from([
+        0x89,0x50,0x4e,0x47,0x0d,0x0a,0x1a,0x0a,0x00,0x00,0x00,0x0d,
+        0x49,0x48,0x44,0x52,0x00,0x00,0x00,0x01,0x00,0x00,0x00,0x01,
+        0x08,0x06,0x00,0x00,0x00,0x1f,0x15,0xc4,0x89,0x00,0x00,0x00,
+        0x0a,0x49,0x44,0x41,0x54,0x78,0x9c,0x63,0x00,0x01,0x00,0x00,
+        0x05,0x00,0x01,0x0d,0x0a,0x2d,0xb4,0x00,0x00,0x00,0x00,0x49,
+        0x45,0x4e,0x44,0xae,0x42,0x60,0x82,
+      ]);
+      fs.writeFileSync("/tmp/vitest-icon-1x1-outline.png", png1x1);
+
+      const { data, exitCode } = runJson(
+        `${CLI} app edit some-app-id --outline-icon /tmp/vitest-icon-1x1-outline.png --json`
+      );
+      expect(exitCode).toBe(1);
+      const error = (data as Record<string, { code: string; message: string }>).error;
+      expect(error.code).toBe("INVALID_ICON");
+      expect(error.message).toMatch(/32x32px.*1x1px/);
+    });
+  });
 });
 
 // ── Non-destructive tests (auth + TEST_APP_ID) ──────────────────────

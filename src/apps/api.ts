@@ -1,5 +1,6 @@
 import type { AppSummary, AppDetails, AppBot } from "./types.js";
 import { apiFetch } from "../utils/http.js";
+import { CliError } from "../utils/errors.js";
 
 /**
  * Teams app manifest.json structure (subset of fields we care about)
@@ -212,7 +213,7 @@ export async function uploadIcon(
 
   if (!uploadResponse.ok) {
     const error = await uploadResponse.text();
-    throw new Error(`Failed to upload ${iconType} icon: ${uploadResponse.status} ${error}`);
+    throw new CliError("API_ERROR", `Failed to upload ${iconType} icon: ${uploadResponse.status} ${error}`);
   }
 
   const iconUrl: string = await uploadResponse.json();
