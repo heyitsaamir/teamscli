@@ -16,13 +16,13 @@ The Teams Developer Portal (TDP) is the web UI at [dev.teams.microsoft.com](http
 | `teams app bot status` | Apps → select app → App features → Bot (location shown) |
 | `teams app bot migrate` | *No portal equivalent* |
 | `teams app auth secret create` | Azure Portal → App registrations → Certificates & secrets |
-| `teams app auth oauth add` | Azure Portal → Bot Service → Configuration → OAuth |
-| `teams app auth oauth list` | Azure Portal → Bot Service → Configuration → OAuth |
-| `teams app auth oauth remove` | Azure Portal → Bot Service → Configuration → OAuth |
-| `teams app auth sso setup` | *No single equivalent — requires Azure Portal + TDP manifest edits* |
-| `teams app auth sso list` | Azure Portal → Bot Service → Configuration (filtered) |
-| `teams app auth sso edit` | Azure Portal → Bot Service → Configuration → edit connection |
-| `teams app auth sso remove` | Azure Portal → Bot Service + TDP manifest |
+| `teams app user-auth oauth add` | Azure Portal → Bot Service → Configuration → OAuth |
+| `teams app user-auth oauth list` | Azure Portal → Bot Service → Configuration → OAuth |
+| `teams app user-auth oauth remove` | Azure Portal → Bot Service → Configuration → OAuth |
+| `teams app user-auth sso setup` | *No single equivalent — requires Azure Portal + TDP manifest edits* |
+| `teams app user-auth sso list` | Azure Portal → Bot Service → Configuration (filtered) |
+| `teams app user-auth sso edit` | Azure Portal → Bot Service → Configuration → edit connection |
+| `teams app user-auth sso remove` | Azure Portal → Bot Service + TDP manifest |
 | `teams scaffold manifest` | *No portal equivalent* |
 | `teams config` | *No portal equivalent* |
 
@@ -44,7 +44,7 @@ SSO setup in the portal requires jumping between three different UIs:
 - Azure Portal → Bot Service (OAuth connection)
 - TDP → App manifest (webApplicationInfo)
 
-`teams app auth sso setup` does all three in one command.
+`teams app user-auth sso setup` does all three in one command.
 
 ### App Doctor
 

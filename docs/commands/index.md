@@ -33,9 +33,10 @@ teams
 │   ├── bot
 │   │   ├── status [appId]         Show bot location
 │   │   └── migrate [appId]        Migrate bot to Azure
-│   └── auth
-│       ├── secret
-│       │   └── create [appId]     Generate client secret
+│   ├── auth
+│   │   └── secret
+│   │       └── create [appId]     Generate client secret
+│   └── user-auth
 │       ├── oauth
 │       │   ├── add [appId]        Add OAuth connection
 │       │   ├── list [appId]       List OAuth connections
@@ -56,7 +57,7 @@ teams
 
 Most commands work in two modes:
 
-- **Interactive** — omit the `[appId]` argument and the CLI presents a searchable app picker. Subcommands like `app`, `app auth`, and `app manifest` show action menus.
+- **Interactive** — omit the `[appId]` argument and the CLI presents a searchable app picker. Subcommands like `app`, `app user-auth`, and `app manifest` show action menus.
 - **Scripted** — pass `[appId]` and all required flags directly for CI/CD or automation. Use `--json` where available for machine-readable output.
 
 Set `TEAMS_NO_INTERACTIVE=1` to disable interactive prompts entirely.

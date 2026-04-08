@@ -2,6 +2,14 @@
 
 This is a TypeScript CLI tool (`teams`) for managing Microsoft Teams apps. It uses Commander.js for command parsing, MSAL for auth, and talks to TDP (Teams Developer Portal) APIs.
 
+## Review Style
+
+Be extremely concise — sacrifice grammar for brevity. Every comment MUST include an importance level prefix:
+
+- **[CRITICAL]** — Bugs, security issues, data loss. Must fix.
+- **[HIGH]** — Correctness, perf, or maintainability problems. Should fix.
+- **[NIT]** — Style, naming, minor cleanup. Optional.
+
 ## Code Style
 
 ### TypeScript
