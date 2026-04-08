@@ -50,12 +50,20 @@ function sanitizeArgv(argv: string[]): string {
   const result: string[] = [];
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
-    if (SENSITIVE_FLAGS.has(arg.toLowerCase()) && i + 1 < argv.length) {
+    const eqIdx = arg.indexOf("=");
+    if (eqIdx !== -1) {
+      // Handle --flag=value format
+      const flag = arg.slice(0, eqIdx).toLowerCase();
+      if (SENSITIVE_FLAGS.has(flag)) {
+        result.push(`${arg.slice(0, eqIdx)}=***`);
+        continue;
+      }
+    } else if (SENSITIVE_FLAGS.has(arg.toLowerCase()) && i + 1 < argv.length) {
       result.push(arg, "***");
       i++;
-    } else {
-      result.push(arg);
+      continue;
     }
+    result.push(arg);
   }
   return result.join(" ");
 }

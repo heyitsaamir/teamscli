@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { createRequire } from "node:module";
-import { program } from "commander";
+import { program, type Command } from "commander";
 import { loginCommand, logoutCommand } from "./commands/auth/index.js";
 import { statusCommand } from "./commands/status.js";
 import { appCommand, appsCommand } from "./commands/app/index.js";
@@ -60,10 +60,9 @@ program
 
     // Log the resolved command path (e.g. "app create", "auth login") for tracing.
     const parts: string[] = [];
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let cmd: any = actionCommand;
+    let cmd: Command | null = actionCommand;
     while (cmd && cmd.name() && cmd.name() !== "teams") {
-      parts.unshift(cmd.name() as string);
+      parts.unshift(cmd.name());
       cmd = cmd.parent;
     }
     logToSession("CMD", `executing: ${parts.join(" ") || actionCommand.name()}`);
