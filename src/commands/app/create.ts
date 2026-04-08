@@ -122,6 +122,10 @@ export const appCreateCommand = new Command("create")
 				? await input({ message: "App name:" })
 				: undefined);
 
+		if (!name?.trim()) {
+			throw new CliError("VALIDATION_MISSING", "App name cannot be empty.");
+		}
+
 		// Get endpoint (prompt only in full interactive mode)
 		const endpoint =
 			options.endpoint ??

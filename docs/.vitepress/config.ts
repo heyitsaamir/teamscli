@@ -40,7 +40,6 @@ export default defineConfig({
               { text: "app edit", link: "/commands/app/edit" },
               { text: "app doctor", link: "/commands/app/doctor" },
               { text: "app manifest download", link: "/commands/app/manifest-download" },
-              { text: "app manifest upload", link: "/commands/app/manifest-upload" },
               { text: "app package download", link: "/commands/app/package-download" },
               { text: "app bot status", link: "/commands/app/bot-status" },
               { text: "app bot migrate", link: "/commands/app/bot-migrate" },
