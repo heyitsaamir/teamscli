@@ -1,6 +1,6 @@
 import { Command } from "commander";
 import pc from "picocolors";
-import { createSpinner } from "nanospinner";
+import { createSilentSpinner } from "../../../../utils/spinner.js";
 import { runAz } from "../../../../utils/az.js";
 import { logger } from "../../../../utils/logger.js";
 import { CliError, wrapAction } from "../../../../utils/errors.js";
@@ -23,9 +23,9 @@ export const oauthListCommand = new Command("list")
   .action(wrapAction(async (appIdArg: string | undefined, options: { json?: boolean }) => {
     const { botId, azure } = await requireAzureBot(appIdArg);
 
-    const spinner = createSpinner("Fetching OAuth connections...").start();
+    const spinner = createSilentSpinner("Fetching OAuth connections...").start();
     try {
-      const settings = runAz<AuthSetting[]>([
+      const settings = await runAz<AuthSetting[]>([
         "bot", "authsetting", "list",
         "--name", botId,
         "--resource-group", azure.resourceGroup,

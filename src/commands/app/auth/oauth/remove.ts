@@ -1,7 +1,7 @@
 import { Command } from "commander";
 import { search } from "@inquirer/prompts";
 import pc from "picocolors";
-import { createSpinner } from "nanospinner";
+import { createSilentSpinner } from "../../../../utils/spinner.js";
 import { runAz } from "../../../../utils/az.js";
 import { isInteractive } from "../../../../utils/interactive.js";
 import { logger } from "../../../../utils/logger.js";
@@ -29,8 +29,8 @@ export const oauthRemoveCommand = new Command("remove")
       }
 
       // List connections and let user pick
-      const listSpinner = createSpinner("Fetching OAuth connections...").start();
-      const settings = runAz<AuthSetting[]>([
+      const listSpinner = createSilentSpinner("Fetching OAuth connections...").start();
+      const settings = await runAz<AuthSetting[]>([
         "bot", "authsetting", "list",
         "--name", botId,
         "--resource-group", azure.resourceGroup,
@@ -61,9 +61,9 @@ export const oauthRemoveCommand = new Command("remove")
       });
     }
 
-    const spinner = createSpinner(`Removing "${connectionName}"...`).start();
+    const spinner = createSilentSpinner(`Removing "${connectionName}"...`).start();
     try {
-      runAz([
+      await runAz([
         "bot", "authsetting", "delete",
         "--name", botId,
         "--resource-group", azure.resourceGroup,

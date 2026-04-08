@@ -80,12 +80,12 @@ function generateArmTemplate(opts: CreateBotOpts, azure: AzureContext): object {
 /**
  * Write an ARM template to a temp file, run the callback, then clean up.
  */
-function withArmTemplate(template: object, fn: (templatePath: string) => void): void {
+async function withArmTemplate(template: object, fn: (templatePath: string) => Promise<void>): Promise<void> {
   const dir = mkdtempSync(join(tmpdir(), "teams-cli-"));
   const templatePath = join(dir, "azuredeploy.json");
   try {
     writeFileSync(templatePath, JSON.stringify(template, null, 2));
-    fn(templatePath);
+    await fn(templatePath);
   } finally {
     try { unlinkSync(templatePath); } catch { /* best effort cleanup */ }
   }
@@ -101,10 +101,10 @@ class AzureBotHandler implements BotHandler {
   async createBot(opts: CreateBotOpts): Promise<void> {
     const template = generateArmTemplate(opts, this.azure);
 
-    withArmTemplate(template, (templatePath) => {
+    await withArmTemplate(template, async (templatePath) => {
       // Deploy the ARM template
       logger.debug(`Deploying Azure bot: ${opts.botId} (${opts.name}) in ${this.azure.resourceGroup}`);
-      runAz([
+      await runAz([
         "deployment", "group", "create",
         "--resource-group", this.azure.resourceGroup,
         "--template-file", templatePath,
@@ -114,7 +114,7 @@ class AzureBotHandler implements BotHandler {
 
     // Enable the Microsoft Teams channel (ARM template doesn't configure channels)
     logger.debug("Enabling Microsoft Teams channel");
-    runAz([
+    await runAz([
       "bot", "msteams", "create",
       "--name", opts.botId,
       "--resource-group", this.azure.resourceGroup,
@@ -130,9 +130,9 @@ class AzureBotHandler implements BotHandler {
   async validateCreateBot(opts: CreateBotOpts): Promise<void> {
     const template = generateArmTemplate(opts, this.azure);
 
-    withArmTemplate(template, (templatePath) => {
+    await withArmTemplate(template, async (templatePath) => {
       logger.debug("Running ARM what-if validation");
-      runAz([
+      await runAz([
         "deployment", "group", "what-if",
         "--resource-group", this.azure.resourceGroup,
         "--template-file", templatePath,
@@ -144,7 +144,7 @@ class AzureBotHandler implements BotHandler {
 
   async updateEndpoint(botId: string, endpoint: string): Promise<void> {
     logger.debug(`Updating Azure bot endpoint: ${botId} → ${endpoint}`);
-    runAz([
+    await runAz([
       "bot", "update",
       "--name", botId,
       "--resource-group", this.azure.resourceGroup,
@@ -166,10 +166,10 @@ export function createAzureBotHandler(context: AzureContext): BotHandler {
  * Discover the Azure context for an existing bot by looking up its resource.
  * The bot resource name is always the client ID (set at creation time).
  */
-export function discoverAzureBot(botId: string, silent = false): AzureContext | null {
+export async function discoverAzureBot(botId: string, silent = false): Promise<AzureContext | null> {
   const spinner = createSilentSpinner("Discovering Azure bot...", silent).start();
   try {
-    const results = runAz<Array<{ resourceGroup: string; location: string }>>(
+    const results = await runAz<Array<{ resourceGroup: string; location: string }>>(
       ["resource", "list",
         "--resource-type", "Microsoft.BotService/botServices",
         "--name", botId],
@@ -179,7 +179,7 @@ export function discoverAzureBot(botId: string, silent = false): AzureContext | 
       return null;
     }
     const bot = results[0];
-    const account = runAz<{ id: string; tenantId: string }>(["account", "show"]);
+    const account = await runAz<{ id: string; tenantId: string }>(["account", "show"]);
     spinner.success({ text: "Azure bot discovered" });
     return {
       subscription: account.id,

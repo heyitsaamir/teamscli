@@ -1,7 +1,7 @@
 import { Command } from "commander";
 import { input, select, search } from "@inquirer/prompts";
 import pc from "picocolors";
-import { createSpinner } from "nanospinner";
+import { createSilentSpinner } from "../../../../utils/spinner.js";
 import { getTokenSilent, graphScopes } from "../../../../auth/index.js";
 import { getAadAppByClientId, createClientSecret } from "../../../../apps/graph.js";
 import { runAz } from "../../../../utils/az.js";
@@ -43,8 +43,8 @@ export const ssoEditCommand = new Command("edit")
         throw new CliError("VALIDATION_MISSING", "--connection-name is required in non-interactive mode.");
       }
 
-      const listSpinner = createSpinner("Fetching SSO connections...").start();
-      const settings = runAz<AuthSetting[]>([
+      const listSpinner = createSilentSpinner("Fetching SSO connections...").start();
+      const settings = await runAz<AuthSetting[]>([
         "bot", "authsetting", "list",
         "--name", botId,
         "--resource-group", azure.resourceGroup,
@@ -77,8 +77,8 @@ export const ssoEditCommand = new Command("edit")
     }
 
     // Fetch current details
-    const detailSpinner = createSpinner("Loading connection details...").start();
-    const current = runAz<AuthSetting>([
+    const detailSpinner = createSilentSpinner("Loading connection details...").start();
+    const current = await runAz<AuthSetting>([
       "bot", "authsetting", "show",
       "--name", botId,
       "--resource-group", azure.resourceGroup,
@@ -142,7 +142,7 @@ export const ssoEditCommand = new Command("edit")
       if (!graphToken) {
         throw new CliError("AUTH_TOKEN_FAILED", "Failed to get Graph token.", "Try `teams login` again.");
       }
-      const secretSpinner = createSpinner("Creating new client secret...").start();
+      const secretSpinner = createSilentSpinner("Creating new client secret...").start();
       const aadApp = await getAadAppByClientId(graphToken, botId);
       const secret = await createClientSecret(graphToken, aadApp.id);
       clientSecret = secret.secretText;
@@ -150,9 +150,9 @@ export const ssoEditCommand = new Command("edit")
     }
 
     // Delete and recreate (az bot authsetting has no update command)
-    const spinner = createSpinner("Updating SSO connection...").start();
+    const spinner = createSilentSpinner("Updating SSO connection...").start();
     try {
-      runAz([
+      await runAz([
         "bot", "authsetting", "delete",
         "--name", botId,
         "--resource-group", azure.resourceGroup,
@@ -160,7 +160,7 @@ export const ssoEditCommand = new Command("edit")
         "--subscription", azure.subscription,
       ]);
 
-      runAz([
+      await runAz([
         "bot", "authsetting", "create",
         "--name", botId,
         "--resource-group", azure.resourceGroup,

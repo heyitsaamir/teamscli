@@ -1,23 +1,26 @@
-import { execFileSync } from "node:child_process";
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
 import { platform } from "node:os";
 import { logger } from "./logger.js";
 import { CliError } from "./errors.js";
 
+const execFileAsync = promisify(execFile);
+
 // Resolve the correct Azure CLI executable for the platform
 const AZ_COMMAND = platform() === "win32" ? "az.cmd" : "az";
 
-export function isAzInstalled(): boolean {
+export async function isAzInstalled(): Promise<boolean> {
   try {
-    execFileSync(AZ_COMMAND, ["version"], { stdio: "pipe" });
+    await execFileAsync(AZ_COMMAND, ["version"]);
     return true;
   } catch {
     return false;
   }
 }
 
-export function isAzLoggedIn(): boolean {
+export async function isAzLoggedIn(): Promise<boolean> {
   try {
-    execFileSync(AZ_COMMAND, ["account", "show"], { stdio: "pipe" });
+    await execFileAsync(AZ_COMMAND, ["account", "show"]);
     return true;
   } catch {
     return false;
@@ -27,12 +30,12 @@ export function isAzLoggedIn(): boolean {
 /**
  * Ensure Azure CLI is installed and logged in. Exits with helpful message if not.
  */
-export function ensureAz(): void {
-  if (!isAzInstalled()) {
+export async function ensureAz(): Promise<void> {
+  if (!(await isAzInstalled())) {
     throw new CliError("TOOL_AZ_NOT_INSTALLED", "Azure CLI is not installed.", "Install from https://aka.ms/install-az");
   }
 
-  if (!isAzLoggedIn()) {
+  if (!(await isAzLoggedIn())) {
     throw new CliError("TOOL_AZ_NOT_LOGGED_IN", "Not logged in to Azure CLI.", "Run `az login` first.");
   }
 }
@@ -41,13 +44,12 @@ export function ensureAz(): void {
  * Run an az CLI command and return parsed JSON output.
  * Automatically appends --output json.
  */
-export function runAz<T = unknown>(args: string[]): T {
+export async function runAz<T = unknown>(args: string[]): Promise<T> {
   logger.debug(`${AZ_COMMAND} ${args.join(" ")}`);
-  const output = execFileSync(AZ_COMMAND, [...args, "--output", "json"], {
+  const { stdout } = await execFileAsync(AZ_COMMAND, [...args, "--output", "json"], {
     encoding: "utf-8",
-    stdio: ["pipe", "pipe", "pipe"],
   });
-  const trimmed = output.trim();
+  const trimmed = stdout.trim();
   if (!trimmed) return undefined as T;
   return JSON.parse(trimmed) as T;
 }

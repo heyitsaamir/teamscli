@@ -1,7 +1,7 @@
 import { Command } from "commander";
 import { select } from "@inquirer/prompts";
 import pc from "picocolors";
-import { createSpinner } from "nanospinner";
+import { createSilentSpinner } from "../../../../utils/spinner.js";
 import { runAz } from "../../../../utils/az.js";
 import { isInteractive } from "../../../../utils/interactive.js";
 import { logger } from "../../../../utils/logger.js";
@@ -31,9 +31,9 @@ export const ssoListCommand = new Command("list")
   .action(wrapAction(async (appIdArg?: string) => {
     const { appId, botId, azure } = await requireAzureBot(appIdArg);
 
-    const spinner = createSpinner("Fetching SSO connections...").start();
+    const spinner = createSilentSpinner("Fetching SSO connections...").start();
     try {
-      const settings = runAz<AuthSetting[]>([
+      const settings = await runAz<AuthSetting[]>([
         "bot", "authsetting", "list",
         "--name", botId,
         "--resource-group", azure.resourceGroup,
@@ -56,7 +56,7 @@ export const ssoListCommand = new Command("list")
       for (const setting of aadConnections) {
         const connectionName = setting.name.split("/").pop() ?? setting.name;
         try {
-          const details = runAz<AuthSetting>([
+          const details = await runAz<AuthSetting>([
             "bot", "authsetting", "show",
             "--name", botId,
             "--resource-group", azure.resourceGroup,

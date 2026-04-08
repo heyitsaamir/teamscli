@@ -1,5 +1,5 @@
 import { Command } from "commander";
-import { createSpinner } from "nanospinner";
+import { createSilentSpinner } from "../utils/spinner.js";
 import pc from "picocolors";
 import { getAccount, paths } from "../auth/index.js";
 import { isAzInstalled, isAzLoggedIn, runAz } from "../utils/az.js";
@@ -10,7 +10,7 @@ export const statusCommand = new Command("status")
     .description("Show current CLI status")
     .option("-v, --verbose", "[OPTIONAL] Show additional details")
     .action(wrapAction(async (options: { verbose?: boolean }) => {
-        const spinner = createSpinner("Checking status...").start();
+    const spinner = createSilentSpinner("Checking status...").start();
         const account = await getAccount();
 
         if (!account) {
@@ -28,13 +28,13 @@ export const statusCommand = new Command("status")
         }
 
         // Azure CLI status
-        if (!isAzInstalled()) {
+        if (!await isAzInstalled()) {
             logger.info(`\n${pc.dim("Azure CLI:")} ${pc.yellow("not installed")}`);
-        } else if (!isAzLoggedIn()) {
+        } else if (!await isAzLoggedIn()) {
             logger.info(`\n${pc.dim("Azure CLI:")} installed, ${pc.yellow("not logged in")}`);
         } else {
             try {
-                const sub = runAz<{ name: string; id: string }>(["account", "show"]);
+                const sub = await runAz<{ name: string; id: string }>(["account", "show"]);
                 logger.info(`\n${pc.dim("Azure CLI:")} ${pc.green("connected")}`);
                 logger.info(`${pc.dim("Subscription:")} ${sub.name} ${pc.dim(`(${sub.id})`)}`);
             } catch {
