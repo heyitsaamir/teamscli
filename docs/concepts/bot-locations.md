@@ -1,10 +1,10 @@
-# Bot Locations: BF Tenant vs Azure
+# Bot Locations: Teams-Managed vs Azure
 
 When you create a bot for a Teams app, the bot registration can live in one of two places. Understanding the difference is key to choosing the right approach.
 
-## BF Tenant (Bot Framework)
+## Teams-Managed
 
-The **BF tenant** is a Microsoft-managed environment where bot registrations live by default. When you create a bot via the Teams Developer Portal (TDP) or via `teams app create` (without `--azure`), the registration goes here.
+A **Teams-managed** bot is registered in a Microsoft-managed environment via the Teams Developer Portal (TDP). When you run `teams app create` (without `--azure`), the registration goes here.
 
 **Pros:**
 - No Azure subscription needed
@@ -36,20 +36,20 @@ An **Azure bot** is a bot registration in your own Azure subscription (via Azure
 
 | Scenario | Recommended |
 |----------|------------|
-| Quick prototyping | BF tenant |
-| Development/testing | BF tenant |
+| Quick prototyping | Teams-managed |
+| Development/testing | Teams-managed |
 | Need OAuth connections | Azure |
 | Need SSO | Azure |
 | Production deployment | Azure |
-| No Azure subscription | BF tenant |
+| No Azure subscription | Teams-managed |
 
 ## Default Location
 
-By default, `teams app create` uses the BF tenant. Override this per-command:
+By default, `teams app create` uses Teams-managed. Override this per-command:
 
 ```bash
 teams app create --name "My Bot" --azure --resource-group my-rg
-teams app create --name "My Bot" --bf
+teams app create --name "My Bot" --teams-managed
 ```
 
 Or set a persistent default:
@@ -58,11 +58,11 @@ Or set a persistent default:
 teams config default-bot-location azure
 ```
 
-**Precedence:** explicit flag (`--azure`/`--bf`) > saved config > BF default.
+**Precedence:** explicit flag (`--azure`/`--teams-managed`) > saved config > Teams-managed default.
 
 ## Migration
 
-If you try to use a feature that requires Azure (like OAuth or SSO) on a BF tenant bot, the CLI will automatically detect this and offer to migrate your bot for you.
+If you try to use a feature that requires Azure (like OAuth or SSO) on a Teams-managed bot, the CLI will automatically detect this and offer to migrate your bot for you.
 
 You can also migrate manually at any time without changing your AAD app or credentials:
 
@@ -72,8 +72,8 @@ teams app bot migrate <appId> --resource-group my-rg
 
 See [app bot migrate](/commands/app/bot-migrate) for details. The migration:
 
-1. Validates the bot is currently in BF
-2. Deletes the BF registration
+1. Validates the bot is not already in Azure
+2. Removes the Teams-managed registration
 3. Creates an Azure Bot resource
 4. Automatically rolls back if step 3 fails
 

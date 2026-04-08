@@ -8,8 +8,8 @@ type Config = Record<string, string>;
 
 const KNOWN_KEYS: Record<string, { values: string[]; description: string }> = {
   "default-bot-location": {
-    values: ["bf", "azure"],
-    description: "Default bot location for app create (bf or azure)",
+    values: ["tm", "azure"],
+    description: "Default bot location for app create (teams-managed or azure)",
   },
 };
 

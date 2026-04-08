@@ -14,7 +14,7 @@ import { createSilentSpinner } from "../../../utils/spinner.js";
 interface BotMigrateOutput {
   botId: string;
   appName: string;
-  from: "bf";
+  from: "teams-managed";
   to: "azure";
   endpoint: string | null;
   subscription: string;
@@ -31,7 +31,7 @@ interface MigrateOptions {
 }
 
 export const botMigrateCommand = new Command("migrate")
-  .description("Migrate bot from BF tenant to Azure")
+  .description("Migrate bot to Azure")
   .argument("[appId]", "App ID")
   .option("--subscription <id>", "[OPTIONAL] Azure subscription ID")
   .option("--resource-group <name>", "Azure resource group (required)")
@@ -84,7 +84,7 @@ export const botMigrateCommand = new Command("migrate")
 
     if (!options.json) {
       logger.info(`${pc.dim("Bot ID:")} ${botId}`);
-      logger.info(`${pc.dim("Current location:")} BF tenant`);
+      logger.info(`${pc.dim("Current location:")} Teams (managed)`);
       logger.info();
     }
 
@@ -153,17 +153,17 @@ export const botMigrateCommand = new Command("migrate")
       validateSpinner.success({ text: "Azure deployment validated" });
     } catch (error) {
       validateSpinner.error({ text: "Azure deployment validation failed" });
-      throw new CliError("API_ARM_ERROR", error instanceof Error ? error.message : "Azure deployment validation failed.", "No changes were made. Your bot is still in BF tenant.");
+      throw new CliError("API_ARM_ERROR", error instanceof Error ? error.message : "Azure deployment validation failed.", "No changes were made. Your bot is unchanged.");
     }
 
-    // Step 2: Delete BF registration (validated that Azure will succeed)
-    const deleteSpinner = createSilentSpinner("Removing BF tenant registration...", silent).start();
+    // Step 2: Delete Teams-managed registration (validated that Azure will succeed)
+    const deleteSpinner = createSilentSpinner("Removing old registration...", silent).start();
     try {
       await deleteBot(token, botId);
-      deleteSpinner.success({ text: "BF registration removed" });
+      deleteSpinner.success({ text: "Old registration removed" });
     } catch (error) {
-      deleteSpinner.error({ text: "Failed to remove BF registration" });
-      throw new CliError("API_ERROR", error instanceof Error ? error.message : "Failed to remove BF registration.");
+      deleteSpinner.error({ text: "Failed to remove old registration" });
+      throw new CliError("API_ERROR", error instanceof Error ? error.message : "Failed to remove old registration.");
     }
 
     // Step 3: Create Azure bot (already validated)
@@ -175,8 +175,8 @@ export const botMigrateCommand = new Command("migrate")
       createSpinnerInst.error({ text: "Failed to create Azure bot" });
       logger.error(error instanceof Error ? error.message : "Unknown error");
 
-      // Rollback: re-register bot in BF with all original details
-      const rollbackSpinner = createSilentSpinner("Rolling back — restoring BF registration...", silent).start();
+      // Rollback: re-register bot with all original details
+      const rollbackSpinner = createSilentSpinner("Rolling back — restoring previous registration...", silent).start();
       try {
         await registerBot(token, {
           botId: botDetails.botId,
@@ -190,20 +190,20 @@ export const botMigrateCommand = new Command("migrate")
         if (meetingSub && meetingSub.eventTypes.length > 0) {
           await setMeetingSubscription(token, botId, meetingSub.eventTypes);
         }
-        rollbackSpinner.success({ text: "BF registration restored" });
+        rollbackSpinner.success({ text: "Previous registration restored" });
 
         if (options.json) {
           outputJson({ ok: false, error: { code: "API_ARM_ERROR", message: "Migration failed" }, rolledBack: true });
         } else {
-          logger.info(pc.yellow("Migration failed but your bot has been restored to BF tenant."));
+          logger.info(pc.yellow("Migration failed but your bot has been restored."));
         }
       } catch {
         rollbackSpinner.error({ text: "Rollback failed" });
         if (options.json) {
           outputJson({ ok: false, error: { code: "API_ARM_ERROR", message: "Migration failed and rollback failed" }, rolledBack: false });
         } else {
-          logger.error(pc.red("Could not restore BF registration. Re-register manually:"));
-          logger.error(pc.cyan(`  teams app create --name "${botName}" --bf`));
+          logger.error(pc.red("Could not restore previous registration. Re-register manually:"));
+          logger.error(pc.cyan(`  teams app create --name "${botName}" --teams-managed`));
         }
       }
       process.exit(1);
@@ -213,7 +213,7 @@ export const botMigrateCommand = new Command("migrate")
       const result: BotMigrateOutput = {
         botId,
         appName: botName,
-        from: "bf",
+        from: "teams-managed",
         to: "azure",
         endpoint: botEndpoint || null,
         subscription,

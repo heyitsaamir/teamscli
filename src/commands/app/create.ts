@@ -40,7 +40,7 @@ interface AppCreateOutput {
 	botId: string;
 	endpoint: string | null;
 	installLink: string;
-	botLocation: "bf" | "azure";
+	botLocation: "teams-managed" | "azure";
 	credentials: {
 		CLIENT_ID: string;
 		CLIENT_SECRET: string;
@@ -55,7 +55,7 @@ interface CreateOptions {
 	package?: string;
 	env?: string;
 	azure?: boolean;
-	bf?: boolean;
+	teamsManaged?: boolean;
 	subscription?: string;
 	resourceGroup?: string;
 	createResourceGroup?: boolean;
@@ -71,7 +71,7 @@ export const appCreateCommand = new Command("create")
 	.option("-p, --package <path>", "[OPTIONAL] Path to app package zip")
 	.option("--env <path>", "[OPTIONAL] Path to .env file to write credentials")
 	.option("--azure", "[OPTIONAL] Create bot in Azure (requires az CLI)")
-	.option("--bf", "[OPTIONAL] Create bot in BF tenant via TDP")
+	.option("--teams-managed", "[OPTIONAL] Create bot managed by Teams (default)")
 	.option("--subscription <id>", "[OPTIONAL] Azure subscription ID (defaults to az CLI default)")
 	.option("--resource-group <name>", "Azure resource group (required for --azure)")
 	.option("--create-resource-group", "[OPTIONAL] Create the resource group if it doesn't exist")
@@ -90,15 +90,15 @@ export const appCreateCommand = new Command("create")
 		}
 
 		// Validate conflicting flags
-		if (options.azure && options.bf) {
-			throw new CliError("VALIDATION_CONFLICT", "Cannot specify both --azure and --bf.");
+		if (options.azure && options.teamsManaged) {
+			throw new CliError("VALIDATION_CONFLICT", "Cannot specify both --azure and --teams-managed.");
 		}
 
-		// Resolve bot location: explicit flag > config > default (bf)
+		// Resolve bot location: explicit flag > config > default (teams-managed)
 		let location: BotLocation;
 		if (options.azure) location = "azure";
-		else if (options.bf) location = "bf";
-		else location = ((await getConfig("default-bot-location")) as BotLocation) ?? "bf";
+		else if (options.teamsManaged) location = "tm";
+		else location = ((await getConfig("default-bot-location")) as BotLocation) ?? "tm";
 
 		// Gather Azure context if needed
 		let azureContext: AzureContext | undefined;
@@ -273,13 +273,12 @@ export const appCreateCommand = new Command("create")
 			spinner.success({ text: `Created Teams app (${teamsAppId})` });
 
 			// Register bot
-			const locationLabel = location === "bf" ? "BF tenant" : "Azure";
-			spinner = createSilentSpinner(`Registering bot (${locationLabel})...`, silent).start();
-			const handler = location === "bf"
+			spinner = createSilentSpinner("Registering bot...", silent).start();
+			const handler = location === "tm"
 				? createTdpBotHandler(tdpToken)
 				: createAzureBotHandler(azureContext!);
 			await handler.createBot({ botId: clientId, name: name ?? "Bot", endpoint });
-			spinner.success({ text: `Registered bot (${locationLabel})` });
+			spinner.success({ text: "Bot registered" });
 
 			// Output results
 			const installLink = `https://teams.microsoft.com/l/app/${teamsAppId}?installAppPackage=true`;
@@ -291,7 +290,7 @@ export const appCreateCommand = new Command("create")
 					botId: clientId,
 					endpoint: endpoint ?? null,
 					installLink,
-					botLocation: location,
+					botLocation: location === "tm" ? "teams-managed" : "azure",
 					credentials: {
 						CLIENT_ID: clientId,
 						CLIENT_SECRET: secretText,

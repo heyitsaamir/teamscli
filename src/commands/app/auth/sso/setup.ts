@@ -139,10 +139,10 @@ export const ssoSetupCommand = new Command("setup")
       // Build redirect URIs
       const existingWeb = fullApp.web as Record<string, unknown> ?? {};
       const existingRedirects = (existingWeb.redirectUris as string[]) ?? [];
-      const bfRedirect = "https://token.botframework.com/.auth/web/redirect";
-      const redirectUris = existingRedirects.includes(bfRedirect)
+      const botFrameworkRedirect = "https://token.botframework.com/.auth/web/redirect";
+      const redirectUris = existingRedirects.includes(botFrameworkRedirect)
         ? existingRedirects
-        : [...existingRedirects, bfRedirect];
+        : [...existingRedirects, botFrameworkRedirect];
 
       // Build identifier URIs
       const existingIdentifierUris = (fullApp.identifierUris as string[]) ?? [];

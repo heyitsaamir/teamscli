@@ -32,7 +32,7 @@ teams
 │   │   └── download [appId]       Download app package
 │   ├── bot
 │   │   ├── status [appId]         Show bot location
-│   │   └── migrate [appId]        Migrate bot BF → Azure
+│   │   └── migrate [appId]        Migrate bot to Azure
 │   └── auth
 │       ├── secret
 │       │   └── create [appId]     Generate client secret

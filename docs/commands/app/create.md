@@ -24,7 +24,7 @@ teams app create [options]
 | `-p, --package <path>` | [OPTIONAL] Path to app package zip |
 | `--env <path>` | [OPTIONAL] Path to .env file to write credentials |
 | `--azure` | [OPTIONAL] Create bot in Azure (requires az CLI) |
-| `--bf` | [OPTIONAL] Create bot in BF tenant via TDP |
+| `--teams-managed` | [OPTIONAL] Create bot managed by Teams (default) |
 | `--subscription <id>` | [OPTIONAL] Azure subscription ID (defaults to az CLI default) |
 | `--resource-group <name>` | Azure resource group (required for --azure) |
 | `--create-resource-group` | [OPTIONAL] Create the resource group if it doesn't exist |
@@ -37,9 +37,9 @@ Creates a complete Teams bot app in a single command: AAD app registration, clie
 
 ### Bot Location
 
-By default, the bot is created in the **BF tenant** (no Azure subscription needed). Use `--azure` to create an Azure Bot instead, which is required for OAuth and SSO features.
+By default, the bot is Teams-managed (no Azure subscription needed). Use `--azure` to create an Azure Bot instead, which is required for OAuth and SSO features.
 
-**Precedence:** `--azure`/`--bf` flag > `teams config default-bot-location` > BF default.
+**Precedence:** `--azure`/`--teams-managed` flag > `teams config default-bot-location` > Teams-managed default.
 
 See [Bot Locations](/concepts/bot-locations) for details on the trade-offs.
 
@@ -55,7 +55,7 @@ You can provide your own manifest in three ways:
 
 ### Examples
 
-Create with defaults (BF tenant, generated manifest):
+Create with defaults (Teams-managed, generated manifest):
 
 ```bash
 teams app create --name "My Bot"

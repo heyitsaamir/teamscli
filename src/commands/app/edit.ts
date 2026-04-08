@@ -59,7 +59,7 @@ export async function showEditMenu(app: AppSummary, token: string): Promise<void
   if (appDetails.bots && appDetails.bots.length > 0) {
     const botId = appDetails.bots[0].botId;
     botLocation = await getBotLocation(token, botId);
-    if (botLocation === "bf") {
+    if (botLocation === "tm") {
       try {
         bot = await fetchBot(token, botId);
       } catch {
@@ -75,9 +75,6 @@ export async function showEditMenu(app: AppSummary, token: string): Promise<void
     logger.info(`${pc.dim("ID:")} ${appDetails.teamsAppId}`);
     if (bot) {
       logger.info(`${pc.dim("Endpoint:")} ${bot.messagingEndpoint || pc.yellow("(not set)")}`);
-    }
-    if (botLocation) {
-      logger.info(`${pc.dim("Bot location:")} ${botLocation === "bf" ? "BF tenant" : "Azure"}`);
     }
 
     const showEndpoint = bot || botLocation === "azure";

@@ -17,7 +17,7 @@ features:
   - title: App Lifecycle
     details: Create, view, edit, and manage Teams apps — including manifest and package operations.
   - title: Bot Registration
-    details: Register bots in the BF tenant or Azure, migrate between them, and configure messaging endpoints.
+    details: Register bots with Teams or Azure, migrate between them, and configure messaging endpoints.
   - title: Authentication
     details: Set up SSO, manage OAuth connections, and generate client secrets for your AAD apps.
   - title: AI Agent Friendly

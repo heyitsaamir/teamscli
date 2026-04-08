@@ -28,7 +28,7 @@ Runs a comprehensive diagnostic check across your app's bot registration, AAD ap
 ### Check Categories
 
 **Bot Registration**
-- Bot location detected (BF tenant or Azure)
+- Bot location detected (Teams-managed or Azure)
 - Teams channel is enabled
 - Messaging endpoint is reachable (HTTP probe)
 
