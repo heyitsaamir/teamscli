@@ -7,6 +7,7 @@ import { pickApp } from "../../../utils/app-picker.js";
 import { ensureAz, runAz } from "../../../utils/az.js";
 import { resolveSubscription, resolveResourceGroup } from "../../../utils/az-prompts.js";
 import { CliError, wrapAction } from "../../../utils/errors.js";
+import { confirmAction } from "../../../utils/interactive.js";
 import { outputJson } from "../../../utils/json-output.js";
 import { logger } from "../../../utils/logger.js";
 import { createSilentSpinner } from "../../../utils/spinner.js";
@@ -86,6 +87,11 @@ export const botMigrateCommand = new Command("migrate")
       logger.info(`${pc.dim("Bot ID:")} ${botId}`);
       logger.info(`${pc.dim("Current location:")} Teams (managed)`);
       logger.info();
+    }
+
+    // Confirm before Azure setup (avoid side effects like RG creation before user agrees)
+    if (!await confirmAction("Migrate this bot to Azure? The existing registration will be replaced.", silent)) {
+      return;
     }
 
     // Azure setup
