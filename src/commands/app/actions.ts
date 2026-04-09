@@ -65,7 +65,7 @@ export async function showAppActions(app: AppSummary, token: string): Promise<vo
       }
     } else if (action === "user-auth") {
       try {
-        await userAuthCommand.parseAsync([], { from: "user" });
+        await userAuthCommand.parseAsync([app.teamsAppId], { from: "user" });
       } catch (error) {
         if (error instanceof Error && error.name === "ExitPromptError") continue;
         logger.error(pc.red(error instanceof Error ? error.message : "Unknown error"));
