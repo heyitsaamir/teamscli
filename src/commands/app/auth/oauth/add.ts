@@ -44,7 +44,7 @@ export const oauthAddCommand = new Command("add")
         process.exit(1);
       }
       const providerSpinner = createSpinner("Fetching OAuth providers...").start();
-      const providers = runAz<{ value: ServiceProvider[] }>(["bot", "authsetting", "list-providers"]);
+      const providers = await runAz<{ value: ServiceProvider[] }>(["bot", "authsetting", "list-providers"]);
       providerSpinner.stop();
       const providerList = providers.value.map((p) => ({
         name: p.properties.displayName,
@@ -123,7 +123,7 @@ export const oauthAddCommand = new Command("add")
         args.push("--parameters", ...params.split(" "));
       }
 
-      runAz(args);
+      await runAz(args);
       spinner.success({ text: `OAuth connection "${connectionName}" created` });
     } catch (error) {
       spinner.error({ text: "Failed to create OAuth connection" });

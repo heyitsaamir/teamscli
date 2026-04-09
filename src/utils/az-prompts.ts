@@ -37,7 +37,7 @@ export async function resolveSubscription(flagValue?: string): Promise<string> {
 
   // Get current default subscription
   let spinner = createSpinner("Fetching Azure subscriptions...").start();
-  const current = runAz<AzSubscription>(["account", "show"]);
+  const current = await runAz<AzSubscription>(["account", "show"]);
   spinner.stop();
 
   const useDefault = await confirm({
@@ -52,7 +52,7 @@ export async function resolveSubscription(flagValue?: string): Promise<string> {
 
   // Pick a different subscription
   spinner = createSpinner("Fetching Azure subscriptions...").start();
-  const subs = runAz<AzSubscription[]>(["account", "list"]);
+  const subs = await runAz<AzSubscription[]>(["account", "list"]);
   spinner.stop();
   const picked = await search<AzSubscription>({
     message: "Select a subscription",
@@ -88,7 +88,7 @@ export async function resolveResourceGroup(
   }
 
   const rgSpinner = createSpinner("Fetching resource groups...").start();
-  const groups = runAz<AzResourceGroup[]>([
+  const groups = await runAz<AzResourceGroup[]>([
     "group", "list",
     "--subscription", subscription,
   ]);

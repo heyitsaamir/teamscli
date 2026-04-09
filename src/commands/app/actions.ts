@@ -56,7 +56,7 @@ async function showAuthMenu(appId: string, _token: string): Promise<void> {
     const { botId, azure } = await requireAzureBot(appId);
 
     const ssoSpinner = createSpinner("Fetching SSO connections...").start();
-    const settings = runAz<AuthSetting[]>([
+    const settings = await runAz<AuthSetting[]>([
       "bot", "authsetting", "list",
       "--name", botId,
       "--resource-group", azure.resourceGroup,

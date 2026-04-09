@@ -32,7 +32,7 @@ export const ssoListCommand = new Command("list")
 
     const spinner = createSpinner("Fetching SSO connections...").start();
     try {
-      const settings = runAz<AuthSetting[]>([
+      const settings = await runAz<AuthSetting[]>([
         "bot", "authsetting", "list",
         "--name", botId,
         "--resource-group", azure.resourceGroup,
@@ -55,7 +55,7 @@ export const ssoListCommand = new Command("list")
       for (const setting of aadConnections) {
         const connectionName = setting.name.split("/").pop() ?? setting.name;
         try {
-          const details = runAz<AuthSetting>([
+          const details = await runAz<AuthSetting>([
             "bot", "authsetting", "show",
             "--name", botId,
             "--resource-group", azure.resourceGroup,

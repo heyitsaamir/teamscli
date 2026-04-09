@@ -73,8 +73,8 @@ export async function requireAzureBot(appIdArg?: string, silent = false): Promis
     }
   }
 
-  ensureAz();
-  const azure = discoverAzureBot(botId, silent);
+  await ensureAz();
+  const azure = await discoverAzureBot(botId, silent);
   if (!azure) {
     throw new CliError("NOT_FOUND_AZURE_BOT", "Could not find this bot in Azure.");
   }

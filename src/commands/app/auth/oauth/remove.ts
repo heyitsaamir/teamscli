@@ -30,7 +30,7 @@ export const oauthRemoveCommand = new Command("remove")
 
       // List connections and let user pick
       const listSpinner = createSpinner("Fetching OAuth connections...").start();
-      const settings = runAz<AuthSetting[]>([
+      const settings = await runAz<AuthSetting[]>([
         "bot", "authsetting", "list",
         "--name", botId,
         "--resource-group", azure.resourceGroup,
@@ -63,7 +63,7 @@ export const oauthRemoveCommand = new Command("remove")
 
     const spinner = createSpinner(`Removing "${connectionName}"...`).start();
     try {
-      runAz([
+      await runAz([
         "bot", "authsetting", "delete",
         "--name", botId,
         "--resource-group", azure.resourceGroup,

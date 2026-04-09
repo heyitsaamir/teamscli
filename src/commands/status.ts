@@ -26,13 +26,13 @@ export const statusCommand = new Command("status")
         }
 
         // Azure CLI status
-        if (!isAzInstalled()) {
+        if (!(await isAzInstalled())) {
             console.log(`\n${pc.dim("Azure CLI:")} ${pc.yellow("not installed")}`);
-        } else if (!isAzLoggedIn()) {
+        } else if (!(await isAzLoggedIn())) {
             console.log(`\n${pc.dim("Azure CLI:")} installed, ${pc.yellow("not logged in")}`);
         } else {
             try {
-                const sub = runAz<{ name: string; id: string }>(["account", "show"]);
+                const sub = await runAz<{ name: string; id: string }>(["account", "show"]);
                 console.log(`\n${pc.dim("Azure CLI:")} ${pc.green("connected")}`);
                 console.log(`${pc.dim("Subscription:")} ${sub.name} ${pc.dim(`(${sub.id})`)}`);
             } catch {

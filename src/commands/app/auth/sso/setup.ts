@@ -180,7 +180,7 @@ export const ssoSetupCommand = new Command("setup")
     // Step 2: Create OAuth connection for SSO
     const oauthSpinner = createSilentSpinner("Creating SSO connection...", silent).start();
     try {
-      runAz([
+      await runAz([
         "bot", "authsetting", "create",
         "--name", botId,
         "--resource-group", azure.resourceGroup,

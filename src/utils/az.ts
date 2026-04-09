@@ -1,7 +1,10 @@
-import { execFileSync } from "node:child_process";
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
 import { platform } from "node:os";
 import { logger } from "./logger.js";
 import { CliError } from "./errors.js";
+
+const execFileAsync = promisify(execFile);
 
 // On Windows, .cmd files cannot be executed directly with execFile() due to spawn EINVAL error.
 // We use cmd.exe to execute az.cmd, which is safer than shell:true (blocks command injection).
@@ -15,25 +18,24 @@ const AZ_ARGS_PREFIX = IS_WINDOWS ? ["/c", "az.cmd"] : [];
  * On Windows: cmd /c az.cmd <args>
  * On Unix: az <args>
  */
-function execAz(args: string[]): string {
-  return execFileSync(AZ_COMMAND, [...AZ_ARGS_PREFIX, ...args], {
+async function execAz(args: string[]): Promise<{ stdout: string }> {
+  return execFileAsync(AZ_COMMAND, [...AZ_ARGS_PREFIX, ...args], {
     encoding: "utf-8",
-    stdio: ["pipe", "pipe", "pipe"],
   });
 }
 
-export function isAzInstalled(): boolean {
+export async function isAzInstalled(): Promise<boolean> {
   try {
-    execAz(["version"]);
+    await execAz(["version"]);
     return true;
   } catch {
     return false;
   }
 }
 
-export function isAzLoggedIn(): boolean {
+export async function isAzLoggedIn(): Promise<boolean> {
   try {
-    execAz(["account", "show"]);
+    await execAz(["account", "show"]);
     return true;
   } catch {
     return false;
@@ -43,12 +45,12 @@ export function isAzLoggedIn(): boolean {
 /**
  * Ensure Azure CLI is installed and logged in. Exits with helpful message if not.
  */
-export function ensureAz(): void {
-  if (!isAzInstalled()) {
+export async function ensureAz(): Promise<void> {
+  if (!(await isAzInstalled())) {
     throw new CliError("TOOL_AZ_NOT_INSTALLED", "Azure CLI is not installed.", "Install from https://learn.microsoft.com/en-us/cli/azure/install-azure-cli?view=azure-cli-latest");
   }
 
-  if (!isAzLoggedIn()) {
+  if (!(await isAzLoggedIn())) {
     throw new CliError("TOOL_AZ_NOT_LOGGED_IN", "Not logged in to Azure CLI.", "Run `az login` first.");
   }
 }
@@ -57,10 +59,10 @@ export function ensureAz(): void {
  * Run an az CLI command and return parsed JSON output.
  * Automatically appends --output json.
  */
-export function runAz<T = unknown>(args: string[]): T {
+export async function runAz<T = unknown>(args: string[]): Promise<T> {
   logger.debug(`az ${args.join(" ")}`);
-  const output = execAz([...args, "--output", "json"]);
-  const trimmed = output.trim();
+  const { stdout } = await execAz([...args, "--output", "json"]);
+  const trimmed = stdout.trim();
   if (!trimmed) return undefined as T;
   return JSON.parse(trimmed) as T;
 }

@@ -32,7 +32,7 @@ export const ssoCommand = new Command("sso")
 
       // Fetch existing SSO connections
       const listSpinner = createSpinner("Fetching SSO connections...").start();
-      const settings = runAz<AuthSetting[]>([
+      const settings = await runAz<AuthSetting[]>([
         "bot", "authsetting", "list",
         "--name", botId,
         "--resource-group", azure.resourceGroup,

@@ -23,7 +23,7 @@ export const oauthListCommand = new Command("list")
 
     const spinner = createSpinner("Fetching OAuth connections...").start();
     try {
-      const settings = runAz<AuthSetting[]>([
+      const settings = await runAz<AuthSetting[]>([
         "bot", "authsetting", "list",
         "--name", botId,
         "--resource-group", azure.resourceGroup,

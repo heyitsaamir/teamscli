@@ -44,7 +44,7 @@ export const ssoEditCommand = new Command("edit")
       }
 
       const listSpinner = createSpinner("Fetching SSO connections...").start();
-      const settings = runAz<AuthSetting[]>([
+      const settings = await runAz<AuthSetting[]>([
         "bot", "authsetting", "list",
         "--name", botId,
         "--resource-group", azure.resourceGroup,
@@ -78,7 +78,7 @@ export const ssoEditCommand = new Command("edit")
 
     // Fetch current details
     const detailSpinner = createSpinner("Loading connection details...").start();
-    const current = runAz<AuthSetting>([
+    const current = await runAz<AuthSetting>([
       "bot", "authsetting", "show",
       "--name", botId,
       "--resource-group", azure.resourceGroup,
@@ -153,7 +153,7 @@ export const ssoEditCommand = new Command("edit")
     // Delete and recreate (az bot authsetting has no update command)
     const spinner = createSpinner("Updating SSO connection...").start();
     try {
-      runAz([
+      await runAz([
         "bot", "authsetting", "delete",
         "--name", botId,
         "--resource-group", azure.resourceGroup,
@@ -161,7 +161,7 @@ export const ssoEditCommand = new Command("edit")
         "--subscription", azure.subscription,
       ]);
 
-      runAz([
+      await runAz([
         "bot", "authsetting", "create",
         "--name", botId,
         "--resource-group", azure.resourceGroup,

@@ -31,7 +31,7 @@ export const ssoRemoveCommand = new Command("remove")
 
       // List SSO connections and let user pick
       const listSpinner = createSpinner("Fetching SSO connections...").start();
-      const settings = runAz<AuthSetting[]>([
+      const settings = await runAz<AuthSetting[]>([
         "bot", "authsetting", "list",
         "--name", botId,
         "--resource-group", azure.resourceGroup,
@@ -67,7 +67,7 @@ export const ssoRemoveCommand = new Command("remove")
     // Remove the OAuth connection
     const spinner = createSpinner(`Removing SSO connection "${connectionName}"...`).start();
     try {
-      runAz([
+      await runAz([
         "bot", "authsetting", "delete",
         "--name", botId,
         "--resource-group", azure.resourceGroup,
