@@ -33,6 +33,10 @@ teams
 │   ├── bot
 │   │   ├── status [appId]         Show bot location
 │   │   └── migrate [appId]        Migrate bot to Azure
+│   ├── rsc
+│   │   ├── list <teamsAppId>      List RSC permissions
+│   │   ├── add <teamsAppId>       Add RSC permission
+│   │   └── remove <teamsAppId>    Remove RSC permission
 │   ├── auth
 │   │   └── secret
 │   │       └── create [appId]     Generate client secret

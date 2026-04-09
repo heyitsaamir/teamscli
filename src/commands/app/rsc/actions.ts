@@ -1,6 +1,11 @@
 import { fetchAppDetailsV2, updateAppDetails } from "../../../apps/api.js";
 import type { RscPermissionEntry, AppAuthorization } from "../../../apps/types.js";
 
+/** Composite key for deduplication: "name|type" */
+function permKey(p: RscPermissionEntry): string {
+  return `${p.name}|${p.type}`;
+}
+
 /**
  * Read current RSC permissions from the app.
  */
@@ -37,7 +42,7 @@ async function buildAuthorizationUpdate(
 
 /**
  * Add RSC permissions to the app (merges with existing, skips duplicates).
- * Returns the list of permissions that were actually added (excludes already-existing ones).
+ * Uses composite key (name+type) so the same permission name with different types are treated independently.
  */
 export async function addRscPermissions(
   token: string,
@@ -45,13 +50,13 @@ export async function addRscPermissions(
   permissions: RscPermissionEntry[],
 ): Promise<{ added: RscPermissionEntry[]; skipped: RscPermissionEntry[] }> {
   const current = await listRscPermissions(token, teamsAppId);
-  const existingNames = new Set(current.map((p) => p.name));
+  const existingKeys = new Set(current.map(permKey));
 
   const added: RscPermissionEntry[] = [];
   const skipped: RscPermissionEntry[] = [];
 
   for (const perm of permissions) {
-    if (existingNames.has(perm.name)) {
+    if (existingKeys.has(permKey(perm))) {
       skipped.push(perm);
     } else {
       added.push(perm);
@@ -69,7 +74,7 @@ export async function addRscPermissions(
 
 /**
  * Remove RSC permissions from the app by name.
- * Returns the list of permissions that were actually removed.
+ * Uses name-only matching (removes all types for that name).
  */
 export async function removeRscPermissions(
   token: string,
@@ -98,4 +103,17 @@ export async function removeRscPermissions(
   }
 
   return { removed, notFound };
+}
+
+/**
+ * Set the exact RSC permissions for an app (atomic replace).
+ * Used by the interactive scope editor to apply the diff in a single API call.
+ */
+export async function setRscPermissions(
+  token: string,
+  teamsAppId: string,
+  permissions: RscPermissionEntry[],
+): Promise<void> {
+  const update = await buildAuthorizationUpdate(token, teamsAppId, permissions);
+  await updateAppDetails(token, teamsAppId, update);
 }

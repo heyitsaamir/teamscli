@@ -13,7 +13,7 @@ import {
   type RscScope,
 } from "../../../apps/rsc-catalog.js";
 import type { RscPermissionEntry, AppSummary } from "../../../apps/types.js";
-import { listRscPermissions, addRscPermissions, removeRscPermissions } from "./actions.js";
+import { listRscPermissions, addRscPermissions, removeRscPermissions, setRscPermissions } from "./actions.js";
 
 // ─── Interactive menu ───────────────────────────────────────────────
 
@@ -88,7 +88,8 @@ async function editScopePermissions(token: string, teamsAppId: string, scope: Rs
   const current = await listRscPermissions(token, teamsAppId);
   spinner.stop();
 
-  const currentNames = new Set(current.map((p) => p.name));
+  // Composite key for dedup: "name|type"
+  const currentKeys = new Set(current.map((p) => `${p.name}|${p.type}`));
   const catalog = getPermissionsForScope(scope);
   const scopeSuffix = scope === "Team" ? ".Group" : scope === "Chat" ? ".Chat" : ".User";
 
@@ -107,7 +108,7 @@ async function editScopePermissions(token: string, teamsAppId: string, scope: Rs
       choices.push({
         name: `${perm.displayName} ${pc.dim(`(${perm.name})`)}`,
         value: { name: perm.name, type: "Application" },
-        checked: currentNames.has(perm.name),
+        checked: currentKeys.has(`${perm.name}|Application`),
       });
     }
   }
@@ -118,7 +119,7 @@ async function editScopePermissions(token: string, teamsAppId: string, scope: Rs
       choices.push({
         name: `${perm.displayName} ${pc.dim(`(${perm.name})`)}`,
         value: { name: perm.name, type: "Delegated" },
-        checked: currentNames.has(perm.name),
+        checked: currentKeys.has(`${perm.name}|Delegated`),
       });
     }
   }
@@ -141,30 +142,29 @@ async function editScopePermissions(token: string, teamsAppId: string, scope: Rs
     choices,
   });
 
-  // Compute diff
-  const selectedNames = new Set(selected.map((p) => p.name));
-  const currentScopeNames = new Set(current.filter((p) => p.name.endsWith(scopeSuffix)).map((p) => p.name));
+  // Compute diff using composite keys
+  const selectedKeys = new Set(selected.map((p) => `${p.name}|${p.type}`));
+  const currentScopePerms = current.filter((p) => p.name.endsWith(scopeSuffix));
+  const currentScopeKeys = new Set(currentScopePerms.map((p) => `${p.name}|${p.type}`));
 
-  const toAdd = selected.filter((p) => !currentScopeNames.has(p.name));
-  const toRemove = [...currentScopeNames].filter((name) => !selectedNames.has(name));
+  const toAdd = selected.filter((p) => !currentScopeKeys.has(`${p.name}|${p.type}`));
+  const toRemoveKeys = new Set([...currentScopeKeys].filter((key) => !selectedKeys.has(key)));
 
-  if (toAdd.length === 0 && toRemove.length === 0) {
+  if (toAdd.length === 0 && toRemoveKeys.size === 0) {
     logger.info(pc.dim("No changes."));
     return;
   }
 
-  const updateSpinner = createSilentSpinner("Updating RSC permissions...").start();
+  // Atomic update: keep non-scope perms + selected scope perms
+  const otherScopePerms = current.filter((p) => !p.name.endsWith(scopeSuffix));
+  const finalPerms = [...otherScopePerms, ...selected];
 
-  if (toAdd.length > 0) {
-    await addRscPermissions(token, teamsAppId, toAdd);
-  }
-  if (toRemove.length > 0) {
-    await removeRscPermissions(token, teamsAppId, toRemove);
-  }
+  const updateSpinner = createSilentSpinner("Updating RSC permissions...").start();
+  await setRscPermissions(token, teamsAppId, finalPerms);
 
   const parts: string[] = [];
   if (toAdd.length > 0) parts.push(`added ${toAdd.length}`);
-  if (toRemove.length > 0) parts.push(`removed ${toRemove.length}`);
+  if (toRemoveKeys.size > 0) parts.push(`removed ${toRemoveKeys.size}`);
   updateSpinner.success({ text: `RSC permissions updated (${parts.join(", ")}).` });
 }
 
