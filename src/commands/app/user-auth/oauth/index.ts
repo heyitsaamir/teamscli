@@ -13,29 +13,31 @@ export const oauthCommand = new Command("oauth")
       return;
     }
 
-    try {
-      const action = await select({
-        message: "OAuth connections",
-        choices: [
-          { name: "Add connection", value: "add" },
-          { name: "List connections", value: "list" },
-          { name: "Remove connection", value: "remove" },
-          { name: "Back", value: "back" },
-        ],
-      });
+    while (true) {
+      try {
+        const action = await select({
+          message: "OAuth connections",
+          choices: [
+            { name: "Add connection", value: "add" },
+            { name: "List connections", value: "list" },
+            { name: "Remove connection", value: "remove" },
+            { name: "Back", value: "back" },
+          ],
+        });
 
-      if (action === "back") return;
+        if (action === "back") return;
 
-      if (action === "add") {
-        await oauthAddCommand.parseAsync([], { from: "user" });
-      } else if (action === "list") {
-        await oauthListCommand.parseAsync([], { from: "user" });
-      } else if (action === "remove") {
-        await oauthRemoveCommand.parseAsync([], { from: "user" });
+        if (action === "add") {
+          await oauthAddCommand.parseAsync([], { from: "user" });
+        } else if (action === "list") {
+          await oauthListCommand.parseAsync([], { from: "user" });
+        } else if (action === "remove") {
+          await oauthRemoveCommand.parseAsync([], { from: "user" });
+        }
+      } catch (error) {
+        if (error instanceof Error && error.name === "ExitPromptError") return;
+        throw error;
       }
-    } catch (error) {
-      if (error instanceof Error && error.name === "ExitPromptError") return;
-      throw error;
     }
   });
 

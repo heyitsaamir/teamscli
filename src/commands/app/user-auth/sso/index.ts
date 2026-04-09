@@ -27,52 +27,54 @@ export const ssoCommand = new Command("sso")
       return;
     }
 
-    try {
-      const { appId, botId, azure } = await requireAzureBot();
+    const { appId, botId, azure } = await requireAzureBot();
 
-      // Fetch existing SSO connections
-      const listSpinner = createSilentSpinner("Fetching SSO connections...").start();
-      const settings = await runAz<AuthSetting[]>([
-        "bot", "authsetting", "list",
-        "--name", botId,
-        "--resource-group", azure.resourceGroup,
-        "--subscription", azure.subscription,
-      ]);
-      listSpinner.stop();
+    while (true) {
+      try {
+        // Fetch existing SSO connections
+        const listSpinner = createSilentSpinner("Fetching SSO connections...").start();
+        const settings = await runAz<AuthSetting[]>([
+          "bot", "authsetting", "list",
+          "--name", botId,
+          "--resource-group", azure.resourceGroup,
+          "--subscription", azure.subscription,
+        ]);
+        listSpinner.stop();
 
-      const aadConnections = settings.filter((s) => {
-        const provider = s.properties?.serviceProviderDisplayName ?? "";
-        return provider.includes("Azure Active Directory");
-      });
+        const aadConnections = settings.filter((s) => {
+          const provider = s.properties?.serviceProviderDisplayName ?? "";
+          return provider.includes("Azure Active Directory");
+        });
 
-      const connectionChoices = aadConnections.map((s) => {
-        const name = s.name.split("/").pop() ?? s.name;
-        return {
-          name: s.properties?.scopes ? `${name} ${pc.dim(`(${s.properties.scopes})`)}` : name,
-          value: `edit:${name}`,
-        };
-      });
+        const connectionChoices = aadConnections.map((s) => {
+          const name = s.name.split("/").pop() ?? s.name;
+          return {
+            name: s.properties?.scopes ? `${name} ${pc.dim(`(${s.properties.scopes})`)}` : name,
+            value: `edit:${name}`,
+          };
+        });
 
-      const action = await select({
-        message: "SSO",
-        choices: [
-          ...connectionChoices,
-          { name: "Set up new SSO connection", value: "setup" },
-          { name: "Back", value: "back" },
-        ],
-      });
+        const action = await select({
+          message: "SSO",
+          choices: [
+            ...connectionChoices,
+            { name: "Set up new SSO connection", value: "setup" },
+            { name: "Back", value: "back" },
+          ],
+        });
 
-      if (action === "back") return;
+        if (action === "back") return;
 
-      if (action === "setup") {
-        await ssoSetupCommand.parseAsync([appId], { from: "user" });
-      } else if (action.startsWith("edit:")) {
-        const connectionName = action.slice(5);
-        await ssoEditCommand.parseAsync([appId, "--connection-name", connectionName], { from: "user" });
+        if (action === "setup") {
+          await ssoSetupCommand.parseAsync([appId], { from: "user" });
+        } else if (action.startsWith("edit:")) {
+          const connectionName = action.slice(5);
+          await ssoEditCommand.parseAsync([appId, "--connection-name", connectionName], { from: "user" });
+        }
+      } catch (error) {
+        if (error instanceof Error && error.name === "ExitPromptError") return;
+        throw error;
       }
-    } catch (error) {
-      if (error instanceof Error && error.name === "ExitPromptError") return;
-      throw error;
     }
   });
 
