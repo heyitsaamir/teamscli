@@ -90,6 +90,13 @@ async function editScopePermissions(token: string, teamsAppId: string, scope: Rs
 
   const currentNames = new Set(current.map((p) => p.name));
   const catalog = getPermissionsForScope(scope);
+  const scopeSuffix = scope === "Team" ? ".Group" : scope === "Chat" ? ".Chat" : ".User";
+
+  // Track which current scope permissions are in the catalog
+  const catalogNames = new Set([
+    ...catalog.Application.map((p) => p.name),
+    ...catalog.Delegated.map((p) => p.name),
+  ]);
 
   // Build checkbox choices with current permissions pre-checked
   const choices: Array<{ name: string; value: RscPermissionEntry; checked?: boolean } | Separator> = [];
@@ -116,6 +123,19 @@ async function editScopePermissions(token: string, teamsAppId: string, scope: Rs
     }
   }
 
+  // Include unknown permissions (in this scope but not in catalog) as pre-checked
+  const unknownPerms = current.filter((p) => p.name.endsWith(scopeSuffix) && !catalogNames.has(p.name));
+  if (unknownPerms.length > 0) {
+    choices.push(new Separator(pc.bold("── Other (not in catalog) ──")));
+    for (const perm of unknownPerms) {
+      choices.push({
+        name: `${perm.name} ${pc.dim(`(${perm.type})`)}`,
+        value: { name: perm.name, type: perm.type },
+        checked: true,
+      });
+    }
+  }
+
   const selected = await checkbox<RscPermissionEntry>({
     message: `${scope} RSC permissions (space to toggle, enter to save):`,
     choices,
@@ -123,7 +143,6 @@ async function editScopePermissions(token: string, teamsAppId: string, scope: Rs
 
   // Compute diff
   const selectedNames = new Set(selected.map((p) => p.name));
-  const scopeSuffix = scope === "Team" ? ".Group" : scope === "Chat" ? ".Chat" : ".User";
   const currentScopeNames = new Set(current.filter((p) => p.name.endsWith(scopeSuffix)).map((p) => p.name));
 
   const toAdd = selected.filter((p) => !currentScopeNames.has(p.name));
@@ -178,10 +197,6 @@ interface RscRemoveOptions {
   json?: boolean;
 }
 
-interface RscListOutput {
-  permissions: RscPermissionEntry[];
-}
-
 interface RscAddOutput {
   added: RscPermissionEntry[];
   skipped: RscPermissionEntry[];
@@ -201,8 +216,7 @@ const rscListCommand = new Command("list")
     const permissions = await listRscPermissions(token, teamsAppId);
 
     if (options.json) {
-      const result: RscListOutput = { permissions };
-      outputJson(result);
+      outputJson(permissions);
       return;
     }
 
@@ -264,7 +278,7 @@ const rscRemoveCommand = new Command("remove")
     }
 
     if (notFound.length > 0) {
-      throw new CliError("NOT_FOUND_APP", `Permission "${permission}" not found on this app.`);
+      throw new CliError("VALIDATION_MISSING", `Permission "${permission}" not found on this app.`);
     }
 
     logger.info(pc.green(`Removed ${permission}.`));
