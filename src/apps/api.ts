@@ -220,7 +220,13 @@ export async function uploadIcon(
 
   // Step 2: Write URL back to app definition (read-modify-write to preserve the other icon)
   const field = iconType === "color" ? "colorIcon" : "outlineIcon";
-  await updateAppDetails(token, teamsAppId, { [field]: iconUrl });
+  try {
+    await updateAppDetails(token, teamsAppId, { [field]: iconUrl });
+  } catch (error) {
+    if (error instanceof CliError) throw error;
+    const msg = error instanceof Error ? error.message : String(error);
+    throw new CliError("API_ERROR", `Failed to update ${iconType} icon: ${msg}`);
+  }
 }
 
 /**
