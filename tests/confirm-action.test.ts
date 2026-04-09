@@ -1,3 +1,6 @@
+// RED/GREEN: verified 2026-04-09 — each guard (autoConfirm, silent, isInteractive, confirm call)
+// was broken individually and the expected tests failed before restoring correct code.
+
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 /**
