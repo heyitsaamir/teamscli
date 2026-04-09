@@ -1,8 +1,11 @@
 import { Command } from "commander";
-import { execSync } from "node:child_process";
-import { createSpinner } from "nanospinner";
+import { exec } from "node:child_process";
+import { promisify } from "node:util";
 import pc from "picocolors";
 import { logger } from "../utils/logger.js";
+import { createSilentSpinner } from "../utils/spinner.js";
+
+const execAsync = promisify(exec);
 
 const INSTALL_URL =
   "https://github.com/heyitsaamir/teamscli/releases/latest/download/teamscli.tgz";
@@ -10,16 +13,16 @@ const INSTALL_URL =
 /**
  * Run the self-update. Returns true on success, false on failure.
  */
-export function runSelfUpdate(): boolean {
-  const spinner = createSpinner("Updating teams...").start();
+export async function runSelfUpdate(): Promise<boolean> {
+  const spinner = createSilentSpinner("Updating teams...").start();
 
   try {
-    execSync(`npm install -g ${INSTALL_URL}`, { stdio: "pipe" });
+    await execAsync(`npm install -g ${INSTALL_URL}`);
     spinner.success({ text: "Updated to the latest version" });
 
     try {
-      const version = execSync("teams --version", { encoding: "utf-8" }).trim();
-      logger.info(`${pc.dim("Version:")} ${version}`);
+      const { stdout } = await execAsync("teams --version");
+      logger.info(`${pc.dim("Version:")} ${stdout.trim()}`);
     } catch {
       // version check is best-effort
     }
@@ -39,7 +42,7 @@ export function runSelfUpdate(): boolean {
 export const selfUpdateCommand = new Command("self-update")
   .description("Update teams to the latest version")
   .action(async () => {
-    if (!runSelfUpdate()) {
+    if (!(await runSelfUpdate())) {
       process.exit(1);
     }
   });

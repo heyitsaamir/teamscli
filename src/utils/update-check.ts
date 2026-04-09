@@ -1,7 +1,7 @@
 import { readFile, writeFile, mkdir } from "node:fs/promises";
 import { join } from "node:path";
 import { createRequire } from "node:module";
-import { execSync } from "node:child_process";
+import { spawn } from "node:child_process";
 import pc from "picocolors";
 import { paths } from "../auth/config.js";
 import { isInteractive } from "./interactive.js";
@@ -67,7 +67,7 @@ export async function checkForUpdates(options?: { autoUpdate?: boolean }): Promi
       // Already checked recently — auto-update or show hint if we cached a newer version
       if (state.latestVersion) {
         if (autoUpdate) {
-          autoUpdateAndRerun();
+          await autoUpdateAndRerun();
         } else {
           showUpdateHint(state.latestVersion);
         }
@@ -83,7 +83,7 @@ export async function checkForUpdates(options?: { autoUpdate?: boolean }): Promi
 
       if (autoUpdate) {
         await writeState(newState);
-        autoUpdateAndRerun();
+        await autoUpdateAndRerun();
       } else {
         showUpdateHint(latestVersion);
       }
@@ -95,19 +95,18 @@ export async function checkForUpdates(options?: { autoUpdate?: boolean }): Promi
   }
 }
 
-function autoUpdateAndRerun(): void {
-  const success = runSelfUpdate();
+async function autoUpdateAndRerun(): Promise<void> {
+  const success = await runSelfUpdate();
   if (success) {
-    // Re-run the original command using the same invocation method
-    const args = process.argv.slice(2).filter((a) => a !== "--disable-auto-update");
-    const cmd = process.argv[1]
-      ? `${process.execPath} ${process.argv[1]} --disable-auto-update ${args.join(" ")}`
-      : `teams --disable-auto-update ${args.join(" ")}`;
-    try {
-      execSync(cmd, { stdio: "inherit" });
-    } catch {
-      // Command may exit non-zero, that's fine
-    }
+    // Re-run the original command using spawn with an argv array (no shell, no injection risk)
+    const filteredArgs = process.argv.slice(2).filter((a) => a !== "--disable-auto-update");
+    const [bin, spawnArgs] = process.argv[1]
+      ? [process.execPath, [process.argv[1], "--disable-auto-update", ...filteredArgs]]
+      : ["teams", ["--disable-auto-update", ...filteredArgs]];
+    await new Promise<void>((resolve) => {
+      const child = spawn(bin, spawnArgs, { stdio: "inherit", shell: false });
+      child.on("close", () => resolve());
+    });
     process.exit(0);
   }
   // On failure, runSelfUpdate already printed the error — continue with current version
