@@ -3,7 +3,7 @@ import { input, search } from "@inquirer/prompts";
 import pc from "picocolors";
 import { createSilentSpinner } from "../../../../utils/spinner.js";
 import { runAz } from "../../../../utils/az.js";
-import { isInteractive } from "../../../../utils/interactive.js";
+import { isInteractive, confirmAction } from "../../../../utils/interactive.js";
 import { logger } from "../../../../utils/logger.js";
 import { CliError, wrapAction } from "../../../../utils/errors.js";
 import { requireAzureBot } from "../require-azure.js";
@@ -96,6 +96,11 @@ export const oauthAddCommand = new Command("add")
         throw new CliError("VALIDATION_MISSING", "--scopes is required in non-interactive mode.");
       }
       scopes = await input({ message: "Scopes (space-delimited):" });
+    }
+
+    // Confirm before proceeding
+    if (!await confirmAction(`Create OAuth connection "${connectionName}" using ${provider}?`)) {
+      return;
     }
 
     // Create the connection

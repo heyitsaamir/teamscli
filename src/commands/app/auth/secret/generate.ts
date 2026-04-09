@@ -4,6 +4,7 @@ import {
 	fetchApp,
 	getAadAppByClientId,
 } from "../../../../apps/index.js";
+import { confirmAction } from "../../../../utils/interactive.js";
 import {
 	getAccount,
 	getTokenSilent,
@@ -51,6 +52,10 @@ export async function generateSecret(opts: GenerateSecretOptions): Promise<void>
 		envPath = (await input({
 			message: "Path to .env file (leave empty to show in terminal):",
 		})) || undefined;
+	}
+
+	if (!await confirmAction("Generate a new client secret?", silent)) {
+		return;
 	}
 
 	const account = await getAccount();

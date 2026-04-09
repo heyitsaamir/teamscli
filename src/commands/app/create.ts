@@ -25,7 +25,7 @@ import { CliError, wrapAction } from "../../utils/errors.js";
 import { readAndValidateIcon } from "../../utils/icon.js";
 import { outputJson } from "../../utils/json-output.js";
 import { logger } from "../../utils/logger.js";
-import { isInteractive } from "../../utils/interactive.js";
+import { isInteractive, confirmAction } from "../../utils/interactive.js";
 import { getConfig } from "../../utils/config.js";
 import { ensureAz, runAz } from "../../utils/az.js";
 import { resolveSubscription, resolveResourceGroup } from "../../utils/az-prompts.js";
@@ -189,7 +189,11 @@ export const appCreateCommand = new Command("create")
 		const colorIcon = colorIconPath ? readAndValidateIcon(colorIconPath, 192) : undefined;
 		const outlineIcon = outlineIconPath ? readAndValidateIcon(outlineIconPath, 32) : undefined;
 
-		// ===== All inputs gathered, now do async work =====
+		// ===== All inputs gathered — confirm before proceeding =====
+		const locationLabel = location === "azure" ? "Azure" : "Teams-managed";
+		if (!await confirmAction(`Create Teams app "${name}" with ${locationLabel} bot?`, silent)) {
+			return;
+		}
 
 		// Get tokens
 		let spinner = createSilentSpinner("Acquiring tokens...", silent).start();

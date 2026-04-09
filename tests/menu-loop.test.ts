@@ -26,6 +26,7 @@ function setupMocks(): void {
     isInteractive: () => true,
     isAutoConfirm: () => false,
     setAutoConfirm: vi.fn(),
+    confirmAction: vi.fn().mockResolvedValue(true),
   }));
 
   vi.mock("../src/utils/spinner.js", () => ({
