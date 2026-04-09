@@ -6,12 +6,27 @@ import { CliError } from "./errors.js";
 
 const execFileAsync = promisify(execFile);
 
-// Resolve the correct Azure CLI executable for the platform
-const AZ_COMMAND = platform() === "win32" ? "az.cmd" : "az";
+// On Windows, .cmd files cannot be executed directly with execFile() due to spawn EINVAL error.
+// We use cmd.exe to execute az.cmd, which is safer than shell:true (blocks command injection).
+// On Unix, az is a shell script that can be executed directly.
+const IS_WINDOWS = platform() === "win32";
+const AZ_COMMAND = IS_WINDOWS ? "cmd" : "az";
+const AZ_ARGS_PREFIX = IS_WINDOWS ? ["/c", "az.cmd"] : [];
+
+/**
+ * Execute Azure CLI command with platform-specific handling.
+ * On Windows: cmd /c az.cmd <args>
+ * On Unix: az <args>
+ */
+async function execAz(args: string[]): Promise<{ stdout: string }> {
+  return execFileAsync(AZ_COMMAND, [...AZ_ARGS_PREFIX, ...args], {
+    encoding: "utf-8",
+  });
+}
 
 export async function isAzInstalled(): Promise<boolean> {
   try {
-    await execFileAsync(AZ_COMMAND, ["version"]);
+    await execAz(["version"]);
     return true;
   } catch {
     return false;
@@ -20,7 +35,7 @@ export async function isAzInstalled(): Promise<boolean> {
 
 export async function isAzLoggedIn(): Promise<boolean> {
   try {
-    await execFileAsync(AZ_COMMAND, ["account", "show"]);
+    await execAz(["account", "show"]);
     return true;
   } catch {
     return false;
@@ -45,10 +60,8 @@ export async function ensureAz(): Promise<void> {
  * Automatically appends --output json.
  */
 export async function runAz<T = unknown>(args: string[]): Promise<T> {
-  logger.debug(`${AZ_COMMAND} ${args.join(" ")}`);
-  const { stdout } = await execFileAsync(AZ_COMMAND, [...args, "--output", "json"], {
-    encoding: "utf-8",
-  });
+  logger.debug(`az ${args.join(" ")}`);
+  const { stdout } = await execAz([...args, "--output", "json"]);
   const trimmed = stdout.trim();
   if (!trimmed) return undefined as T;
   return JSON.parse(trimmed) as T;
