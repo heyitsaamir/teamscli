@@ -1,15 +1,12 @@
 import { readFile, writeFile, mkdir } from "node:fs/promises";
 import { join } from "node:path";
 import { createRequire } from "node:module";
-import { exec } from "node:child_process";
-import { promisify } from "node:util";
+import { spawn } from "node:child_process";
 import pc from "picocolors";
 import { paths } from "../auth/config.js";
 import { isInteractive } from "./interactive.js";
 import { runSelfUpdate } from "../commands/self-update.js";
 import { logger } from "./logger.js";
-
-const execAsync = promisify(exec);
 
 const STATE_FILE = join(paths.cache, "update-check.json");
 const CHECK_INTERVAL_MS = 24 * 60 * 60 * 1000; // 24 hours
@@ -101,16 +98,15 @@ export async function checkForUpdates(options?: { autoUpdate?: boolean }): Promi
 async function autoUpdateAndRerun(): Promise<void> {
   const success = await runSelfUpdate();
   if (success) {
-    // Re-run the original command using the same invocation method
-    const args = process.argv.slice(2).filter((a) => a !== "--disable-auto-update");
-    const cmd = process.argv[1]
-      ? `${process.execPath} ${process.argv[1]} --disable-auto-update ${args.join(" ")}`
-      : `teams --disable-auto-update ${args.join(" ")}`;
-    try {
-      await execAsync(cmd);
-    } catch {
-      // Command may exit non-zero, that's fine
-    }
+    // Re-run the original command using spawn with an argv array (no shell, no injection risk)
+    const filteredArgs = process.argv.slice(2).filter((a) => a !== "--disable-auto-update");
+    const [bin, spawnArgs] = process.argv[1]
+      ? [process.execPath, [process.argv[1], "--disable-auto-update", ...filteredArgs]]
+      : ["teams", ["--disable-auto-update", ...filteredArgs]];
+    await new Promise<void>((resolve) => {
+      const child = spawn(bin, spawnArgs, { stdio: "inherit", shell: false });
+      child.on("close", () => resolve());
+    });
     process.exit(0);
   }
   // On failure, runSelfUpdate already printed the error — continue with current version
