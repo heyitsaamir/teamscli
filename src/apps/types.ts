@@ -1,3 +1,18 @@
+export interface RscPermissionEntry {
+  name: string;
+  type: "Application" | "Delegated";
+}
+
+export interface AppPermissionsRsc {
+  resourceSpecific?: RscPermissionEntry[];
+  [key: string]: unknown;
+}
+
+export interface AppAuthorization {
+  permissions?: AppPermissionsRsc;
+  [key: string]: unknown;
+}
+
 export interface AppBot {
   botId: string;
   scopes?: string[];
@@ -40,6 +55,7 @@ export interface AppDetails {
   colorIcon?: string;
   outlineIcon?: string;
   bots?: AppBot[];
+  authorization?: AppAuthorization;
 
   // Allow pass-through of unknown fields from the API
   [key: string]: unknown;
