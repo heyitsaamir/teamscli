@@ -22,9 +22,8 @@ export function isAutoConfirm(): boolean {
 /**
  * Confirm a major action before proceeding.
  * - Returns true immediately when --yes is active.
- * - In interactive mode, prompts the user.
- * - In non-interactive mode without --yes, returns true (caller already
- *   provided explicit flags).
+ * - Returns true immediately in silent or non-interactive mode.
+ * - Otherwise, prompts the user in interactive mode.
  */
 export async function confirmAction(message: string, silent = false): Promise<boolean> {
   if (autoConfirm) return true;

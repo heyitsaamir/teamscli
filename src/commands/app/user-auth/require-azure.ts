@@ -61,7 +61,7 @@ export async function requireAzureBot(appIdArg?: string, silent = false): Promis
   if (location === "tm") {
     if (isAutoConfirm() && isInteractive()) {
       logger.warn(pc.yellow("This feature requires an Azure bot. Auto-confirming migration..."));
-      await botMigrateCommand.parseAsync([appId], { from: "user" });
+      await botMigrateCommand.parseAsync([appId, "--yes"], { from: "user" });
 
       const newLocation = await getBotLocation(token, botId);
       if (newLocation !== "azure") {
@@ -76,7 +76,7 @@ export async function requireAzureBot(appIdArg?: string, silent = false): Promis
       });
 
       if (migrate) {
-        await botMigrateCommand.parseAsync([appId], { from: "user" });
+        await botMigrateCommand.parseAsync([appId, "--yes"], { from: "user" });
 
         const newLocation = await getBotLocation(token, botId);
         if (newLocation !== "azure") {
