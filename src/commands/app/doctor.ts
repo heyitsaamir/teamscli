@@ -162,7 +162,7 @@ async function checkBotRegistration(
   } else {
     // Azure-specific checks
     if (!isAzInstalled()) {
-      results.push({ category: cat, label: "Azure CLI not installed", status: "warn", detail: "Install from https://aka.ms/install-az" });
+      results.push({ category: cat, label: "Azure CLI not installed", status: "warn", detail: "Install from https://learn.microsoft.com/en-us/cli/azure/install-azure-cli?view=azure-cli-latest" });
     } else if (!isAzLoggedIn()) {
       results.push({ category: cat, label: "Azure CLI not logged in", status: "warn", detail: "Run az login" });
     } else {

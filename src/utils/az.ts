@@ -25,7 +25,7 @@ export function isAzLoggedIn(): boolean {
  */
 export function ensureAz(): void {
   if (!isAzInstalled()) {
-    throw new CliError("TOOL_AZ_NOT_INSTALLED", "Azure CLI is not installed.", "Install from https://aka.ms/install-az");
+    throw new CliError("TOOL_AZ_NOT_INSTALLED", "Azure CLI is not installed.", "Install from https://learn.microsoft.com/en-us/cli/azure/install-azure-cli?view=azure-cli-latest");
   }
 
   if (!isAzLoggedIn()) {
