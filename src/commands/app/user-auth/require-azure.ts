@@ -1,7 +1,8 @@
 import { confirm } from "@inquirer/prompts";
 import pc from "picocolors";
 import { getAccount, getTokenSilent, teamsDevPortalScopes } from "../../../auth/index.js";
-import { fetchAppDetailsV2, getBotLocation, discoverAzureBot, type AzureContext } from "../../../apps/index.js";
+import { fetchAppDetailsV2, getBotLocation, discoverAzureBot, type AzureContext, type BotLocation } from "../../../apps/index.js";
+import { createSilentSpinner } from "../../../utils/spinner.js";
 import { pickApp } from "../../../utils/app-picker.js";
 import { ensureAz } from "../../../utils/az.js";
 import { isAutoConfirm, isInteractive } from "../../../utils/interactive.js";
@@ -42,13 +43,20 @@ export async function requireAzureBot(appIdArg?: string, silent = false): Promis
     appId = picked.app.teamsAppId;
   }
 
-  const details = await fetchAppDetailsV2(token, appId);
-  if (!details.bots || details.bots.length === 0) {
-    throw new CliError("NOT_FOUND_BOT", "This app has no bots.");
-  }
+  const locationSpinner = createSilentSpinner("Checking where your bot is located...", silent).start();
+  let botId: string;
+  let location: BotLocation;
+  try {
+    const details = await fetchAppDetailsV2(token, appId);
+    if (!details.bots || details.bots.length === 0) {
+      throw new CliError("NOT_FOUND_BOT", "This app has no bots.");
+    }
 
-  const botId = details.bots[0].botId;
-  const location = await getBotLocation(token, botId);
+    botId = details.bots[0].botId;
+    location = await getBotLocation(token, botId);
+  } finally {
+    locationSpinner.stop();
+  }
 
   if (location === "tm") {
     if (isAutoConfirm() && isInteractive()) {
