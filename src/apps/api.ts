@@ -1,5 +1,6 @@
 import type { AppSummary, AppDetails, AppBot } from "./types.js";
 import { apiFetch } from "../utils/http.js";
+import { CliError } from "../utils/errors.js";
 
 /**
  * Teams app manifest.json structure (subset of fields we care about)
@@ -184,6 +185,48 @@ function manifestToAppDetails(manifest: TeamsManifest): Partial<AppDetails> {
   }
 
   return details;
+}
+
+/**
+ * Upload an icon to a Teams app via TDP.
+ * Two-step process: upload bytes, then write the returned URL back to the app definition.
+ */
+export async function uploadIcon(
+  token: string,
+  teamsAppId: string,
+  iconType: "color" | "outline",
+  base64String: string,
+): Promise<void> {
+  // Step 1: Upload icon bytes
+  const uploadResponse = await apiFetch(`${TDP_BASE_URL}/appdefinitions/${teamsAppId}/image`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      type: iconType,
+      name: "",
+      base64String,
+    }),
+  });
+
+  if (!uploadResponse.ok) {
+    const error = await uploadResponse.text();
+    throw new CliError("API_ERROR", `Failed to upload ${iconType} icon: ${uploadResponse.status} ${error}`);
+  }
+
+  const iconUrl: string = await uploadResponse.json();
+
+  // Step 2: Write URL back to app definition (read-modify-write to preserve the other icon)
+  const field = iconType === "color" ? "colorIcon" : "outlineIcon";
+  try {
+    await updateAppDetails(token, teamsAppId, { [field]: iconUrl });
+  } catch (error) {
+    if (error instanceof CliError) throw error;
+    const msg = error instanceof Error ? error.message : String(error);
+    throw new CliError("API_ERROR", `Failed to update ${iconType} icon: ${msg}`);
+  }
 }
 
 /**
