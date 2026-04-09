@@ -1,10 +1,30 @@
 import { execFileSync } from "node:child_process";
+import { platform } from "node:os";
 import { logger } from "./logger.js";
 import { CliError } from "./errors.js";
 
+// On Windows, .cmd files cannot be executed directly with execFile() due to spawn EINVAL error.
+// We use cmd.exe to execute az.cmd, which is safer than shell:true (blocks command injection).
+// On Unix, az is a shell script that can be executed directly.
+const IS_WINDOWS = platform() === "win32";
+const AZ_COMMAND = IS_WINDOWS ? "cmd" : "az";
+const AZ_ARGS_PREFIX = IS_WINDOWS ? ["/c", "az.cmd"] : [];
+
+/**
+ * Execute Azure CLI command with platform-specific handling.
+ * On Windows: cmd /c az.cmd <args>
+ * On Unix: az <args>
+ */
+function execAz(args: string[]): string {
+  return execFileSync(AZ_COMMAND, [...AZ_ARGS_PREFIX, ...args], {
+    encoding: "utf-8",
+    stdio: ["pipe", "pipe", "pipe"],
+  });
+}
+
 export function isAzInstalled(): boolean {
   try {
-    execFileSync("az", ["version"], { stdio: "pipe", shell: true });
+    execAz(["version"]);
     return true;
   } catch {
     return false;
@@ -13,7 +33,7 @@ export function isAzInstalled(): boolean {
 
 export function isAzLoggedIn(): boolean {
   try {
-    execFileSync("az", ["account", "show"], { stdio: "pipe", shell: true });
+    execAz(["account", "show"]);
     return true;
   } catch {
     return false;
@@ -39,11 +59,7 @@ export function ensureAz(): void {
  */
 export function runAz<T = unknown>(args: string[]): T {
   logger.debug(`az ${args.join(" ")}`);
-  const output = execFileSync("az", [...args, "--output", "json"], {
-    encoding: "utf-8",
-    stdio: ["pipe", "pipe", "pipe"],
-    shell: true,
-  });
+  const output = execAz([...args, "--output", "json"]);
   const trimmed = output.trim();
   if (!trimmed) return undefined as T;
   return JSON.parse(trimmed) as T;
