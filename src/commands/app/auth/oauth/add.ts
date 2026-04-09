@@ -30,7 +30,7 @@ export const oauthAddCommand = new Command("add")
   .option("--connection-name <name>", "OAuth connection name")
   .option("--client-id <id>", "Provider client ID")
   .option("--client-secret <secret>", "Provider client secret")
-  .option("--scopes <scopes>", "Provider scopes (space-delimited)")
+  .option("--scopes <scopes>", "Provider scopes (comma-delimited)")
   .option("--parameters <params>", "[OPTIONAL] Extra provider params (key=value key=value)")
   .action(async (appIdArg: string | undefined, options: OAuthAddOptions) => {
     const { botId, azure } = await requireAzureBot(appIdArg);
@@ -99,7 +99,7 @@ export const oauthAddCommand = new Command("add")
         logger.error("--scopes is required in non-interactive mode");
         process.exit(1);
       }
-      scopes = await input({ message: "Scopes (space-delimited):" });
+      scopes = await input({ message: "Scopes (comma-delimited):" });
     }
 
     // Create the connection
