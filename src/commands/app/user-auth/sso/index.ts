@@ -27,19 +27,31 @@ export const ssoCommand = new Command("sso")
       return;
     }
 
-    const { appId, botId, azure } = await requireAzureBot();
+    let azureBotContext: Awaited<ReturnType<typeof requireAzureBot>>;
+    try {
+      azureBotContext = await requireAzureBot();
+    } catch (error) {
+      if (error instanceof Error && error.name === "ExitPromptError") return;
+      throw error;
+    }
+
+    const { appId, botId, azure } = azureBotContext;
 
     while (true) {
       try {
         // Fetch existing SSO connections
         const listSpinner = createSilentSpinner("Fetching SSO connections...").start();
-        const settings = await runAz<AuthSetting[]>([
-          "bot", "authsetting", "list",
-          "--name", botId,
-          "--resource-group", azure.resourceGroup,
-          "--subscription", azure.subscription,
-        ]);
-        listSpinner.stop();
+        let settings: AuthSetting[];
+        try {
+          settings = await runAz<AuthSetting[]>([
+            "bot", "authsetting", "list",
+            "--name", botId,
+            "--resource-group", azure.resourceGroup,
+            "--subscription", azure.subscription,
+          ]);
+        } finally {
+          listSpinner.stop();
+        }
 
         const aadConnections = settings.filter((s) => {
           const provider = s.properties?.serviceProviderDisplayName ?? "";
