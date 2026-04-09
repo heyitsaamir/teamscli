@@ -6,6 +6,8 @@ import { runAz } from "../../../../utils/az.js";
 import { isInteractive } from "../../../../utils/interactive.js";
 import { logger } from "../../../../utils/logger.js";
 import { requireAzureBot } from "../require-azure.js";
+import { updateAppDetails, fetchAppDetailsV2 } from "../../../../apps/api.js";
+import { createSilentSpinner } from "../../../../utils/spinner.js";
 
 interface OAuthAddOptions {
   provider?: string;
@@ -33,7 +35,7 @@ export const oauthAddCommand = new Command("add")
   .option("--scopes <scopes>", "Provider scopes (space-delimited)")
   .option("--parameters <params>", "[OPTIONAL] Extra provider params (key=value key=value)")
   .action(async (appIdArg: string | undefined, options: OAuthAddOptions) => {
-    const { botId, azure } = await requireAzureBot(appIdArg);
+    const { token, appId, botId, azure } = await requireAzureBot(appIdArg);
     const interactive = isInteractive();
 
     // Resolve provider
@@ -129,5 +131,25 @@ export const oauthAddCommand = new Command("add")
       spinner.error({ text: "Failed to create OAuth connection" });
       logger.error(error instanceof Error ? error.message : "Unknown error");
       process.exit(1);
+    }
+
+    // Update manifest with *.botframework.com domain
+    const manifestSpinner = createSilentSpinner("Updating manifest...", false).start();
+    try {
+      const details = await fetchAppDetailsV2(token, appId);
+      const validDomains = (details.validDomains as string[]) ?? [];
+
+      if (!validDomains.includes("*.botframework.com")) {
+        await updateAppDetails(token, appId, {
+          validDomains: [...validDomains, "*.botframework.com"],
+        });
+        manifestSpinner.success({ text: "Manifest updated with *.botframework.com domain" });
+      } else {
+        manifestSpinner.success({ text: "Manifest already has *.botframework.com domain" });
+      }
+    } catch (error) {
+      manifestSpinner.error({ text: "Failed to update manifest" });
+      logger.error(error instanceof Error ? error.message : "Unknown error");
+      // Non-fatal — OAuth connection was created, manifest can be updated manually
     }
   });
