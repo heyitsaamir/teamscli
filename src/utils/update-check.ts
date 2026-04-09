@@ -1,12 +1,15 @@
 import { readFile, writeFile, mkdir } from "node:fs/promises";
 import { join } from "node:path";
 import { createRequire } from "node:module";
-import { execSync } from "node:child_process";
+import { exec } from "node:child_process";
+import { promisify } from "node:util";
 import pc from "picocolors";
 import { paths } from "../auth/config.js";
 import { isInteractive } from "./interactive.js";
 import { runSelfUpdate } from "../commands/self-update.js";
 import { logger } from "./logger.js";
+
+const execAsync = promisify(exec);
 
 const STATE_FILE = join(paths.cache, "update-check.json");
 const CHECK_INTERVAL_MS = 24 * 60 * 60 * 1000; // 24 hours
@@ -67,7 +70,7 @@ export async function checkForUpdates(options?: { autoUpdate?: boolean }): Promi
       // Already checked recently — auto-update or show hint if we cached a newer version
       if (state.latestVersion) {
         if (autoUpdate) {
-          autoUpdateAndRerun();
+          await autoUpdateAndRerun();
         } else {
           showUpdateHint(state.latestVersion);
         }
@@ -83,7 +86,7 @@ export async function checkForUpdates(options?: { autoUpdate?: boolean }): Promi
 
       if (autoUpdate) {
         await writeState(newState);
-        autoUpdateAndRerun();
+        await autoUpdateAndRerun();
       } else {
         showUpdateHint(latestVersion);
       }
@@ -95,8 +98,8 @@ export async function checkForUpdates(options?: { autoUpdate?: boolean }): Promi
   }
 }
 
-function autoUpdateAndRerun(): void {
-  const success = runSelfUpdate();
+async function autoUpdateAndRerun(): Promise<void> {
+  const success = await runSelfUpdate();
   if (success) {
     // Re-run the original command using the same invocation method
     const args = process.argv.slice(2).filter((a) => a !== "--disable-auto-update");
@@ -104,7 +107,7 @@ function autoUpdateAndRerun(): void {
       ? `${process.execPath} ${process.argv[1]} --disable-auto-update ${args.join(" ")}`
       : `teams --disable-auto-update ${args.join(" ")}`;
     try {
-      execSync(cmd, { stdio: "inherit" });
+      await execAsync(cmd);
     } catch {
       // Command may exit non-zero, that's fine
     }
