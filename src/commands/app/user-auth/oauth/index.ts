@@ -7,11 +7,14 @@ import { isInteractive } from "../../../../utils/interactive.js";
 
 export const oauthCommand = new Command("oauth")
   .description("Manage OAuth connections (Azure bots only)")
-  .action(async function (this: Command) {
+  .argument("[appId]", "App ID")
+  .action(async function (this: Command, appId?: string) {
     if (!isInteractive()) {
       this.help();
       return;
     }
+
+    const args = appId ? [appId] : [];
 
     while (true) {
       try {
@@ -28,11 +31,11 @@ export const oauthCommand = new Command("oauth")
         if (action === "back") return;
 
         if (action === "add") {
-          await oauthAddCommand.parseAsync([], { from: "user" });
+          await oauthAddCommand.parseAsync(args, { from: "user" });
         } else if (action === "list") {
-          await oauthListCommand.parseAsync([], { from: "user" });
+          await oauthListCommand.parseAsync(args, { from: "user" });
         } else if (action === "remove") {
-          await oauthRemoveCommand.parseAsync([], { from: "user" });
+          await oauthRemoveCommand.parseAsync(args, { from: "user" });
         }
       } catch (error) {
         if (error instanceof Error && error.name === "ExitPromptError") return;

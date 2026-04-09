@@ -21,7 +21,8 @@ interface AuthSetting {
 
 export const ssoCommand = new Command("sso")
   .description("Manage SSO configuration (Azure bots only)")
-  .action(async function (this: Command) {
+  .argument("[appId]", "App ID")
+  .action(async function (this: Command, appIdArg?: string) {
     if (!isInteractive()) {
       this.help();
       return;
@@ -29,7 +30,7 @@ export const ssoCommand = new Command("sso")
 
     let azureBotContext: Awaited<ReturnType<typeof requireAzureBot>>;
     try {
-      azureBotContext = await requireAzureBot();
+      azureBotContext = await requireAzureBot(appIdArg);
     } catch (error) {
       if (error instanceof Error && error.name === "ExitPromptError") return;
       throw error;

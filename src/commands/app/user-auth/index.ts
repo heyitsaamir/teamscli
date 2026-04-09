@@ -6,11 +6,14 @@ import { isInteractive } from "../../../utils/interactive.js";
 
 export const userAuthCommand = new Command("user-auth")
   .description("Manage user authentication")
-  .action(async function (this: Command) {
+  .argument("[appId]", "App ID")
+  .action(async function (this: Command, appId?: string) {
     if (!isInteractive()) {
       this.help();
       return;
     }
+
+    const args = appId ? [appId] : [];
 
     while (true) {
       try {
@@ -26,9 +29,9 @@ export const userAuthCommand = new Command("user-auth")
         if (action === "back") return;
 
         if (action === "oauth") {
-          await oauthCommand.parseAsync([], { from: "user" });
+          await oauthCommand.parseAsync(args, { from: "user" });
         } else if (action === "sso") {
-          await ssoCommand.parseAsync([], { from: "user" });
+          await ssoCommand.parseAsync(args, { from: "user" });
         }
       } catch (error) {
         if (error instanceof Error && error.name === "ExitPromptError") return;
