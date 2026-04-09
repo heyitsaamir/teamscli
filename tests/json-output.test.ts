@@ -13,20 +13,14 @@ interface TestEnv {
   TEST_AZ_RESOURCE_GROUP?: string;
 }
 
-function loadTestEnv(): TestEnv {
+function loadTestEnv(): TestEnv | null {
   const envPath = resolve(__dirname, "../.testenv");
-  if (!existsSync(envPath)) {
-    throw new Error(
-      "Missing .testenv file. Copy .testenv.example to .testenv and set TEST_APP_ID"
-    );
-  }
+  if (!existsSync(envPath)) return null;
 
   const content = readFileSync(envPath, "utf-8");
 
   const appIdMatch = content.match(/^TEST_APP_ID=(.+)$/m);
-  if (!appIdMatch || !appIdMatch[1] || appIdMatch[1] === "your-app-id-here") {
-    throw new Error("TEST_APP_ID not set in .testenv");
-  }
+  if (!appIdMatch || !appIdMatch[1] || appIdMatch[1] === "your-app-id-here") return null;
 
   const subMatch = content.match(/^TEST_AZ_SUBSCRIPTION=(.+)$/m);
   const rgMatch = content.match(/^TEST_AZ_RESOURCE_GROUP=(.+)$/m);
@@ -37,6 +31,9 @@ function loadTestEnv(): TestEnv {
     TEST_AZ_RESOURCE_GROUP: rgMatch?.[1]?.trim(),
   };
 }
+
+const testEnv = loadTestEnv();
+const describeWithEnv = testEnv ? describe : describe.skip;
 
 function run(command: string): { stdout: string; exitCode: number } {
   try {
@@ -164,12 +161,11 @@ describe("--json validation (offline)", () => {
 
 // ── Non-destructive tests (auth + TEST_APP_ID) ──────────────────────
 
-describe("--json output (requires auth)", () => {
+describeWithEnv("--json output (requires auth)", () => {
   let appId: string;
 
   beforeAll(() => {
-    const env = loadTestEnv();
-    appId = env.TEST_APP_ID;
+    appId = testEnv!.TEST_APP_ID;
   });
 
   describe("app doctor --json", () => {
@@ -308,15 +304,13 @@ describe("--json output (requires auth)", () => {
 // Creates a real app, migrates to Azure, sets up SSO.
 // Skipped if TEST_AZ_SUBSCRIPTION is not set in .testenv.
 
-describe("--json lifecycle (requires Azure)", () => {
-  let env: TestEnv;
+describeWithEnv("--json lifecycle (requires Azure)", () => {
   let createdAppId: string;
   let createdBotId: string;
   let hasAzure: boolean;
 
   beforeAll(() => {
-    env = loadTestEnv();
-    hasAzure = !!env.TEST_AZ_SUBSCRIPTION;
+    hasAzure = !!testEnv!.TEST_AZ_SUBSCRIPTION;
   });
 
   describe("app create --json", () => {
@@ -371,10 +365,10 @@ describe("--json lifecycle (requires Azure)", () => {
     it("migrates bot to Azure with full output", () => {
       if (!hasAzure) return;
 
-      const rg = env.TEST_AZ_RESOURCE_GROUP ?? "teams-cli-test";
+      const rg = testEnv!.TEST_AZ_RESOURCE_GROUP ?? "teams-cli-test";
       const { data, exitCode } = runJson(
         `${CLI} app bot migrate "${createdAppId}" ` +
-          `--subscription "${env.TEST_AZ_SUBSCRIPTION}" ` +
+          `--subscription "${testEnv!.TEST_AZ_SUBSCRIPTION}" ` +
           `--resource-group "${rg}" ` +
           `--create-resource-group --json`
       );
@@ -384,7 +378,7 @@ describe("--json lifecycle (requires Azure)", () => {
       expect(data.appName).toBe("Vitest JSON Bot");
       expect(data.from).toBe("teams-managed");
       expect(data.to).toBe("azure");
-      expect(data.subscription).toBe(env.TEST_AZ_SUBSCRIPTION);
+      expect(data.subscription).toBe(testEnv!.TEST_AZ_SUBSCRIPTION);
       expect(data.resourceGroup).toBe(rg);
       expect(data.warnings).toBeInstanceOf(Array);
       // Endpoint was null at creation
@@ -394,10 +388,10 @@ describe("--json lifecycle (requires Azure)", () => {
     it("returns already_in_azure status for Azure bots", () => {
       if (!hasAzure) return;
 
-      const rg = env.TEST_AZ_RESOURCE_GROUP ?? "teams-cli-test";
+      const rg = testEnv!.TEST_AZ_RESOURCE_GROUP ?? "teams-cli-test";
       const { data, exitCode } = runJson(
         `${CLI} app bot migrate "${createdAppId}" ` +
-          `--subscription "${env.TEST_AZ_SUBSCRIPTION}" ` +
+          `--subscription "${testEnv!.TEST_AZ_SUBSCRIPTION}" ` +
           `--resource-group "${rg}" --json`
       );
       expect(exitCode).toBe(0);
@@ -408,10 +402,10 @@ describe("--json lifecycle (requires Azure)", () => {
     it("produces no non-JSON output (no spinner leakage)", () => {
       if (!hasAzure) return;
 
-      const rg = env.TEST_AZ_RESOURCE_GROUP ?? "teams-cli-test";
+      const rg = testEnv!.TEST_AZ_RESOURCE_GROUP ?? "teams-cli-test";
       const { stdout } = run(
         `${CLI} app bot migrate "${createdAppId}" ` +
-          `--subscription "${env.TEST_AZ_SUBSCRIPTION}" ` +
+          `--subscription "${testEnv!.TEST_AZ_SUBSCRIPTION}" ` +
           `--resource-group "${rg}" --json`
       );
       const parsed = JSON.parse(stdout);

@@ -69,6 +69,33 @@ Always run `pnpm build` after changes — the CLI runs from `dist/`, not source.
 
 Every command MUST support `--json` (boolean flag, marked `[OPTIONAL]`). Each command defines a typed output interface in its own file (e.g., `AppCreateOutput`). Use `outputJson()` from `src/utils/json-output.ts`. Guard all human output (`logger.info`, `outputCredentials`) with `if (!options.json)`. Skip interactive prompts in JSON mode — use defaults or require flags.
 
+## Interactive Menus
+
+Every interactive menu that uses `select()` to dispatch to subcommands **must** be wrapped in a `while (true)` loop. Without this, the menu exits after one action and the user gets thrown back to the parent menu instead of staying in context.
+
+```typescript
+// ✅ Correct — loops back to menu after subcommand completes
+while (true) {
+  try {
+    const action = await select({ message: "...", choices: [...] });
+    if (action === "back") return;
+    // dispatch to subcommands...
+  } catch (error) {
+    if (error instanceof Error && error.name === "ExitPromptError") return;
+    throw error;
+  }
+}
+
+// ❌ Wrong — menu shows once, then exits to parent
+try {
+  const action = await select({ message: "...", choices: [...] });
+  if (action === "back") return;
+  // dispatch to subcommands...
+} catch (error) { ... }
+```
+
+When adding a new interactive menu, also add a corresponding test in `tests/menu-loop.test.ts` verifying the loop behavior.
+
 ## Commander Patterns
 
 Use Commander's built-in features for global flags and hooks. Don't manually parse `process.argv` — use `.option()` on the program and access via `optsWithGlobals()` in `preAction` hooks.
@@ -82,7 +109,10 @@ When adding or renaming commands, menu items, or features, update the correspond
 
 ## Pre-PR Validation
 
-Before creating a PR, always run the agentic tests defined in `agentic-tests.md`. These are basic smoke tests (setup/act/assert) that verify the CLI works end-to-end. Run `pnpm build` first, then execute each test scenario via `node dist/index.js <command>` (not the global `teams` command) and confirm expected output.
+Before creating a PR:
+1. Run `pnpm build` — ensures TypeScript compiles cleanly.
+2. Run `pnpm test` — runs unit tests (menu loop behavior, JSON output, etc.). These must all pass.
+3. Run the agentic tests defined in `agentic-tests.md` — basic smoke tests (setup/act/assert) that verify the CLI works end-to-end. Execute each test scenario via `node dist/index.js <command>` (not the global `teams` command) and confirm expected output.
 
 # Architecture Decisions
 

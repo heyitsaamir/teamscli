@@ -10,22 +10,19 @@ const CLI = "node dist/index.js";
 // Increase timeout for API calls
 const TEST_TIMEOUT = 30000;
 
-function loadTestEnv(): { TEST_APP_ID: string } {
+function loadTestEnv(): { TEST_APP_ID: string } | null {
   const envPath = resolve(__dirname, "../.testenv");
-  if (!existsSync(envPath)) {
-    throw new Error(
-      "Missing .testenv file. Copy .testenv.example to .testenv and set TEST_APP_ID"
-    );
-  }
+  if (!existsSync(envPath)) return null;
 
   const content = readFileSync(envPath, "utf-8");
   const match = content.match(/^TEST_APP_ID=(.+)$/m);
-  if (!match || !match[1] || match[1] === "your-app-id-here") {
-    throw new Error("TEST_APP_ID not set in .testenv");
-  }
+  if (!match || !match[1] || match[1] === "your-app-id-here") return null;
 
   return { TEST_APP_ID: match[1].trim() };
 }
+
+const testEnv = loadTestEnv();
+const describeWithEnv = testEnv ? describe : describe.skip;
 
 function run(command: string): { stdout: string; exitCode: number } {
   try {
@@ -60,13 +57,12 @@ function getManifestField(appId: string, path: string): string {
   return String(value ?? "");
 }
 
-describe("CLI Validation Tests", () => {
+describeWithEnv("CLI Validation Tests", () => {
   // Validation happens after app fetch, so we need a real app ID
   let appId: string;
 
   beforeAll(() => {
-    const env = loadTestEnv();
-    appId = env.TEST_APP_ID;
+    appId = testEnv!.TEST_APP_ID;
   });
 
   it("rejects short name over 30 characters", () => {
@@ -154,13 +150,12 @@ describe("CLI Validation Tests", () => {
   });
 });
 
-describe("Integration Tests (requires auth + .testenv)", () => {
+describeWithEnv("Integration Tests (requires auth + .testenv)", () => {
   let appId: string;
   const originals: Record<string, string> = {};
 
   beforeAll(() => {
-    const env = loadTestEnv();
-    appId = env.TEST_APP_ID;
+    appId = testEnv!.TEST_APP_ID;
 
     // Store original values for restoration
     const manifest = getManifest(appId);

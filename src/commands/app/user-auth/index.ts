@@ -12,26 +12,28 @@ export const userAuthCommand = new Command("user-auth")
       return;
     }
 
-    try {
-      const action = await select({
-        message: "User authentication",
-        choices: [
-          { name: "OAuth connections", value: "oauth" },
-          { name: "SSO", value: "sso" },
-          { name: "Back", value: "back" },
-        ],
-      });
+    while (true) {
+      try {
+        const action = await select({
+          message: "User authentication",
+          choices: [
+            { name: "OAuth connections", value: "oauth" },
+            { name: "SSO", value: "sso" },
+            { name: "Back", value: "back" },
+          ],
+        });
 
-      if (action === "back") return;
+        if (action === "back") return;
 
-      if (action === "oauth") {
-        await oauthCommand.parseAsync([], { from: "user" });
-      } else if (action === "sso") {
-        await ssoCommand.parseAsync([], { from: "user" });
+        if (action === "oauth") {
+          await oauthCommand.parseAsync([], { from: "user" });
+        } else if (action === "sso") {
+          await ssoCommand.parseAsync([], { from: "user" });
+        }
+      } catch (error) {
+        if (error instanceof Error && error.name === "ExitPromptError") return;
+        throw error;
       }
-    } catch (error) {
-      if (error instanceof Error && error.name === "ExitPromptError") return;
-      throw error;
     }
   });
 
