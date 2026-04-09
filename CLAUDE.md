@@ -107,6 +107,10 @@ When adding or renaming commands, menu items, or features, update the correspond
 - `docs/commands/index.md` — command tree overview
 - `docs/index.md` — landing page feature descriptions
 
+## Testing
+
+All new tests must follow a **red/green cycle**: write the test first, verify it fails against the broken code (red), then apply the fix and verify it passes (green). This ensures tests actually catch the bug they're designed for.
+
 ## Pre-PR Validation
 
 Before creating a PR:

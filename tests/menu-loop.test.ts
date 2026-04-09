@@ -132,6 +132,114 @@ describe("user-auth menu loop", () => {
   });
 });
 
+describe("user-auth forwards appId", () => {
+  beforeEach(() => {
+    vi.resetModules();
+    vi.clearAllMocks();
+    setupMocks();
+  });
+
+  it("passes appId to oauth subcommand", async () => {
+    const { select } = await import("@inquirer/prompts");
+    const mockedSelect = vi.mocked(select);
+    mockedSelect
+      .mockResolvedValueOnce("oauth" as never)
+      .mockResolvedValueOnce("back" as never);
+
+    const { userAuthCommand } = await import(
+      "../src/commands/app/user-auth/index.js"
+    );
+
+    const oauthParseSpy = vi.fn().mockResolvedValue(undefined);
+    const oauthSub = userAuthCommand.commands.find(
+      (c: Command) => c.name() === "oauth"
+    );
+    if (oauthSub) oauthSub.parseAsync = oauthParseSpy;
+
+    await userAuthCommand.parseAsync(["my-app-id"], { from: "user" });
+
+    expect(oauthParseSpy).toHaveBeenCalledWith(["my-app-id"], { from: "user" });
+  });
+
+  it("passes appId to sso subcommand", async () => {
+    const { select } = await import("@inquirer/prompts");
+    const mockedSelect = vi.mocked(select);
+    mockedSelect
+      .mockResolvedValueOnce("sso" as never)
+      .mockResolvedValueOnce("back" as never);
+
+    const { userAuthCommand } = await import(
+      "../src/commands/app/user-auth/index.js"
+    );
+
+    const ssoParseSpy = vi.fn().mockResolvedValue(undefined);
+    const ssoSub = userAuthCommand.commands.find(
+      (c: Command) => c.name() === "sso"
+    );
+    if (ssoSub) ssoSub.parseAsync = ssoParseSpy;
+
+    await userAuthCommand.parseAsync(["my-app-id"], { from: "user" });
+
+    expect(ssoParseSpy).toHaveBeenCalledWith(["my-app-id"], { from: "user" });
+  });
+});
+
+describe("oauth forwards appId", () => {
+  beforeEach(() => {
+    vi.resetModules();
+    vi.clearAllMocks();
+    setupMocks();
+  });
+
+  it("passes appId to add subcommand", async () => {
+    const { select } = await import("@inquirer/prompts");
+    const mockedSelect = vi.mocked(select);
+    mockedSelect
+      .mockResolvedValueOnce("add" as never)
+      .mockResolvedValueOnce("back" as never);
+
+    const { oauthCommand } = await import(
+      "../src/commands/app/user-auth/oauth/index.js"
+    );
+
+    const addParseSpy = vi.fn().mockResolvedValue(undefined);
+    const addSub = oauthCommand.commands.find(
+      (c: Command) => c.name() === "add"
+    );
+    if (addSub) addSub.parseAsync = addParseSpy;
+
+    await oauthCommand.parseAsync(["my-app-id"], { from: "user" });
+
+    expect(addParseSpy).toHaveBeenCalledWith(["my-app-id"], { from: "user" });
+  });
+});
+
+describe("sso forwards appId", () => {
+  beforeEach(() => {
+    vi.resetModules();
+    vi.clearAllMocks();
+    setupMocks();
+  });
+
+  it("passes appId to requireAzureBot", async () => {
+    const { select } = await import("@inquirer/prompts");
+    const mockedSelect = vi.mocked(select);
+    mockedSelect.mockResolvedValueOnce("back" as never);
+
+    const { requireAzureBot } = await import(
+      "../src/commands/app/user-auth/require-azure.js"
+    );
+
+    const { ssoCommand } = await import(
+      "../src/commands/app/user-auth/sso/index.js"
+    );
+
+    await ssoCommand.parseAsync(["my-app-id"], { from: "user" });
+
+    expect(requireAzureBot).toHaveBeenCalledWith("my-app-id");
+  });
+});
+
 describe("oauth menu loop", () => {
   beforeEach(() => {
     vi.resetModules();
