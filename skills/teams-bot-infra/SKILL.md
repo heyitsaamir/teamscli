@@ -5,7 +5,7 @@ description: Manage Microsoft Teams bot infrastructure using the Teams CLI. Use 
 
 # Teams Bot Infrastructure Management
 
-This skill will guide you in creating, configuring, and troubleshooting Microsoft Teams bot infrastructure using the Teams CLI. It does NOT cover building or hosting bot application code.
+This skill guides you through creating, configuring, and troubleshooting Microsoft Teams bot infrastructure using the Teams CLI. It does NOT cover building or hosting bot application code.
 
 ## 1. Prerequisites Verification
 
