@@ -38,7 +38,11 @@
       "@azure/msal-node-runtime",
       "esbuild",
       "keytar"
-    ]
+    ],
+    "overrides": {
+      "vite": ">=7.3.2",
+      "esbuild": ">=0.25.0"
+    }
   },
   "dependencies": {
     "@azure/msal-node": "^5.0.4",
@@ -58,6 +62,6 @@
     "typescript": "^5.7.0",
     "vitepress": "^1.6.4",
     "vitepress-plugin-llms": "^1.12.0",
-    "vitest": "^4.0.18"
+    "vitest": "^4.1.4"
   }
 }
