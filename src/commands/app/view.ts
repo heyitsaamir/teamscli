@@ -62,6 +62,7 @@ export const appViewCommand = new Command("view")
         termsOfUseUrl: details.termsOfUseUrl,
         endpoint: details.bots?.[0]?.messagingEndpoint ?? null,
         installLink: `https://teams.microsoft.com/l/app/${details.teamsAppId}?installAppPackage=true`,
+        portalLink: `https://dev.teams.microsoft.com/apps/${details.teamsAppId}`,
       };
 
       outputJson(enriched);
@@ -70,8 +71,10 @@ export const appViewCommand = new Command("view")
 
     if (options.web) {
       const installLink = `https://teams.microsoft.com/l/app/${app.teamsAppId}?installAppPackage=true`;
+      const portalLink = `https://dev.teams.microsoft.com/apps/${app.teamsAppId}`;
       logger.info(`${pc.dim("App:")} ${app.appName || app.appId}`);
-      logger.info(`${pc.dim("Install link:")} ${installLink}`);
+      logger.info(`\n  ${pc.bold("▸ Install in Teams")}    ${pc.dim("→")} ${pc.bold(pc.cyan(installLink))}`);
+      logger.info(`  ${pc.bold("▸ Developer Portal")}    ${pc.dim("→")} ${pc.bold(pc.cyan(portalLink))}`);
       return;
     }
 

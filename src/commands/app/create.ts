@@ -1,4 +1,4 @@
-import { input } from "@inquirer/prompts";
+import { input, select } from "@inquirer/prompts";
 import { Command } from "commander";
 import pc from "picocolors";
 import {
@@ -30,6 +30,7 @@ import { getConfig } from "../../utils/config.js";
 import { ensureAz, runAz } from "../../utils/az.js";
 import { resolveSubscription, resolveResourceGroup } from "../../utils/az-prompts.js";
 import { createSilentSpinner } from "../../utils/spinner.js";
+import { openInBrowser } from "../../utils/browser.js";
 
 interface AppCreateOutput {
 	appName: string;
@@ -37,6 +38,7 @@ interface AppCreateOutput {
 	botId: string;
 	endpoint: string | null;
 	installLink: string;
+	portalLink: string;
 	botLocation: "teams-managed" | "azure";
 	credentials: {
 		CLIENT_ID: string;
@@ -265,6 +267,7 @@ export const appCreateCommand = new Command("create")
 
 		// Output results
 		const installLink = `https://teams.microsoft.com/l/app/${teamsAppId}?installAppPackage=true`;
+		const portalLink = `https://dev.teams.microsoft.com/apps/${teamsAppId}`;
 
 		if (options.json) {
 			const result: AppCreateOutput = {
@@ -273,6 +276,7 @@ export const appCreateCommand = new Command("create")
 				botId: clientId,
 				endpoint: endpoint ?? null,
 				installLink,
+				portalLink,
 				botLocation: location === "tm" ? "teams-managed" : "azure",
 				credentials: {
 					CLIENT_ID: clientId,
@@ -289,12 +293,33 @@ export const appCreateCommand = new Command("create")
 			if (endpoint) {
 				logger.info(`${pc.dim("Endpoint:")} ${endpoint}`);
 			}
-			logger.info(`${pc.dim("Install link:")} ${installLink}`);
+			logger.info(`\n  ${pc.bold("▸ Install in Teams")}    ${pc.dim("→")} ${pc.bold(pc.cyan(installLink))}`);
+			logger.info(`  ${pc.bold("▸ Developer Portal")}    ${pc.dim("→")} ${pc.bold(pc.cyan(portalLink))}`);
 
 			outputCredentials(envPath, {
 				CLIENT_ID: clientId,
 				CLIENT_SECRET: secretText,
 				TENANT_ID: account.tenantId,
 			}, "Credentials:");
+
+			if (isInteractive()) {
+				try {
+					while (true) {
+						const action = await select({
+							message: "",
+							choices: [
+								{ name: "Install in Teams", value: "install" },
+								{ name: "Open in Developer Portal", value: "portal" },
+								{ name: "Done", value: "done" },
+							],
+						});
+						if (action === "done") break;
+						if (action === "install") await openInBrowser(installLink);
+						if (action === "portal") await openInBrowser(portalLink);
+					}
+				} catch (error) {
+					if (!(error instanceof Error && error.name === "ExitPromptError")) throw error;
+				}
+			}
 		}
 	}));

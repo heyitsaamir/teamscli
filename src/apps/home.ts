@@ -5,11 +5,12 @@ import type { AppSummary, AppDetails } from "./types.js";
 import { fetchApp, fetchAppDetailsV2 } from "./api.js";
 import { fetchBot } from "./tdp.js";
 import { logger } from "../utils/logger.js";
+import { openInBrowser } from "../utils/browser.js";
 
 /**
  * Fetch and print app detail header. Returns the resolved details.
  */
-async function printAppHeader(appSummary: AppSummary, token: string): Promise<{ appDetails: AppDetails; endpoint: string | null }> {
+async function printAppHeader(appSummary: AppSummary, token: string): Promise<{ appDetails: AppDetails; endpoint: string | null; installLink: string; portalLink: string }> {
   const spinner = createSpinner("Fetching details...").start();
 
   let appDetails: AppDetails;
@@ -60,9 +61,11 @@ async function printAppHeader(appSummary: AppSummary, token: string): Promise<{ 
     logger.info(`${pc.dim("Endpoint:")} ${endpoint || pc.yellow("(not set)")}`);
   }
   const installLink = `https://teams.microsoft.com/l/app/${appDetails.teamsAppId}?installAppPackage=true`;
-  logger.info(`${pc.dim("Install link:")} ${installLink}`);
+  const portalLink = `https://dev.teams.microsoft.com/apps/${appDetails.teamsAppId}`;
+  logger.info(`\n  ${pc.bold("▸ Install in Teams")}    ${pc.dim("→")} ${pc.bold(pc.cyan(installLink))}`);
+  logger.info(`  ${pc.bold("▸ Developer Portal")}    ${pc.dim("→")} ${pc.bold(pc.cyan(portalLink))}`);
 
-  return { appDetails, endpoint };
+  return { appDetails, endpoint, installLink, portalLink };
 }
 
 /**
@@ -70,14 +73,23 @@ async function printAppHeader(appSummary: AppSummary, token: string): Promise<{ 
  * When interactive, shows a "Back" prompt before returning.
  */
 export async function showAppDetail(appSummary: AppSummary, token: string, options?: { interactive?: boolean }): Promise<void> {
-  const { appDetails } = await printAppHeader(appSummary, token);
+  const { appDetails, installLink, portalLink } = await printAppHeader(appSummary, token);
   logger.info(pc.dim(`\nTip: ${pc.cyan(`teams app view ${appDetails.teamsAppId}`)} to view this app`));
 
   if (options?.interactive) {
-    await select({
-      message: "",
-      choices: [{ name: "Back", value: "back" }],
-    });
+    while (true) {
+      const action = await select({
+        message: "",
+        choices: [
+          { name: "Install in Teams", value: "install" },
+          { name: "Open in Developer Portal", value: "portal" },
+          { name: "Back", value: "back" },
+        ],
+      });
+      if (action === "back") return;
+      if (action === "install") await openInBrowser(installLink);
+      if (action === "portal") await openInBrowser(portalLink);
+    }
   }
 }
 
