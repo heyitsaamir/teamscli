@@ -161,29 +161,20 @@ export const appCreateCommand = new Command("create")
 			  }
 			| undefined;
 
-		if (interactive && !hasFlags) {
+		if (interactive && !hasFlags && !options.json) {
 			const customization = await collectManifestCustomization();
 			descriptionOpts = customization.description;
 			scopeChoices = customization.scopes;
 			developerOpts = customization.developer;
+			if (customization.icons) {
+				options.colorIcon ??= customization.icons.colorIconPath;
+				options.outlineIcon ??= customization.icons.outlineIconPath;
+			}
 		}
 
-		// Get icon paths (prompt only in full interactive mode)
-		const colorIconPath =
-			options.colorIcon ??
-			(interactive && !hasFlags
-				? (await input({
-						message: "Color icon path (192x192 PNG, leave empty to skip):",
-				  })) || undefined
-				: undefined);
-
-		const outlineIconPath =
-			options.outlineIcon ??
-			(interactive && !hasFlags
-				? (await input({
-						message: "Outline icon path (32x32 PNG, leave empty to skip):",
-				  })) || undefined
-				: undefined);
+		// Resolve icon paths (CLI flags take priority, then interactive selection)
+		const colorIconPath = options.colorIcon;
+		const outlineIconPath = options.outlineIcon;
 
 		// Validate icons upfront (before any API calls)
 		const colorIcon = colorIconPath ? readAndValidateIcon(colorIconPath, 192) : undefined;
