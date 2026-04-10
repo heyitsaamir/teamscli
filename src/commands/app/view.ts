@@ -7,12 +7,31 @@ import { outputJson } from "../../utils/json-output.js";
 import { pickApp } from "../../utils/app-picker.js";
 import { CliError, wrapAction } from "../../utils/errors.js";
 import { logger } from "../../utils/logger.js";
+import { printLinkBanner } from "../../utils/browser.js";
+
+interface AppViewOutput {
+  appId: string;
+  teamsAppId: string;
+  name: string;
+  longName: string;
+  version: string;
+  developer: string;
+  shortDescription: string;
+  longDescription: string;
+  websiteUrl: string;
+  privacyUrl: string;
+  termsOfUseUrl: string;
+  endpoint: string | null;
+  installLink: string;
+  portalLink: string;
+}
 
 export const appViewCommand = new Command("view")
   .description("View a Teams app")
   .argument("[appId]", "App ID")
   .option("--json", "[OPTIONAL] Output as JSON")
-  .option("--web", "[OPTIONAL] Print the Teams install link")
+  .option("--web", "[OPTIONAL] Print the install and Developer Portal links")
+  .option("--install-link", "[OPTIONAL] Print just the install link (pipe-friendly)")
   .action(wrapAction(async (appIdArg: string | undefined, options) => {
     // Interactive picker loop when no appId
     if (!appIdArg) {
@@ -48,7 +67,7 @@ export const appViewCommand = new Command("view")
       const details = await fetchAppDetailsV2(token, app.teamsAppId);
       spinner.stop();
 
-      const enriched: Record<string, unknown> = {
+      const enriched: AppViewOutput = {
         appId: details.appId,
         teamsAppId: details.teamsAppId,
         name: details.shortName,
@@ -62,16 +81,26 @@ export const appViewCommand = new Command("view")
         termsOfUseUrl: details.termsOfUseUrl,
         endpoint: details.bots?.[0]?.messagingEndpoint ?? null,
         installLink: `https://teams.microsoft.com/l/app/${details.teamsAppId}?installAppPackage=true`,
+        portalLink: `https://dev.teams.microsoft.com/apps/${details.teamsAppId}`,
       };
 
       outputJson(enriched);
       return;
     }
 
+    if (options.installLink) {
+      const installLink = `https://teams.microsoft.com/l/app/${app.teamsAppId}?installAppPackage=true`;
+      logger.info(installLink);
+      return;
+    }
+
     if (options.web) {
       const installLink = `https://teams.microsoft.com/l/app/${app.teamsAppId}?installAppPackage=true`;
+      const portalLink = `https://dev.teams.microsoft.com/apps/${app.teamsAppId}`;
       logger.info(`${pc.dim("App:")} ${app.appName || app.appId}`);
-      logger.info(`${pc.dim("Install link:")} ${installLink}`);
+      logger.info("");
+      printLinkBanner("Install in Teams", installLink);
+      printLinkBanner("Developer Portal", portalLink);
       return;
     }
 
