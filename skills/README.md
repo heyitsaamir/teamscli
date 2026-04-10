@@ -1,0 +1,104 @@
+# Teams CLI Skills
+
+Agent skills for managing Microsoft Teams bot infrastructure using the Teams CLI.
+
+## Available Skills
+
+### teams-bot-infra
+
+Manage Microsoft Teams bot infrastructure using the Teams CLI. This skill guides AI coding assistants through creating, configuring, and troubleshooting Teams bot apps and registrations.
+
+**Use when:**
+- Creating a new Teams bot
+- Configuring bot credentials and endpoints
+- Troubleshooting Teams bot setup
+- Managing Teams bot infrastructure
+
+**Does NOT cover:**
+- Building bot application code
+- Hosting or deploying bot code
+- Bot development patterns
+
+**What it includes:**
+- Complete bot creation workflow (CLI install → auth → create → verify)
+- Verification checkpoints with evidence requirements
+- Common operations (update endpoint, view apps, update CLI)
+- Error recovery (authentication issues, sideload disabled)
+- Resource links (Teams SDK, devtunnels, documentation)
+
+## Installation
+
+Install skills using the `skills` CLI tool:
+
+```bash
+npx skills add heyitsaamir/teamscli --skill teams-bot-infra
+```
+
+This installs the `teams-bot-infra` skill for use with AI coding assistants like Claude Code, Cursor, GitHub Copilot, and others.
+
+### Install All Skills
+
+To install all Teams CLI skills at once:
+
+```bash
+npx skills add heyitsaamir/teamscli
+```
+
+## Usage
+
+Once installed, the skills are automatically available to AI coding assistants. Agents will load the appropriate skill when you ask about:
+
+- "Create a Teams bot"
+- "Set up Teams bot infrastructure"
+- "Configure Teams bot credentials"
+- "Troubleshoot Teams bot setup"
+- "Update bot endpoint"
+
+### Manual Invocation
+
+You can also explicitly invoke a skill in compatible agents:
+
+**Claude Code:**
+```
+/teams-bot-infra
+```
+
+**Other agents:** Check your agent's documentation for skill invocation syntax.
+
+## Skill Structure
+
+```
+skills/
+├── README.md                    (this file)
+└── teams-bot-infra/
+    └── SKILL.md                 (skill instructions)
+```
+
+## Requirements
+
+These skills require:
+- **Teams CLI** - Install via: `npm install -g https://github.com/heyitsaamir/teamscli/releases/latest/download/teamscli.tgz`
+- **Node.js** - Required for Teams CLI
+- **Microsoft account** - For Teams authentication
+
+## Contributing
+
+Skills are developed using the agent skills development lifecycle:
+
+1. **Discovery** - Document real workflows by executing them
+2. **Architecture** - Design modular, focused skills
+3. **Development** - Write workflows (not documentation) with verification checkpoints
+4. **Testing** - Validate against real scenarios
+5. **Distribution** - Package and publish
+
+See the [teams-bot-infra development](https://github.com/heyitsaamir/teamscli/issues/37) for an example of this process.
+
+## Resources
+
+- **Teams CLI Documentation**: https://heyitsaamir.github.io/teamscli/
+- **Agent Skills Standard**: https://code.claude.com/docs/en/skills
+- **Skills Marketplace**: https://agentskill.sh/
+
+## License
+
+MIT - See [LICENSE](../LICENSE) for details
