@@ -21,58 +21,73 @@ interface AuthSetting {
 
 export const ssoCommand = new Command("sso")
   .description("Manage SSO configuration (Azure bots only)")
-  .action(async function (this: Command) {
+  .argument("[appId]", "App ID")
+  .action(async function (this: Command, appIdArg?: string) {
     if (!isInteractive()) {
       this.help();
       return;
     }
 
+    let azureBotContext: Awaited<ReturnType<typeof requireAzureBot>>;
     try {
-      const { appId, botId, azure } = await requireAzureBot();
-
-      // Fetch existing SSO connections
-      const listSpinner = createSilentSpinner("Fetching SSO connections...").start();
-      const settings = await runAz<AuthSetting[]>([
-        "bot", "authsetting", "list",
-        "--name", botId,
-        "--resource-group", azure.resourceGroup,
-        "--subscription", azure.subscription,
-      ]);
-      listSpinner.stop();
-
-      const aadConnections = settings.filter((s) => {
-        const provider = s.properties?.serviceProviderDisplayName ?? "";
-        return provider.includes("Azure Active Directory");
-      });
-
-      const connectionChoices = aadConnections.map((s) => {
-        const name = s.name.split("/").pop() ?? s.name;
-        return {
-          name: s.properties?.scopes ? `${name} ${pc.dim(`(${s.properties.scopes})`)}` : name,
-          value: `edit:${name}`,
-        };
-      });
-
-      const action = await select({
-        message: "SSO",
-        choices: [
-          ...connectionChoices,
-          { name: "Set up new SSO connection", value: "setup" },
-          { name: "Back", value: "back" },
-        ],
-      });
-
-      if (action === "back") return;
-
-      if (action === "setup") {
-        await ssoSetupCommand.parseAsync([appId], { from: "user" });
-      } else if (action.startsWith("edit:")) {
-        const connectionName = action.slice(5);
-        await ssoEditCommand.parseAsync([appId, "--connection-name", connectionName], { from: "user" });
-      }
+      azureBotContext = await requireAzureBot(appIdArg);
     } catch (error) {
       if (error instanceof Error && error.name === "ExitPromptError") return;
       throw error;
+    }
+
+    const { appId, botId, azure } = azureBotContext;
+
+    while (true) {
+      try {
+        // Fetch existing SSO connections
+        const listSpinner = createSilentSpinner("Fetching SSO connections...").start();
+        let settings: AuthSetting[];
+        try {
+          settings = await runAz<AuthSetting[]>([
+            "bot", "authsetting", "list",
+            "--name", botId,
+            "--resource-group", azure.resourceGroup,
+            "--subscription", azure.subscription,
+          ]);
+        } finally {
+          listSpinner.stop();
+        }
+
+        const aadConnections = settings.filter((s) => {
+          const provider = s.properties?.serviceProviderDisplayName ?? "";
+          return provider.includes("Azure Active Directory");
+        });
+
+        const connectionChoices = aadConnections.map((s) => {
+          const name = s.name.split("/").pop() ?? s.name;
+          return {
+            name: s.properties?.scopes ? `${name} ${pc.dim(`(${s.properties.scopes})`)}` : name,
+            value: `edit:${name}`,
+          };
+        });
+
+        const action = await select({
+          message: "SSO",
+          choices: [
+            ...connectionChoices,
+            { name: "Set up new SSO connection", value: "setup" },
+            { name: "Back", value: "back" },
+          ],
+        });
+
+        if (action === "back") return;
+
+        if (action === "setup") {
+          await ssoSetupCommand.parseAsync([appId], { from: "user" });
+        } else if (action.startsWith("edit:")) {
+          const connectionName = action.slice(5);
+          await ssoEditCommand.parseAsync([appId, "--connection-name", connectionName], { from: "user" });
+        }
+      } catch (error) {
+        if (error instanceof Error && error.name === "ExitPromptError") return;
+        throw error;
+      }
     }
   });
 

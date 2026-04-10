@@ -41,16 +41,30 @@ export interface TeamsManifest {
 
 const TDP_BASE_URL = "https://dev.teams.microsoft.com/api";
 
-export async function fetchApps(token: string): Promise<AppSummary[]> {
-  const response = await apiFetch(`${TDP_BASE_URL}/appdefinitions/my?pageNumber=1`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
+const TDP_PAGE_SIZE = 15;
 
-  if (!response.ok) {
-    throw new Error(`Failed to fetch apps: ${response.status} ${response.statusText}`);
+export async function fetchApps(token: string): Promise<AppSummary[]> {
+  const allApps: AppSummary[] = [];
+  let pageNumber = 1;
+
+  while (true) {
+    const response = await apiFetch(`${TDP_BASE_URL}/appdefinitions/my?pageNumber=${pageNumber}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new CliError("API_ERROR", `Failed to fetch apps: ${response.status} ${errorText}`);
+    }
+
+    const page: AppSummary[] = await response.json();
+    allApps.push(...page);
+
+    if (page.length < TDP_PAGE_SIZE) break;
+    pageNumber++;
   }
 
-  return response.json();
+  return allApps;
 }
 
 export async function fetchApp(token: string, id: string): Promise<AppSummary> {

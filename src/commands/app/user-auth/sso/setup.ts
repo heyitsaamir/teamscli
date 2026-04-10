@@ -5,7 +5,7 @@ import { getTokenSilent, graphScopes } from "../../../../auth/index.js";
 import { getAadAppByClientId, getAadAppFull, updateAadApp, createClientSecret } from "../../../../apps/graph.js";
 import { updateAppDetails, fetchAppDetailsV2 } from "../../../../apps/api.js";
 import { runAz } from "../../../../utils/az.js";
-import { isInteractive } from "../../../../utils/interactive.js";
+import { isInteractive, confirmAction } from "../../../../utils/interactive.js";
 import { CliError, wrapAction } from "../../../../utils/errors.js";
 import { outputJson } from "../../../../utils/json-output.js";
 import { logger } from "../../../../utils/logger.js";
@@ -64,6 +64,11 @@ export const ssoSetupCommand = new Command("setup")
       scopes = await input({ message: "Scopes:", default: "User.Read" });
     }
     scopes = scopes ?? "User.Read";
+
+    // Confirm before proceeding
+    if (!await confirmAction("Set up SSO? This will configure the AAD app, create an OAuth connection, and update the manifest.", silent)) {
+      return;
+    }
 
     // Get Graph token (needed for both secret creation and AAD app updates)
     const graphToken = await getTokenSilent(graphScopes);

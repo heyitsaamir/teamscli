@@ -7,35 +7,40 @@ import { isInteractive } from "../../../../utils/interactive.js";
 
 export const oauthCommand = new Command("oauth")
   .description("Manage OAuth connections (Azure bots only)")
-  .action(async function (this: Command) {
+  .argument("[appId]", "App ID")
+  .action(async function (this: Command, appId?: string) {
     if (!isInteractive()) {
       this.help();
       return;
     }
 
-    try {
-      const action = await select({
-        message: "OAuth connections",
-        choices: [
-          { name: "Add connection", value: "add" },
-          { name: "List connections", value: "list" },
-          { name: "Remove connection", value: "remove" },
-          { name: "Back", value: "back" },
-        ],
-      });
+    const args = appId ? [appId] : [];
 
-      if (action === "back") return;
+    while (true) {
+      try {
+        const action = await select({
+          message: "OAuth connections",
+          choices: [
+            { name: "Add connection", value: "add" },
+            { name: "List connections", value: "list" },
+            { name: "Remove connection", value: "remove" },
+            { name: "Back", value: "back" },
+          ],
+        });
 
-      if (action === "add") {
-        await oauthAddCommand.parseAsync([], { from: "user" });
-      } else if (action === "list") {
-        await oauthListCommand.parseAsync([], { from: "user" });
-      } else if (action === "remove") {
-        await oauthRemoveCommand.parseAsync([], { from: "user" });
+        if (action === "back") return;
+
+        if (action === "add") {
+          await oauthAddCommand.parseAsync(args, { from: "user" });
+        } else if (action === "list") {
+          await oauthListCommand.parseAsync(args, { from: "user" });
+        } else if (action === "remove") {
+          await oauthRemoveCommand.parseAsync(args, { from: "user" });
+        }
+      } catch (error) {
+        if (error instanceof Error && error.name === "ExitPromptError") return;
+        throw error;
       }
-    } catch (error) {
-      if (error instanceof Error && error.name === "ExitPromptError") return;
-      throw error;
     }
   });
 

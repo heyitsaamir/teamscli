@@ -6,32 +6,37 @@ import { isInteractive } from "../../../utils/interactive.js";
 
 export const userAuthCommand = new Command("user-auth")
   .description("Manage user authentication")
-  .action(async function (this: Command) {
+  .argument("[appId]", "App ID")
+  .action(async function (this: Command, appId?: string) {
     if (!isInteractive()) {
       this.help();
       return;
     }
 
-    try {
-      const action = await select({
-        message: "User authentication",
-        choices: [
-          { name: "OAuth connections", value: "oauth" },
-          { name: "SSO", value: "sso" },
-          { name: "Back", value: "back" },
-        ],
-      });
+    const args = appId ? [appId] : [];
 
-      if (action === "back") return;
+    while (true) {
+      try {
+        const action = await select({
+          message: "User authentication",
+          choices: [
+            { name: "OAuth connections", value: "oauth" },
+            { name: "SSO", value: "sso" },
+            { name: "Back", value: "back" },
+          ],
+        });
 
-      if (action === "oauth") {
-        await oauthCommand.parseAsync([], { from: "user" });
-      } else if (action === "sso") {
-        await ssoCommand.parseAsync([], { from: "user" });
+        if (action === "back") return;
+
+        if (action === "oauth") {
+          await oauthCommand.parseAsync(args, { from: "user" });
+        } else if (action === "sso") {
+          await ssoCommand.parseAsync(args, { from: "user" });
+        }
+      } catch (error) {
+        if (error instanceof Error && error.name === "ExitPromptError") return;
+        throw error;
       }
-    } catch (error) {
-      if (error instanceof Error && error.name === "ExitPromptError") return;
-      throw error;
     }
   });
 

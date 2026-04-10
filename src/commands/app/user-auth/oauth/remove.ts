@@ -3,7 +3,7 @@ import { search } from "@inquirer/prompts";
 import pc from "picocolors";
 import { createSilentSpinner } from "../../../../utils/spinner.js";
 import { runAz } from "../../../../utils/az.js";
-import { isInteractive } from "../../../../utils/interactive.js";
+import { isInteractive, confirmAction } from "../../../../utils/interactive.js";
 import { logger } from "../../../../utils/logger.js";
 import { CliError, wrapAction } from "../../../../utils/errors.js";
 import { requireAzureBot } from "../require-azure.js";
@@ -59,6 +59,10 @@ export const oauthRemoveCommand = new Command("remove")
           return choices.filter((c) => c.value.toLowerCase().includes(term.toLowerCase()));
         },
       });
+    }
+
+    if (!await confirmAction(`Remove OAuth connection "${connectionName}"?`)) {
+      return;
     }
 
     const spinner = createSilentSpinner(`Removing "${connectionName}"...`).start();
