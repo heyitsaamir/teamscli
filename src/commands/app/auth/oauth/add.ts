@@ -8,6 +8,8 @@ import { logger } from "../../../../utils/logger.js";
 import { requireAzureBot } from "../require-azure.js";
 import { updateAppDetails, fetchAppDetailsV2 } from "../../../../apps/api.js";
 import { createSilentSpinner } from "../../../../utils/spinner.js";
+import { getTokenSilent, graphScopes } from "../../../../auth/index.js";
+import { getAadAppByClientId, getAadAppFull, updateAadApp } from "../../../../apps/graph.js";
 
 interface OAuthAddOptions {
   provider?: string;
@@ -131,6 +133,44 @@ export const oauthAddCommand = new Command("add")
       spinner.error({ text: "Failed to create OAuth connection" });
       logger.error(error instanceof Error ? error.message : "Unknown error");
       process.exit(1);
+    }
+
+    // Update AAD app with Bot Framework redirect URI
+    const aadSpinner = createSilentSpinner("Configuring AAD app redirect URI...", false).start();
+    try {
+      // Get Graph token
+      const graphToken = await getTokenSilent(graphScopes);
+      if (!graphToken) {
+        throw new Error("Failed to get Graph token");
+      }
+
+      // Look up AAD app by client ID (botId)
+      const aadApp = await getAadAppByClientId(graphToken, botId);
+      const fullApp = await getAadAppFull(graphToken, aadApp.id);
+
+      // Build redirect URIs
+      const existingWeb = fullApp.web as Record<string, unknown> ?? {};
+      const existingRedirects = (existingWeb.redirectUris as string[]) ?? [];
+      const bfRedirect = "https://token.botframework.com/.auth/web/redirect";
+
+      if (!existingRedirects.includes(bfRedirect)) {
+        const redirectUris = [...existingRedirects, bfRedirect];
+
+        // Update the AAD app
+        await updateAadApp(graphToken, aadApp.id, {
+          web: {
+            ...existingWeb,
+            redirectUris,
+          },
+        });
+        aadSpinner.success({ text: "AAD app configured with Bot Framework redirect URI" });
+      } else {
+        aadSpinner.success({ text: "AAD app already has Bot Framework redirect URI" });
+      }
+    } catch (error) {
+      aadSpinner.error({ text: "Failed to configure AAD app redirect URI" });
+      logger.error(error instanceof Error ? error.message : "Unknown error");
+      // Non-fatal — OAuth connection was created, redirect URI can be added manually
     }
 
     // Update manifest with *.botframework.com domain
