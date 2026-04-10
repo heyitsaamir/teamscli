@@ -31,6 +31,7 @@ export const appViewCommand = new Command("view")
   .argument("[appId]", "App ID")
   .option("--json", "[OPTIONAL] Output as JSON")
   .option("--web", "[OPTIONAL] Print the install and Developer Portal links")
+  .option("--install-link", "[OPTIONAL] Print just the install link (pipe-friendly)")
   .action(wrapAction(async (appIdArg: string | undefined, options) => {
     // Interactive picker loop when no appId
     if (!appIdArg) {
@@ -84,6 +85,12 @@ export const appViewCommand = new Command("view")
       };
 
       outputJson(enriched);
+      return;
+    }
+
+    if (options.installLink) {
+      const installLink = `https://teams.microsoft.com/l/app/${app.teamsAppId}?installAppPackage=true`;
+      logger.info(installLink);
       return;
     }
 
