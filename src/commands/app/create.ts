@@ -161,7 +161,7 @@ export const appCreateCommand = new Command("create")
 			  }
 			| undefined;
 
-		if (interactive && !hasFlags) {
+		if (interactive && !hasFlags && !options.json) {
 			const customization = await collectManifestCustomization();
 			descriptionOpts = customization.description;
 			scopeChoices = customization.scopes;

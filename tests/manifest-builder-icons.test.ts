@@ -51,9 +51,10 @@ describe("collectManifestCustomization icons", () => {
     });
   });
 
-  it("omits icons when not selected", async () => {
-    const { checkbox } = await import("@inquirer/prompts");
+  it("omits icons and does not prompt for paths when not selected", async () => {
+    const { checkbox, input } = await import("@inquirer/prompts");
     const mockedCheckbox = vi.mocked(checkbox);
+    const mockedInput = vi.mocked(input);
 
     mockedCheckbox.mockResolvedValueOnce([] as never);
 
@@ -64,6 +65,7 @@ describe("collectManifestCustomization icons", () => {
     const result = await collectManifestCustomization();
 
     expect(result.icons).toBeUndefined();
+    expect(mockedInput).not.toHaveBeenCalled();
   });
 
   it("omits icons when both paths are empty", async () => {

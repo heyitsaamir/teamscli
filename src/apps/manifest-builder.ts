@@ -20,7 +20,7 @@ export interface ManifestCustomization {
 
 /**
  * Interactively collects manifest customization options from the user.
- * Prompts for description, scopes, and developer details.
+ * Prompts for description, icons, scopes, and developer details.
  */
 export async function collectManifestCustomization(): Promise<ManifestCustomization> {
   if (!isInteractive()) {
