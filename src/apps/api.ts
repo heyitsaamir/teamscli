@@ -53,7 +53,8 @@ export async function fetchApps(token: string): Promise<AppSummary[]> {
     });
 
     if (!response.ok) {
-      throw new Error(`Failed to fetch apps: ${response.status} ${response.statusText}`);
+      const errorText = await response.text();
+      throw new CliError("API_ERROR", `Failed to fetch apps: ${response.status} ${errorText}`);
     }
 
     const page: AppSummary[] = await response.json();
