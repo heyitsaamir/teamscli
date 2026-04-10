@@ -30,7 +30,7 @@ import { getConfig } from "../../utils/config.js";
 import { ensureAz, runAz } from "../../utils/az.js";
 import { resolveSubscription, resolveResourceGroup } from "../../utils/az-prompts.js";
 import { createSilentSpinner } from "../../utils/spinner.js";
-import { openInBrowser } from "../../utils/browser.js";
+import { openInBrowser, printLinkBanner } from "../../utils/browser.js";
 
 interface AppCreateOutput {
 	appName: string;
@@ -284,8 +284,9 @@ export const appCreateCommand = new Command("create")
 			if (endpoint) {
 				logger.info(`${pc.dim("Endpoint:")} ${endpoint}`);
 			}
-			logger.info(`\n  ${pc.bold("▸ Install in Teams")}    ${pc.dim("→")} ${pc.bold(pc.cyan(installLink))}`);
-			logger.info(`  ${pc.bold("▸ Developer Portal")}    ${pc.dim("→")} ${pc.bold(pc.cyan(portalLink))}`);
+			logger.info("");
+			printLinkBanner("Install in Teams", installLink);
+			printLinkBanner("Developer Portal", portalLink);
 
 			outputCredentials(envPath, {
 				CLIENT_ID: clientId,

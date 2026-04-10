@@ -5,7 +5,7 @@ import type { AppSummary, AppDetails } from "./types.js";
 import { fetchApp, fetchAppDetailsV2 } from "./api.js";
 import { fetchBot } from "./tdp.js";
 import { logger } from "../utils/logger.js";
-import { openInBrowser } from "../utils/browser.js";
+import { openInBrowser, printLinkBanner } from "../utils/browser.js";
 
 /**
  * Fetch and print app detail header. Returns the resolved details.
@@ -62,8 +62,9 @@ async function printAppHeader(appSummary: AppSummary, token: string): Promise<{ 
   }
   const installLink = `https://teams.microsoft.com/l/app/${appDetails.teamsAppId}?installAppPackage=true`;
   const portalLink = `https://dev.teams.microsoft.com/apps/${appDetails.teamsAppId}`;
-  logger.info(`\n  ${pc.bold("▸ Install in Teams")}    ${pc.dim("→")} ${pc.bold(pc.cyan(installLink))}`);
-  logger.info(`  ${pc.bold("▸ Developer Portal")}    ${pc.dim("→")} ${pc.bold(pc.cyan(portalLink))}`);
+  logger.info("");
+  printLinkBanner("Install in Teams", installLink);
+  printLinkBanner("Developer Portal", portalLink);
 
   return { appDetails, endpoint, installLink, portalLink };
 }
@@ -77,18 +78,23 @@ export async function showAppDetail(appSummary: AppSummary, token: string, optio
   logger.info(pc.dim(`\nTip: ${pc.cyan(`teams app view ${appDetails.teamsAppId}`)} to view this app`));
 
   if (options?.interactive) {
-    while (true) {
-      const action = await select({
-        message: "",
-        choices: [
-          { name: "Install in Teams", value: "install" },
-          { name: "Open in Developer Portal", value: "portal" },
-          { name: "Back", value: "back" },
-        ],
-      });
-      if (action === "back") return;
-      if (action === "install") await openInBrowser(installLink);
-      if (action === "portal") await openInBrowser(portalLink);
+    try {
+      while (true) {
+        const action = await select({
+          message: "",
+          choices: [
+            { name: "Install in Teams", value: "install" },
+            { name: "Open in Developer Portal", value: "portal" },
+            { name: "Back", value: "back" },
+          ],
+        });
+        if (action === "back") return;
+        if (action === "install") await openInBrowser(installLink);
+        if (action === "portal") await openInBrowser(portalLink);
+      }
+    } catch (error) {
+      if (error instanceof Error && error.name === "ExitPromptError") return;
+      throw error;
     }
   }
 }

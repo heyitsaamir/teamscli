@@ -7,12 +7,13 @@ import { outputJson } from "../../utils/json-output.js";
 import { pickApp } from "../../utils/app-picker.js";
 import { CliError, wrapAction } from "../../utils/errors.js";
 import { logger } from "../../utils/logger.js";
+import { printLinkBanner } from "../../utils/browser.js";
 
 export const appViewCommand = new Command("view")
   .description("View a Teams app")
   .argument("[appId]", "App ID")
   .option("--json", "[OPTIONAL] Output as JSON")
-  .option("--web", "[OPTIONAL] Print the Teams install link")
+  .option("--web", "[OPTIONAL] Print the install and Developer Portal links")
   .action(wrapAction(async (appIdArg: string | undefined, options) => {
     // Interactive picker loop when no appId
     if (!appIdArg) {
@@ -73,8 +74,9 @@ export const appViewCommand = new Command("view")
       const installLink = `https://teams.microsoft.com/l/app/${app.teamsAppId}?installAppPackage=true`;
       const portalLink = `https://dev.teams.microsoft.com/apps/${app.teamsAppId}`;
       logger.info(`${pc.dim("App:")} ${app.appName || app.appId}`);
-      logger.info(`\n  ${pc.bold("▸ Install in Teams")}    ${pc.dim("→")} ${pc.bold(pc.cyan(installLink))}`);
-      logger.info(`  ${pc.bold("▸ Developer Portal")}    ${pc.dim("→")} ${pc.bold(pc.cyan(portalLink))}`);
+      logger.info("");
+      printLinkBanner("Install in Teams", installLink);
+      printLinkBanner("Developer Portal", portalLink);
       return;
     }
 
