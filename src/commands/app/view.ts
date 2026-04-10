@@ -27,8 +27,7 @@ const VIEW_JSON_FIELDS = [
 export const appViewCommand = new Command("view")
   .description("View a Teams app")
   .argument("[appId]", "App ID")
-  .option("--json", "[OPTIONAL] Output as JSON")
-  .option("--fields <fields>", "[OPTIONAL] Comma-separated fields to include in JSON output")
+  .option("--json <fields>", "[OPTIONAL] Output as JSON with specified fields")
   .option("--web", "[OPTIONAL] Print the Teams install link")
   .action(wrapAction(async (appIdArg: string | undefined, options) => {
     // Interactive picker loop when no appId
@@ -61,6 +60,7 @@ export const appViewCommand = new Command("view")
     const app = await fetchApp(token, appIdArg);
 
     if (options.json) {
+      const fields = parseJsonFields(options.json, VIEW_JSON_FIELDS);
       const spinner = createSpinner("Fetching app details...").start();
       const details = await fetchAppDetailsV2(token, app.teamsAppId);
       spinner.stop();
@@ -81,12 +81,7 @@ export const appViewCommand = new Command("view")
         installLink: `https://teams.microsoft.com/l/app/${details.teamsAppId}?installAppPackage=true`,
       };
 
-      if (options.fields) {
-        const fields = parseJsonFields(options.fields, VIEW_JSON_FIELDS);
-        outputJson(pickFields(enriched, fields));
-      } else {
-        outputJson(enriched);
-      }
+      outputJson(pickFields(enriched as Record<string, unknown>, fields));
       return;
     }
 

@@ -12,7 +12,7 @@ import { logger } from "../../utils/logger.js";
 
 const LIST_JSON_FIELDS = ["appId", "teamsAppId", "appName", "version", "updatedAt"];
 
-export async function runAppList(options?: { json?: boolean; fields?: string }): Promise<void> {
+export async function runAppList(options?: { json?: string }): Promise<void> {
   const account = await getAccount();
   if (!account) {
     throw new CliError("AUTH_REQUIRED", "Not logged in.", "Run `teams login` first.");
@@ -43,12 +43,8 @@ export async function runAppList(options?: { json?: boolean; fields?: string }):
   }
 
   if (options?.json) {
-    if (options.fields) {
-      const fields = parseJsonFields(options.fields, LIST_JSON_FIELDS);
-      outputJson(pickFields(apps, fields));
-    } else {
-      outputJson(apps);
-    }
+    const fields = parseJsonFields(options.json, LIST_JSON_FIELDS);
+    outputJson(pickFields(apps, fields));
     return;
   }
 
@@ -89,8 +85,7 @@ export async function runAppList(options?: { json?: boolean; fields?: string }):
 
 export const appListCommand = new Command("list")
   .description("List your Teams apps")
-  .option("--json", "[OPTIONAL] Output as JSON")
-  .option("--fields <fields>", "[OPTIONAL] Comma-separated fields to include in JSON output")
+  .option("--json <fields>", "[OPTIONAL] Output as JSON with specified fields")
   .action(wrapAction(async (options) => {
     await runAppList(options);
   }));
