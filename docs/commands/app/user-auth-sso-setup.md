@@ -47,7 +47,7 @@ Configures Single Sign-On (SSO) for a Teams bot in a single command. This is one
 
 **Step 3: Teams Manifest** (via TDP API)
 - Sets `webApplicationInfo.id` and `webApplicationInfo.resource`
-- Adds `token.botframework.com` to `validDomains`
+- Adds `*.botframework.com` to `validDomains`
 
 ### Prerequisites
 
