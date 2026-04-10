@@ -56,6 +56,16 @@ teams self-update                    # Update to the latest version
 | `--yes` / `-y` | Skip confirmation prompts (CI/agent use) |
 | `--disable-auto-update` | Disable automatic update checks |
 
+## AI Agent Skills
+
+Install agent skills to help AI assistants manage Teams bot infrastructure:
+
+```bash
+npx skills add heyitsaamir/teamscli --skill teams-bot-infra
+```
+
+See [skills/README.md](skills/README.md) for details.
+
 ## Disclaimer
 
 This project is **not** affiliated with, endorsed by, or sponsored by Microsoft Corporation. "Microsoft Teams" is a trademark of Microsoft Corporation.
