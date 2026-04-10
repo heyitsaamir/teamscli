@@ -1,18 +1,16 @@
 import { Command } from "commander";
 import { search } from "@inquirer/prompts";
-import { createSpinner } from "nanospinner";
+import { createSilentSpinner } from "../../utils/spinner.js";
 import pc from "picocolors";
 import { getAccount, getTokenSilent, teamsDevPortalScopes } from "../../auth/index.js";
 import { fetchApps, fetchApp } from "../../apps/index.js";
 import { showAppActions } from "./actions.js";
-import { parseJsonFields, pickFields, outputJson } from "../../utils/json-output.js";
+import { outputJson } from "../../utils/json-output.js";
 import { isInteractive } from "../../utils/interactive.js";
 import { CliError, wrapAction } from "../../utils/errors.js";
 import { logger } from "../../utils/logger.js";
 
-const LIST_JSON_FIELDS = ["appId", "teamsAppId", "appName", "version", "updatedAt"];
-
-export async function runAppList(options?: { json?: string }): Promise<void> {
+export async function runAppList(options?: { json?: boolean }): Promise<void> {
   const account = await getAccount();
   if (!account) {
     throw new CliError("AUTH_REQUIRED", "Not logged in.", "Run `teams login` first.");
@@ -23,7 +21,8 @@ export async function runAppList(options?: { json?: string }): Promise<void> {
     throw new CliError("AUTH_TOKEN_FAILED", "Failed to get token.", "Try `teams login` again.");
   }
 
-  const spinner = createSpinner("Fetching apps...").start();
+  const silent = !!options?.json;
+  const spinner = createSilentSpinner("Fetching apps...", silent).start();
   let apps;
   try {
     apps = await fetchApps(token);
@@ -43,8 +42,7 @@ export async function runAppList(options?: { json?: string }): Promise<void> {
   }
 
   if (options?.json) {
-    const fields = parseJsonFields(options.json, LIST_JSON_FIELDS);
-    outputJson(pickFields(apps, fields));
+    outputJson(apps);
     return;
   }
 
@@ -85,7 +83,7 @@ export async function runAppList(options?: { json?: string }): Promise<void> {
 
 export const appListCommand = new Command("list")
   .description("List your Teams apps")
-  .option("--json <fields>", "[OPTIONAL] Output as JSON with specified fields")
+  .option("--json", "[OPTIONAL] Output as JSON")
   .action(wrapAction(async (options) => {
     await runAppList(options);
   }));

@@ -1,33 +1,17 @@
 import { Command } from "commander";
 import pc from "picocolors";
-import { createSpinner } from "nanospinner";
+import { createSilentSpinner } from "../../utils/spinner.js";
 import { getAccount, getTokenSilent, teamsDevPortalScopes } from "../../auth/index.js";
 import { fetchApp, fetchAppDetailsV2, showAppDetail } from "../../apps/index.js";
-import { parseJsonFields, pickFields, outputJson } from "../../utils/json-output.js";
+import { outputJson } from "../../utils/json-output.js";
 import { pickApp } from "../../utils/app-picker.js";
 import { CliError, wrapAction } from "../../utils/errors.js";
 import { logger } from "../../utils/logger.js";
 
-const VIEW_JSON_FIELDS = [
-  "appId",
-  "teamsAppId",
-  "name",
-  "longName",
-  "version",
-  "developer",
-  "shortDescription",
-  "longDescription",
-  "websiteUrl",
-  "privacyUrl",
-  "termsOfUseUrl",
-  "endpoint",
-  "installLink",
-];
-
 export const appViewCommand = new Command("view")
   .description("View a Teams app")
   .argument("[appId]", "App ID")
-  .option("--json <fields>", "[OPTIONAL] Output as JSON with specified fields")
+  .option("--json", "[OPTIONAL] Output as JSON")
   .option("--web", "[OPTIONAL] Print the Teams install link")
   .action(wrapAction(async (appIdArg: string | undefined, options) => {
     // Interactive picker loop when no appId
@@ -60,8 +44,7 @@ export const appViewCommand = new Command("view")
     const app = await fetchApp(token, appIdArg);
 
     if (options.json) {
-      const fields = parseJsonFields(options.json, VIEW_JSON_FIELDS);
-      const spinner = createSpinner("Fetching app details...").start();
+      const spinner = createSilentSpinner("Fetching app details...", true).start();
       const details = await fetchAppDetailsV2(token, app.teamsAppId);
       spinner.stop();
 
@@ -81,7 +64,7 @@ export const appViewCommand = new Command("view")
         installLink: `https://teams.microsoft.com/l/app/${details.teamsAppId}?installAppPackage=true`,
       };
 
-      outputJson(pickFields(enriched as Record<string, unknown>, fields));
+      outputJson(enriched);
       return;
     }
 
