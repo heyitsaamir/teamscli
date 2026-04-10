@@ -1,7 +1,6 @@
 import { Command } from "commander";
 import { input, search } from "@inquirer/prompts";
 import pc from "picocolors";
-import { createSpinner } from "nanospinner";
 import { runAz } from "../../../../utils/az.js";
 import { isInteractive } from "../../../../utils/interactive.js";
 import { logger } from "../../../../utils/logger.js";
@@ -10,6 +9,8 @@ import { updateAppDetails, fetchAppDetailsV2 } from "../../../../apps/api.js";
 import { createSilentSpinner } from "../../../../utils/spinner.js";
 import { getTokenSilent, graphScopes } from "../../../../auth/index.js";
 import { getAadAppByClientId, getAadAppFull, updateAadApp } from "../../../../apps/graph.js";
+import { wrapAction } from "../../../../utils/errors.js";
+import { outputJson } from "../../../../utils/json-output.js";
 
 interface OAuthAddOptions {
   provider?: string;
@@ -18,6 +19,16 @@ interface OAuthAddOptions {
   clientSecret?: string;
   scopes?: string;
   parameters?: string;
+  json?: boolean;
+}
+
+interface OAuthAddOutput {
+  connectionName: string;
+  provider: string;
+  clientId: string;
+  scopes: string;
+  aadConfigured: boolean;
+  manifestConfigured: boolean;
 }
 
 interface ServiceProvider {
@@ -36,7 +47,9 @@ export const oauthAddCommand = new Command("add")
   .option("--client-secret <secret>", "Provider client secret")
   .option("--scopes <scopes>", "Provider scopes (space-delimited)")
   .option("--parameters <params>", "[OPTIONAL] Extra provider params (key=value key=value)")
-  .action(async (appIdArg: string | undefined, options: OAuthAddOptions) => {
+  .option("--json", "[OPTIONAL] Output as JSON")
+  .action(wrapAction(async (appIdArg: string | undefined, options: OAuthAddOptions) => {
+    const silent = !!options.json;
     const { token, appId, botId, azure } = await requireAzureBot(appIdArg);
     const interactive = isInteractive();
 
@@ -47,7 +60,7 @@ export const oauthAddCommand = new Command("add")
         logger.error("--provider is required in non-interactive mode");
         process.exit(1);
       }
-      const providerSpinner = createSpinner("Fetching OAuth providers...").start();
+      const providerSpinner = createSilentSpinner("Fetching OAuth providers...", silent).start();
       const providers = await runAz<{ value: ServiceProvider[] }>(["bot", "authsetting", "list-providers"]);
       providerSpinner.stop();
       const providerList = providers.value.map((p) => ({
@@ -107,7 +120,7 @@ export const oauthAddCommand = new Command("add")
     }
 
     // Create the connection
-    const spinner = createSpinner("Creating OAuth connection...").start();
+    const spinner = createSilentSpinner("Creating OAuth connection...", silent).start();
     try {
       const args = [
         "bot", "authsetting", "create",
@@ -128,15 +141,22 @@ export const oauthAddCommand = new Command("add")
       }
 
       await runAz(args);
-      spinner.success({ text: `OAuth connection "${connectionName}" created` });
+      if (!options.json) {
+        spinner.success({ text: `OAuth connection "${connectionName}" created` });
+      } else {
+        spinner.stop();
+      }
     } catch (error) {
       spinner.error({ text: "Failed to create OAuth connection" });
-      logger.error(error instanceof Error ? error.message : "Unknown error");
+      if (!options.json) {
+        logger.error(error instanceof Error ? error.message : "Unknown error");
+      }
       process.exit(1);
     }
 
     // Update AAD app with Bot Framework redirect URI
-    const aadSpinner = createSilentSpinner("Configuring AAD app redirect URI...", false).start();
+    const aadSpinner = createSilentSpinner("Configuring AAD app redirect URI...", silent).start();
+    let aadConfigured = false;
     try {
       // Get Graph token
       const graphToken = await getTokenSilent(graphScopes);
@@ -163,18 +183,31 @@ export const oauthAddCommand = new Command("add")
             redirectUris,
           },
         });
-        aadSpinner.success({ text: "AAD app configured with Bot Framework redirect URI" });
+        aadConfigured = true;
+        if (!options.json) {
+          aadSpinner.success({ text: "AAD app configured with Bot Framework redirect URI" });
+        } else {
+          aadSpinner.stop();
+        }
       } else {
-        aadSpinner.success({ text: "AAD app already has Bot Framework redirect URI" });
+        aadConfigured = true;
+        if (!options.json) {
+          aadSpinner.success({ text: "AAD app already has Bot Framework redirect URI" });
+        } else {
+          aadSpinner.stop();
+        }
       }
     } catch (error) {
       aadSpinner.error({ text: "Failed to configure AAD app redirect URI" });
-      logger.error(error instanceof Error ? error.message : "Unknown error");
+      if (!options.json) {
+        logger.error(error instanceof Error ? error.message : "Unknown error");
+      }
       // Non-fatal — OAuth connection was created, redirect URI can be added manually
     }
 
     // Update manifest with *.botframework.com domain
-    const manifestSpinner = createSilentSpinner("Updating manifest...", false).start();
+    const manifestSpinner = createSilentSpinner("Updating manifest...", silent).start();
+    let manifestConfigured = false;
     try {
       const details = await fetchAppDetailsV2(token, appId);
       const validDomains = (details.validDomains as string[]) ?? [];
@@ -183,13 +216,38 @@ export const oauthAddCommand = new Command("add")
         await updateAppDetails(token, appId, {
           validDomains: [...validDomains, "*.botframework.com"],
         });
-        manifestSpinner.success({ text: "Manifest updated with *.botframework.com domain" });
+        manifestConfigured = true;
+        if (!options.json) {
+          manifestSpinner.success({ text: "Manifest updated with *.botframework.com domain" });
+        } else {
+          manifestSpinner.stop();
+        }
       } else {
-        manifestSpinner.success({ text: "Manifest already has *.botframework.com domain" });
+        manifestConfigured = true;
+        if (!options.json) {
+          manifestSpinner.success({ text: "Manifest already has *.botframework.com domain" });
+        } else {
+          manifestSpinner.stop();
+        }
       }
     } catch (error) {
       manifestSpinner.error({ text: "Failed to update manifest" });
-      logger.error(error instanceof Error ? error.message : "Unknown error");
+      if (!options.json) {
+        logger.error(error instanceof Error ? error.message : "Unknown error");
+      }
       // Non-fatal — OAuth connection was created, manifest can be updated manually
     }
-  });
+
+    // Output JSON or done
+    if (options.json) {
+      const output: OAuthAddOutput = {
+        connectionName,
+        provider: provider!,
+        clientId,
+        scopes,
+        aadConfigured,
+        manifestConfigured,
+      };
+      outputJson(output);
+    }
+  }));
