@@ -1,6 +1,5 @@
 import { Command } from "commander";
 import { input, search } from "@inquirer/prompts";
-import pc from "picocolors";
 import { runAz } from "../../../../utils/az.js";
 import { isInteractive } from "../../../../utils/interactive.js";
 import { logger } from "../../../../utils/logger.js";
@@ -9,7 +8,7 @@ import { updateAppDetails, fetchAppDetailsV2 } from "../../../../apps/api.js";
 import { createSilentSpinner } from "../../../../utils/spinner.js";
 import { getTokenSilent, graphScopes } from "../../../../auth/index.js";
 import { getAadAppByClientId, getAadAppFull, updateAadApp } from "../../../../apps/graph.js";
-import { wrapAction } from "../../../../utils/errors.js";
+import { wrapAction, CliError } from "../../../../utils/errors.js";
 import { outputJson } from "../../../../utils/json-output.js";
 
 interface OAuthAddOptions {
@@ -53,12 +52,20 @@ export const oauthAddCommand = new Command("add")
     const { token, appId, botId, azure } = await requireAzureBot(appIdArg);
     const interactive = isInteractive();
 
+    // Validate required parameters in JSON mode
+    if (options.json) {
+      if (!options.provider) throw new CliError("VALIDATION_MISSING", "--provider is required with --json.");
+      if (!options.connectionName) throw new CliError("VALIDATION_MISSING", "--connection-name is required with --json.");
+      if (!options.clientId) throw new CliError("VALIDATION_MISSING", "--client-id is required with --json.");
+      if (!options.clientSecret) throw new CliError("VALIDATION_MISSING", "--client-secret is required with --json.");
+      if (!options.scopes) throw new CliError("VALIDATION_MISSING", "--scopes is required with --json.");
+    }
+
     // Resolve provider
     let provider = options.provider;
     if (!provider) {
       if (!interactive) {
-        logger.error("--provider is required in non-interactive mode");
-        process.exit(1);
+        throw new CliError("VALIDATION_MISSING", "--provider is required in non-interactive mode");
       }
       const providerSpinner = createSilentSpinner("Fetching OAuth providers...", silent).start();
       const providers = await runAz<{ value: ServiceProvider[] }>(["bot", "authsetting", "list-providers"]);
@@ -83,8 +90,7 @@ export const oauthAddCommand = new Command("add")
     let connectionName = options.connectionName;
     if (!connectionName) {
       if (!interactive) {
-        logger.error("--connection-name is required in non-interactive mode");
-        process.exit(1);
+        throw new CliError("VALIDATION_MISSING", "--connection-name is required in non-interactive mode");
       }
       connectionName = await input({ message: "Connection name:", default: provider!.toLowerCase() });
     }
@@ -93,8 +99,7 @@ export const oauthAddCommand = new Command("add")
     let clientId = options.clientId;
     if (!clientId) {
       if (!interactive) {
-        logger.error("--client-id is required in non-interactive mode");
-        process.exit(1);
+        throw new CliError("VALIDATION_MISSING", "--client-id is required in non-interactive mode");
       }
       clientId = await input({ message: "Client ID:" });
     }
@@ -103,8 +108,7 @@ export const oauthAddCommand = new Command("add")
     let clientSecret = options.clientSecret;
     if (!clientSecret) {
       if (!interactive) {
-        logger.error("--client-secret is required in non-interactive mode");
-        process.exit(1);
+        throw new CliError("VALIDATION_MISSING", "--client-secret is required in non-interactive mode");
       }
       clientSecret = await input({ message: "Client secret:" });
     }
@@ -113,8 +117,7 @@ export const oauthAddCommand = new Command("add")
     let scopes = options.scopes;
     if (!scopes) {
       if (!interactive) {
-        logger.error("--scopes is required in non-interactive mode");
-        process.exit(1);
+        throw new CliError("VALIDATION_MISSING", "--scopes is required in non-interactive mode");
       }
       scopes = await input({ message: "Scopes (space-delimited):" });
     }
@@ -148,10 +151,7 @@ export const oauthAddCommand = new Command("add")
       }
     } catch (error) {
       spinner.error({ text: "Failed to create OAuth connection" });
-      if (!options.json) {
-        logger.error(error instanceof Error ? error.message : "Unknown error");
-      }
-      process.exit(1);
+      throw new CliError("API_ERROR", error instanceof Error ? error.message : "Failed to create OAuth connection");
     }
 
     // Update AAD app with Bot Framework redirect URI
