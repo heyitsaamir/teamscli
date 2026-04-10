@@ -28,6 +28,9 @@
   ],
   "author": "",
   "license": "ISC",
+  "engines": {
+    "node": ">=20"
+  },
   "packageManager": "pnpm@10.29.3",
   "pnpm": {
     "onlyBuiltDependencies": [

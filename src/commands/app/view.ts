@@ -9,6 +9,23 @@ import { CliError, wrapAction } from "../../utils/errors.js";
 import { logger } from "../../utils/logger.js";
 import { printLinkBanner } from "../../utils/browser.js";
 
+interface AppViewOutput {
+  appId: string;
+  teamsAppId: string;
+  name: string;
+  longName: string;
+  version: string;
+  developer: string;
+  shortDescription: string;
+  longDescription: string;
+  websiteUrl: string;
+  privacyUrl: string;
+  termsOfUseUrl: string;
+  endpoint: string | null;
+  installLink: string;
+  portalLink: string;
+}
+
 export const appViewCommand = new Command("view")
   .description("View a Teams app")
   .argument("[appId]", "App ID")
@@ -49,7 +66,7 @@ export const appViewCommand = new Command("view")
       const details = await fetchAppDetailsV2(token, app.teamsAppId);
       spinner.stop();
 
-      const enriched: Record<string, unknown> = {
+      const enriched: AppViewOutput = {
         appId: details.appId,
         teamsAppId: details.teamsAppId,
         name: details.shortName,
