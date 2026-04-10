@@ -8,6 +8,7 @@ export const PLACEHOLDER_BOT_ID = "00000000-0000-0000-0000-000000000000";
 
 export interface ManifestCustomization {
   description?: { short: string; full?: string };
+  icons?: { colorIconPath?: string; outlineIconPath?: string };
   scopes?: string[];
   developer?: {
     name: string;
@@ -19,7 +20,7 @@ export interface ManifestCustomization {
 
 /**
  * Interactively collects manifest customization options from the user.
- * Prompts for description, scopes, and developer details.
+ * Prompts for description, icons, scopes, and developer details.
  */
 export async function collectManifestCustomization(): Promise<ManifestCustomization> {
   if (!isInteractive()) {
@@ -30,6 +31,7 @@ export async function collectManifestCustomization(): Promise<ManifestCustomizat
     message: "Customize manifest fields? (space to select, enter to continue)",
     choices: [
       { name: "Description", value: "description" },
+      { name: "Icons", value: "icons" },
       { name: "Scopes", value: "scopes" },
       { name: "Developer details", value: "developer" },
     ],
@@ -41,6 +43,16 @@ export async function collectManifestCustomization(): Promise<ManifestCustomizat
     const shortDesc = await input({ message: "Short description:" });
     const fullDesc = await input({ message: "Full description (leave empty to use short):" });
     result.description = { short: shortDesc, full: fullDesc || undefined };
+  }
+
+  if (customizeFields.includes("icons")) {
+    const colorIconPath =
+      (await input({ message: "Color icon path (192x192 PNG, leave empty to skip):" })) || undefined;
+    const outlineIconPath =
+      (await input({ message: "Outline icon path (32x32 PNG, leave empty to skip):" })) || undefined;
+    if (colorIconPath || outlineIconPath) {
+      result.icons = { colorIconPath, outlineIconPath };
+    }
   }
 
   if (customizeFields.includes("scopes")) {
