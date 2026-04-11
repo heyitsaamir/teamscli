@@ -1,9 +1,12 @@
 // RED/GREEN: verified 2026-04-10
-// RED: removed "Icons" choice from checkbox in manifest-builder.ts — test failed
+// RED (icons): removed "Icons" choice from checkbox in manifest-builder.ts — test failed
 //      because checkbox choices did not include { value: "icons" }.
-// GREEN: restored "Icons" choice — test passes.
+// GREEN (icons): restored "Icons" choice — test passes.
+// RED (validDomains): removed "*.botframework.com" from manifest default — test failed.
+// GREEN (validDomains): restored "*.botframework.com" — test passes.
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import { createManifest } from "../src/apps/manifest.js";
 
 vi.mock("../src/utils/interactive.js", () => ({
   isInteractive: () => true,
@@ -85,5 +88,27 @@ describe("collectManifestCustomization icons", () => {
     const result = await collectManifestCustomization();
 
     expect(result.icons).toBeUndefined();
+  });
+});
+
+describe("createManifest validDomains", () => {
+  it("includes *.botframework.com by default with no endpoint", () => {
+    const manifest = createManifest({
+      botId: "test-bot-id",
+      botName: "Test Bot",
+    }) as { validDomains: string[] };
+
+    expect(manifest.validDomains).toContain("*.botframework.com");
+  });
+
+  it("includes *.botframework.com alongside endpoint domain", () => {
+    const manifest = createManifest({
+      botId: "test-bot-id",
+      botName: "Test Bot",
+      endpoint: "https://mybot.azurewebsites.net/api/messages",
+    }) as { validDomains: string[] };
+
+    expect(manifest.validDomains).toContain("*.botframework.com");
+    expect(manifest.validDomains).toContain("mybot.azurewebsites.net");
   });
 });
