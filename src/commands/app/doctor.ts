@@ -329,7 +329,12 @@ function checkManifest(
       }
     }
   } else {
-    results.push({ category: cat, label: "webApplicationInfo not configured", status: "info", detail: "SSO not set up" });
+    const hasRsc = (details.authorization?.permissions?.resourceSpecific ?? []).length > 0;
+    if (hasRsc) {
+      results.push({ category: cat, label: "webApplicationInfo not configured", status: "fail", detail: "Required when RSC permissions are present" });
+    } else {
+      results.push({ category: cat, label: "webApplicationInfo not configured", status: "info", detail: "SSO not set up" });
+    }
   }
 }
 

@@ -25,11 +25,12 @@ async function buildAuthorizationUpdate(
   token: string,
   teamsAppId: string,
   newResourceSpecific: RscPermissionEntry[],
-): Promise<{ authorization: AppAuthorization }> {
+): Promise<{ authorization: AppAuthorization; webApplicationInfoId?: string }> {
   const details = await fetchAppDetailsV2(token, teamsAppId);
   const currentAuth = details.authorization ?? {};
   const currentPerms = currentAuth.permissions ?? {};
-  return {
+
+  const update: { authorization: AppAuthorization; webApplicationInfoId?: string } = {
     authorization: {
       ...currentAuth,
       permissions: {
@@ -38,6 +39,13 @@ async function buildAuthorizationUpdate(
       },
     },
   };
+
+  // RSC permissions require webApplicationInfo.id in the manifest
+  if (!details.webApplicationInfoId && newResourceSpecific.length > 0) {
+    update.webApplicationInfoId = details.appId;
+  }
+
+  return update;
 }
 
 /**
