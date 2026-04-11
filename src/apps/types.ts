@@ -50,6 +50,8 @@ export interface AppDetails {
   // Additional fields that must be preserved
   manifestVersion: string;
   webApplicationInfoId: string;
+  webApplicationInfoResource?: string;
+  validDomains?: string[];
   mpnId: string;
   accentColor: string;
   colorIcon?: string;

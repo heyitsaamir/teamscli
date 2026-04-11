@@ -294,7 +294,7 @@ function checkManifest(
     results.push({ category: cat, label: "Bot ID does not match app ID", status: "warn", detail: `appId=${details.appId}, botId=${botId}` });
   }
 
-  const validDomains = (details.validDomains ?? []) as string[];
+  const validDomains = details.validDomains ?? [];
 
   // validDomains includes endpoint domain
   if (endpoint) {
@@ -319,7 +319,7 @@ function checkManifest(
     results.push({ category: cat, label: "webApplicationInfo configured", status: "pass" });
 
     // Check resource URI format
-    const resource = details.webApplicationInfoResource as string | undefined;
+    const resource = details.webApplicationInfoResource;
     if (resource) {
       const expected = `api://botid-${botId}`;
       if (resource.startsWith(expected)) {
@@ -443,7 +443,7 @@ async function checkSso(
           const tokenExchange = params.find((p) => p.key === "tokenExchangeUrl")?.value;
 
           if (tokenExchange) {
-            const manifestResource = (details.webApplicationInfoResource as string | undefined) ?? "";
+            const manifestResource = (details.webApplicationInfoResource) ?? "";
             const aadIdentifier = identifierUris[0] ?? "";
 
             const allMatch = tokenExchange === aadIdentifier && tokenExchange === manifestResource;
