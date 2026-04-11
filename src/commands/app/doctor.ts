@@ -294,7 +294,7 @@ function checkManifest(
     results.push({ category: cat, label: "Bot ID does not match app ID", status: "warn", detail: `appId=${details.appId}, botId=${botId}` });
   }
 
-  const validDomains = (details.validDomains ?? []) as string[];
+  const validDomains = details.validDomains ?? [];
 
   // validDomains includes endpoint domain
   if (endpoint) {
@@ -319,7 +319,7 @@ function checkManifest(
     results.push({ category: cat, label: "webApplicationInfo configured", status: "pass" });
 
     // Check resource URI format
-    const resource = details.webApplicationInfoResource as string | undefined;
+    const resource = details.webApplicationInfoResource;
     if (resource) {
       const expected = `api://botid-${botId}`;
       if (resource.startsWith(expected)) {
@@ -329,7 +329,12 @@ function checkManifest(
       }
     }
   } else {
-    results.push({ category: cat, label: "webApplicationInfo not configured", status: "info", detail: "SSO not set up" });
+    const hasRsc = (details.authorization?.permissions?.resourceSpecific ?? []).length > 0;
+    if (hasRsc) {
+      results.push({ category: cat, label: "webApplicationInfo not configured", status: "fail", detail: "Required when RSC permissions are present" });
+    } else {
+      results.push({ category: cat, label: "webApplicationInfo not configured", status: "info", detail: "SSO not set up" });
+    }
   }
 }
 
@@ -438,7 +443,7 @@ async function checkSso(
           const tokenExchange = params.find((p) => p.key === "tokenExchangeUrl")?.value;
 
           if (tokenExchange) {
-            const manifestResource = (details.webApplicationInfoResource as string | undefined) ?? "";
+            const manifestResource = (details.webApplicationInfoResource) ?? "";
             const aadIdentifier = identifierUris[0] ?? "";
 
             const allMatch = tokenExchange === aadIdentifier && tokenExchange === manifestResource;

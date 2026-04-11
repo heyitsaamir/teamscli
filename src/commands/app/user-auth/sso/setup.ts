@@ -4,6 +4,7 @@ import pc from "picocolors";
 import { getTokenSilent, graphScopes } from "../../../../auth/index.js";
 import { getAadAppByClientId, getAadAppFull, updateAadApp, createClientSecret } from "../../../../apps/graph.js";
 import { updateAppDetails, fetchAppDetailsV2 } from "../../../../apps/api.js";
+import type { AppDetails } from "../../../../apps/types.js";
 import { runAz } from "../../../../utils/az.js";
 import { isInteractive, confirmAction } from "../../../../utils/interactive.js";
 import { CliError, wrapAction } from "../../../../utils/errors.js";
@@ -210,9 +211,9 @@ export const ssoSetupCommand = new Command("setup")
     const manifestSpinner = createSilentSpinner("Updating manifest...", silent).start();
     try {
       const details = await fetchAppDetailsV2(token, appId);
-      const validDomains = (details.validDomains as string[]) ?? [];
-      const updates: Record<string, unknown> = {
-        webApplicationInfoId: botId,
+      const validDomains = details.validDomains ?? [];
+      const updates: Partial<AppDetails> = {
+        webApplicationInfoId: details.appId,
         webApplicationInfoResource: `api://botid-${botId}`,
       };
 
