@@ -47,7 +47,7 @@ Updates the Teams app manifest via TDP:
 
 - **`webApplicationInfo.id`** → the bot's client ID
 - **`webApplicationInfo.resource`** → `api://botid-{botId}`
-- **`validDomains`** → adds `token.botframework.com`
+- **`validDomains`** → adds `*.botframework.com`
 
 ## Token Exchange Flow
 

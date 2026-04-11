@@ -294,15 +294,23 @@ function checkManifest(
     results.push({ category: cat, label: "Bot ID does not match app ID", status: "warn", detail: `appId=${details.appId}, botId=${botId}` });
   }
 
+  const validDomains = (details.validDomains ?? []) as string[];
+
   // validDomains includes endpoint domain
   if (endpoint) {
     const domain = extractDomain(endpoint);
-    const validDomains = (details.validDomains ?? []) as string[];
     if (domain && validDomains.includes(domain)) {
       results.push({ category: cat, label: "Endpoint domain in validDomains", status: "pass" });
     } else if (domain) {
       results.push({ category: cat, label: "Endpoint domain not in validDomains", status: "warn", detail: `Add ${domain}` });
     }
+  }
+
+  // *.botframework.com in validDomains (required for auth popups)
+  if (validDomains.includes("*.botframework.com")) {
+    results.push({ category: cat, label: "*.botframework.com in validDomains", status: "pass" });
+  } else {
+    results.push({ category: cat, label: "*.botframework.com missing from validDomains", status: "warn", detail: "Required for auth sign-in popups" });
   }
 
   // webApplicationInfo

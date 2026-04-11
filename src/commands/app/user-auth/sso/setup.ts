@@ -216,8 +216,8 @@ export const ssoSetupCommand = new Command("setup")
         webApplicationInfoResource: `api://botid-${botId}`,
       };
 
-      if (!validDomains.includes("token.botframework.com")) {
-        updates.validDomains = [...validDomains, "token.botframework.com"];
+      if (!validDomains.includes("*.botframework.com")) {
+        updates.validDomains = [...validDomains, "*.botframework.com"];
       }
 
       await updateAppDetails(token, appId, updates);

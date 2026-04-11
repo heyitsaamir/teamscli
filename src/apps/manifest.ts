@@ -42,7 +42,7 @@ export function createManifest(options: ManifestOptions): object {
     developer,
   } = options;
 
-  const validDomains: string[] = [];
+  const validDomains: string[] = ["*.botframework.com"];
   if (endpoint) {
     const domain = extractDomain(endpoint);
     if (domain) validDomains.push(domain);
