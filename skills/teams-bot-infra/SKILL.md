@@ -279,7 +279,7 @@ teams app list
 
 This skill covers bot infrastructure only. To build the actual bot code:
 
-**Teams AI SDK (Recommended):**
+**Teams SDK (Recommended):**
 - https://microsoft.github.io/teams-sdk/welcome
 - Comprehensive bot framework with built-in Teams features
 - Supports TypeScript, JavaScript, Python, C#
@@ -338,7 +338,7 @@ This skill covers bot infrastructure only. To build the actual bot code:
 ## Out of Scope
 
 This skill does NOT cover:
-- ❌ Building bot application code (see Teams AI SDK)
+- ❌ Building bot application code (see Teams SDK)
 - ❌ Hosting or deploying bot code (Azure, AWS, etc.)
 - ❌ Setting up devtunnels/ngrok (link provided to docs)
 - ❌ Bot development patterns and best practices
