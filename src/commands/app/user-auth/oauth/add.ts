@@ -27,6 +27,13 @@ interface ServiceProvider {
   };
 }
 
+interface AadWebConfig {
+  redirectUris?: string[];
+  homePageUrl?: string;
+  logoutUrl?: string;
+  implicitGrantSettings?: unknown;
+}
+
 export const oauthAddCommand = new Command("add")
   .description("Add an OAuth connection to an Azure bot")
   .argument("[appId]", "App ID")
@@ -144,8 +151,8 @@ export const oauthAddCommand = new Command("add")
       const aadApp = await getAadAppByClientId(graphToken, botId);
       const fullApp = await getAadAppFull(graphToken, aadApp.id);
 
-      const existingWeb = fullApp.web as Record<string, unknown> ?? {};
-      const existingRedirects = (existingWeb.redirectUris as string[]) ?? [];
+      const existingWeb = (fullApp.web as AadWebConfig) ?? {};
+      const existingRedirects = existingWeb.redirectUris ?? [];
       const botFrameworkRedirect = "https://token.botframework.com/.auth/web/redirect";
 
       if (!existingRedirects.includes(botFrameworkRedirect)) {
@@ -160,6 +167,7 @@ export const oauthAddCommand = new Command("add")
     } catch (error) {
       redirectSpinner.error({ text: "Failed to add redirect URI" });
       logger.warn(pc.yellow(error instanceof Error ? error.message : "Could not configure redirect URI"));
+      logger.warn(pc.dim("Add it manually: Entra portal → App registrations → Authentication → Web → Redirect URIs → https://token.botframework.com/.auth/web/redirect"));
     }
 
     // Add *.botframework.com to manifest validDomains
@@ -177,5 +185,6 @@ export const oauthAddCommand = new Command("add")
     } catch (error) {
       manifestSpinner.error({ text: "Failed to update manifest" });
       logger.warn(pc.yellow(error instanceof Error ? error.message : "Could not update manifest validDomains"));
+      logger.warn(pc.dim("Add it manually: Developer Portal → App → Domains → add *.botframework.com"));
     }
   }));
