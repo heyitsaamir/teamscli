@@ -17,6 +17,6 @@ teams login
 
 ## Authentication Methods
 
-In interactive sessions (TTY), `teams login` automatically opens your browser for seamless sign-in. After authenticating in the browser, the CLI picks up the token automatically.
+In interactive local sessions (TTY and not over SSH), `teams login` automatically opens your browser for seamless sign-in. After authenticating in the browser, the CLI picks up the token automatically.
 
-In non-interactive sessions (CI, piped input, `TEAMS_NO_INTERACTIVE=1`), the CLI falls back to device code flow — it prints a URL and code for you to enter in a browser manually.
+In all other sessions — non-interactive (CI, piped input), SSH remote sessions, or when `TEAMS_NO_INTERACTIVE=1` is set — the CLI falls back to device code flow: it prints a URL and code for you to enter in a browser manually.

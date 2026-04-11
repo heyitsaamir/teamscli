@@ -9,6 +9,16 @@ export function isInteractive(): boolean {
   return !!process.stdin.isTTY;
 }
 
+/**
+ * Check whether the session is local (i.e. not an SSH remote session).
+ * SSH sessions allocate a TTY so isInteractive() can return true, but
+ * a browser cannot be opened on the remote server side.
+ * Returns false when SSH_CONNECTION or SSH_CLIENT is set.
+ */
+export function isLocalSession(): boolean {
+  return !process.env.SSH_CONNECTION && !process.env.SSH_CLIENT;
+}
+
 let autoConfirm = false;
 
 export function setAutoConfirm(value: boolean): void {

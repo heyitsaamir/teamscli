@@ -3,12 +3,13 @@ import {
   AccountInfo,
   DeviceCodeRequest,
   InteractiveRequest,
+  AuthenticationResult,
 } from "@azure/msal-node";
 import { msalConfig, loginScopes } from "./config.js";
 import { createCachePlugin } from "./cache.js";
 import { logger } from "../utils/logger.js";
 import { openInBrowser } from "../utils/browser.js";
-import { isInteractive } from "../utils/interactive.js";
+import { isInteractive, isLocalSession } from "../utils/interactive.js";
 
 let msalClient: PublicClientApplication | null = null;
 
@@ -42,7 +43,7 @@ const ERROR_TEMPLATE =
 export async function login(): Promise<AccountInfo> {
   const client = await getMsalClient();
 
-  const result = isInteractive()
+  const result = isInteractive() && isLocalSession()
     ? await loginInteractive(client)
     : await loginDeviceCode(client);
 
@@ -53,7 +54,7 @@ export async function login(): Promise<AccountInfo> {
   return result.account;
 }
 
-async function loginInteractive(client: PublicClientApplication) {
+async function loginInteractive(client: PublicClientApplication): Promise<AuthenticationResult> {
   const request: InteractiveRequest = {
     scopes: loginScopes,
     openBrowser: async (url) => {
@@ -66,7 +67,7 @@ async function loginInteractive(client: PublicClientApplication) {
   return client.acquireTokenInteractive(request);
 }
 
-async function loginDeviceCode(client: PublicClientApplication) {
+async function loginDeviceCode(client: PublicClientApplication): Promise<AuthenticationResult | null> {
   const request: DeviceCodeRequest = {
     scopes: loginScopes,
     deviceCodeCallback: (response) => {
