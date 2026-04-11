@@ -1,8 +1,10 @@
 import AdmZip from "adm-zip";
-import { writeFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
+import path from "node:path";
 import pc from "picocolors";
 import { createSpinner } from "nanospinner";
-import { downloadAppPackage } from "../../../apps/index.js";
+import { downloadAppPackage, uploadManifest, type TeamsManifest } from "../../../apps/index.js";
+import { CliError } from "../../../utils/errors.js";
 import { logger } from "../../../utils/logger.js";
 
 /**
@@ -32,4 +34,49 @@ export async function downloadManifest(token: string, appId: string, filePath?: 
   } else {
     logger.info(JSON.stringify(manifestJson, null, 2));
   }
+}
+
+/**
+ * Upload a local manifest.json to update an existing app.
+ * Reads the file, validates it's a Teams manifest, and uploads via TDP API.
+ * Throws on failure.
+ */
+export async function uploadManifestFromFile(
+  token: string,
+  teamsAppId: string,
+  filePath: string,
+): Promise<void> {
+  const resolved = path.resolve(filePath);
+
+  let raw: string;
+  try {
+    raw = await readFile(resolved, "utf-8");
+  } catch (error) {
+    const code = (error as NodeJS.ErrnoException).code;
+    if (code === "ENOENT") {
+      throw new CliError("VALIDATION_MISSING", `File not found: ${resolved}`);
+    }
+    throw new CliError("VALIDATION_FORMAT", `Cannot read file: ${resolved}`);
+  }
+
+  let manifest: TeamsManifest;
+  try {
+    manifest = JSON.parse(raw);
+  } catch {
+    throw new CliError("VALIDATION_FORMAT", `File is not valid JSON: ${resolved}`);
+  }
+
+  if (!manifest.manifestVersion || !manifest.name?.short || !manifest.description?.short) {
+    throw new CliError(
+      "VALIDATION_FORMAT",
+      "File does not appear to be a valid Teams manifest.",
+      "Ensure it has manifestVersion, name.short, and description.short.",
+    );
+  }
+
+  const spinner = createSpinner("Uploading manifest...").start();
+  await uploadManifest(token, teamsAppId, manifest);
+  spinner.success({ text: "Manifest uploaded" });
+
+  logger.info(pc.green(`Manifest from ${pc.bold(resolved)} applied to app ${pc.bold(teamsAppId)}`));
 }

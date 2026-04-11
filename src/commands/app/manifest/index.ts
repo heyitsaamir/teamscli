@@ -1,15 +1,16 @@
 import { Command } from "commander";
-import { input } from "@inquirer/prompts";
+import { input, select } from "@inquirer/prompts";
 import { fetchApp } from "../../../apps/index.js";
 import { pickApp } from "../../../utils/app-picker.js";
 import { isInteractive } from "../../../utils/interactive.js";
-import { downloadManifest } from "./actions.js";
+import { downloadManifest, uploadManifestFromFile } from "./actions.js";
 import { logger } from "../../../utils/logger.js";
 import { manifestDownloadCommand } from "./download.js";
+import { manifestUploadCommand } from "./upload.js";
 import pc from "picocolors";
 
 export const appManifestCommand = new Command("manifest")
-  .description("Download app manifests")
+  .description("Download or upload app manifests")
   .action(async function (this: Command) {
     if (!isInteractive()) {
       this.help();
@@ -18,18 +19,50 @@ export const appManifestCommand = new Command("manifest")
 
     while (true) {
       try {
-        const picked = await pickApp();
-        const app = await fetchApp(picked.token, picked.app.teamsAppId);
-
-        const savePath = await input({
-          message: `${app.appName ?? "Unnamed"} — save manifest to (leave empty to print):`,
-          default: "",
+        const action = await select({
+          message: "Manifest",
+          choices: [
+            { name: "Download", value: "download" },
+            { name: "Upload", value: "upload" },
+            { name: "Back", value: "back" },
+          ],
         });
 
-        try {
-          await downloadManifest(picked.token, app.appId, savePath || undefined);
-        } catch (error) {
-          logger.error(pc.red(error instanceof Error ? error.message : "Unknown error"));
+        if (action === "back") return;
+
+        if (action === "download") {
+          const picked = await pickApp();
+          const app = await fetchApp(picked.token, picked.app.teamsAppId);
+
+          const savePath = await input({
+            message: `${app.appName ?? "Unnamed"} — save manifest to (leave empty to print):`,
+            default: "",
+          });
+
+          try {
+            await downloadManifest(picked.token, app.appId, savePath || undefined);
+          } catch (error) {
+            logger.error(pc.red(error instanceof Error ? error.message : "Unknown error"));
+          }
+        }
+
+        if (action === "upload") {
+          const picked = await pickApp();
+
+          const filePath = await input({
+            message: "Path to manifest.json:",
+          });
+
+          if (!filePath) {
+            logger.error(pc.red("No file path provided."));
+            continue;
+          }
+
+          try {
+            await uploadManifestFromFile(picked.token, picked.app.teamsAppId, filePath);
+          } catch (error) {
+            logger.error(pc.red(error instanceof Error ? error.message : "Unknown error"));
+          }
         }
       } catch (error) {
         if (error instanceof Error && error.name === "ExitPromptError") {
@@ -41,3 +74,4 @@ export const appManifestCommand = new Command("manifest")
   });
 
 appManifestCommand.addCommand(manifestDownloadCommand);
+appManifestCommand.addCommand(manifestUploadCommand);
