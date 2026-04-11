@@ -2,6 +2,7 @@ import { Command } from "commander";
 import { createSpinner } from "nanospinner";
 import { login, getAccount } from "../../auth/index.js";
 import { logger } from "../../utils/logger.js";
+import { isInteractive } from "../../utils/interactive.js";
 
 export const loginCommand = new Command("login")
   .description("Log in to Microsoft 365")
@@ -14,7 +15,10 @@ export const loginCommand = new Command("login")
       return;
     }
 
-    const spinner = createSpinner("Authenticating...").start();
+    const interactive = isInteractive();
+    const spinner = createSpinner(
+      interactive ? "Opening browser for login..." : "Authenticating...",
+    ).start();
     try {
       const account = await login();
       spinner.success({ text: `Logged in as ${account.username}` });

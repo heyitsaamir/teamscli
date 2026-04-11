@@ -1,7 +1,14 @@
-import { PublicClientApplication, AccountInfo, DeviceCodeRequest } from "@azure/msal-node";
+import {
+  PublicClientApplication,
+  AccountInfo,
+  DeviceCodeRequest,
+  InteractiveRequest,
+} from "@azure/msal-node";
 import { msalConfig, loginScopes } from "./config.js";
 import { createCachePlugin } from "./cache.js";
 import { logger } from "../utils/logger.js";
+import { openInBrowser } from "../utils/browser.js";
+import { isInteractive } from "../utils/interactive.js";
 
 let msalClient: PublicClientApplication | null = null;
 
@@ -27,23 +34,47 @@ export async function getAccount(): Promise<AccountInfo | null> {
   return accounts.length > 0 ? accounts[0] : null;
 }
 
+const SUCCESS_TEMPLATE =
+  "<html><body><h2>Authentication successful!</h2><p>You can close this tab and return to the CLI.</p></body></html>";
+const ERROR_TEMPLATE =
+  "<html><body><h2>Authentication failed</h2><p>Something went wrong. Please try again.</p></body></html>";
+
 export async function login(): Promise<AccountInfo> {
   const client = await getMsalClient();
 
-  const deviceCodeRequest: DeviceCodeRequest = {
-    scopes: loginScopes,
-    deviceCodeCallback: (response) => {
-      logger.info(response.message);
-    },
-  };
-
-  const result = await client.acquireTokenByDeviceCode(deviceCodeRequest);
+  const result = isInteractive()
+    ? await loginInteractive(client)
+    : await loginDeviceCode(client);
 
   if (!result?.account) {
     throw new Error("Login failed: no account returned");
   }
 
   return result.account;
+}
+
+async function loginInteractive(client: PublicClientApplication) {
+  const request: InteractiveRequest = {
+    scopes: loginScopes,
+    openBrowser: async (url) => {
+      await openInBrowser(url);
+    },
+    successTemplate: SUCCESS_TEMPLATE,
+    errorTemplate: ERROR_TEMPLATE,
+  };
+
+  return client.acquireTokenInteractive(request);
+}
+
+async function loginDeviceCode(client: PublicClientApplication) {
+  const request: DeviceCodeRequest = {
+    scopes: loginScopes,
+    deviceCodeCallback: (response) => {
+      logger.info(response.message);
+    },
+  };
+
+  return client.acquireTokenByDeviceCode(request);
 }
 
 export async function logout(): Promise<void> {
