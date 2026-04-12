@@ -30,13 +30,15 @@ export const manifestUploadCommand = new Command("upload")
         throw new CliError("AUTH_TOKEN_FAILED", "Failed to get token.", "Try `teams login` again.");
       }
       teamsAppId = appIdArg;
+    } else if (options.json) {
+      throw new CliError("VALIDATION_MISSING", "appId is required in --json mode.");
     } else {
       const picked = await pickApp();
       teamsAppId = picked.app.teamsAppId;
       token = picked.token;
     }
 
-    await uploadManifestFromFile(token, teamsAppId, filePathArg);
+    await uploadManifestFromFile(token, teamsAppId, filePathArg, options.json);
 
     if (options.json) {
       outputJson({ teamsAppId, filePath: filePathArg } satisfies ManifestUploadOutput);

@@ -6,6 +6,7 @@ import { createSpinner } from "nanospinner";
 import { downloadAppPackage, uploadManifest, type TeamsManifest } from "../../../apps/index.js";
 import { CliError } from "../../../utils/errors.js";
 import { logger } from "../../../utils/logger.js";
+import { createSilentSpinner } from "../../../utils/spinner.js";
 
 /**
  * Download manifest from an app package. Saves to file or prints to stdout.
@@ -45,6 +46,7 @@ export async function uploadManifestFromFile(
   token: string,
   teamsAppId: string,
   filePath: string,
+  silent = false,
 ): Promise<void> {
   const resolved = path.resolve(filePath);
 
@@ -74,9 +76,16 @@ export async function uploadManifestFromFile(
     );
   }
 
-  const spinner = createSpinner("Uploading manifest...").start();
-  await uploadManifest(token, teamsAppId, manifest);
+  const spinner = createSilentSpinner("Uploading manifest...", silent).start();
+  try {
+    await uploadManifest(token, teamsAppId, manifest);
+  } catch (error) {
+    spinner.error({ text: "Upload failed" });
+    throw error;
+  }
   spinner.success({ text: "Manifest uploaded" });
 
-  logger.info(pc.green(`Manifest from ${pc.bold(resolved)} applied to app ${pc.bold(teamsAppId)}`));
+  if (!silent) {
+    logger.info(pc.green(`Manifest from ${pc.bold(resolved)} applied to app ${pc.bold(teamsAppId)}`));
+  }
 }
