@@ -25,10 +25,11 @@ export const manifestUploadCommand = new Command("upload")
         throw new CliError("AUTH_REQUIRED", "Not logged in.", "Run `teams login` first.");
       }
 
-      token = (await getTokenSilent(teamsDevPortalScopes))!;
-      if (!token) {
+      const fetchedToken = await getTokenSilent(teamsDevPortalScopes);
+      if (!fetchedToken) {
         throw new CliError("AUTH_TOKEN_FAILED", "Failed to get token.", "Try `teams login` again.");
       }
+      token = fetchedToken;
       teamsAppId = appIdArg;
     } else if (options.json) {
       throw new CliError("VALIDATION_MISSING", "appId is required in --json mode.");

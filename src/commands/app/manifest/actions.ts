@@ -16,17 +16,22 @@ import { createSilentSpinner } from "../../../utils/spinner.js";
 export async function downloadManifest(token: string, appId: string, filePath?: string): Promise<void> {
   const spinner = createSilentSpinner("Downloading manifest...", false).start();
 
-  const packageBuffer = await downloadAppPackage(token, appId);
-  const zip = new AdmZip(packageBuffer);
-  const manifestEntry = zip.getEntry("manifest.json");
+  let manifestJson: unknown;
+  try {
+    const packageBuffer = await downloadAppPackage(token, appId);
+    const zip = new AdmZip(packageBuffer);
+    const manifestEntry = zip.getEntry("manifest.json");
 
-  if (!manifestEntry) {
-    spinner.error({ text: "manifest.json not found in package" });
-    throw new Error("manifest.json not found in package");
+    if (!manifestEntry) {
+      throw new Error("manifest.json not found in package");
+    }
+
+    const manifestContent = manifestEntry.getData().toString("utf-8");
+    manifestJson = JSON.parse(manifestContent);
+  } catch (error) {
+    spinner.error({ text: "Download failed" });
+    throw error;
   }
-
-  const manifestContent = manifestEntry.getData().toString("utf-8");
-  const manifestJson = JSON.parse(manifestContent);
 
   spinner.success({ text: "Manifest downloaded" });
 
@@ -64,8 +69,13 @@ export async function uploadManifestFromFile(
 
   let manifest: TeamsManifest;
   try {
-    manifest = JSON.parse(raw);
-  } catch {
+    const parsed: unknown = JSON.parse(raw);
+    if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+      throw new CliError("VALIDATION_FORMAT", `File does not contain a JSON object: ${resolved}`);
+    }
+    manifest = parsed as TeamsManifest;
+  } catch (error) {
+    if (error instanceof CliError) throw error;
     throw new CliError("VALIDATION_FORMAT", `File is not valid JSON: ${resolved}`);
   }
 
