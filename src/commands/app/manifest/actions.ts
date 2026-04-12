@@ -29,7 +29,7 @@ export async function downloadManifest(token: string, appId: string, filePath?: 
     const manifestContent = manifestEntry.getData().toString("utf-8");
     manifestJson = JSON.parse(manifestContent);
   } catch (error) {
-    spinner.error({ text: "Download failed" });
+    spinner.error({ text: error instanceof Error ? error.message : "Download failed" });
     throw error;
   }
 
