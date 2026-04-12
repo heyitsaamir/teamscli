@@ -2,9 +2,10 @@ import AdmZip from "adm-zip";
 import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import pc from "picocolors";
-import { createSpinner } from "nanospinner";
+import { confirm } from "@inquirer/prompts";
 import { downloadAppPackage, uploadManifest, type TeamsManifest } from "../../../apps/index.js";
 import { CliError } from "../../../utils/errors.js";
+import { isAutoConfirm } from "../../../utils/interactive.js";
 import { logger } from "../../../utils/logger.js";
 import { createSilentSpinner } from "../../../utils/spinner.js";
 
@@ -13,7 +14,7 @@ import { createSilentSpinner } from "../../../utils/spinner.js";
  * Throws on failure.
  */
 export async function downloadManifest(token: string, appId: string, filePath?: string): Promise<void> {
-  const spinner = createSpinner("Downloading manifest...").start();
+  const spinner = createSilentSpinner("Downloading manifest...", false).start();
 
   const packageBuffer = await downloadAppPackage(token, appId);
   const zip = new AdmZip(packageBuffer);
@@ -68,12 +69,30 @@ export async function uploadManifestFromFile(
     throw new CliError("VALIDATION_FORMAT", `File is not valid JSON: ${resolved}`);
   }
 
-  if (!manifest.manifestVersion || !manifest.name?.short || !manifest.description?.short) {
-    throw new CliError(
-      "VALIDATION_FORMAT",
-      "File does not appear to be a valid Teams manifest.",
-      "Ensure it has manifestVersion, name.short, and description.short.",
-    );
+  const missing: string[] = [];
+  if (!manifest.id) missing.push("id");
+  if (!manifest.version) missing.push("version");
+  if (!manifest.manifestVersion) missing.push("manifestVersion");
+  if (!manifest.name?.short) missing.push("name.short");
+  if (!manifest.description?.short) missing.push("description.short");
+  if (!manifest.developer?.name) missing.push("developer.name");
+  if (!manifest.developer?.websiteUrl) missing.push("developer.websiteUrl");
+  if (!manifest.developer?.privacyUrl) missing.push("developer.privacyUrl");
+  if (!manifest.developer?.termsOfUseUrl) missing.push("developer.termsOfUseUrl");
+
+  if (missing.length > 0) {
+    if (silent) {
+      throw new CliError(
+        "VALIDATION_FORMAT",
+        `Manifest is missing required fields: ${missing.join(", ")}`,
+        "See https://learn.microsoft.com/en-us/microsoftteams/platform/resources/schema/manifest-schema for the full schema.",
+      );
+    }
+    logger.warn(pc.yellow(`Manifest is missing fields: ${missing.join(", ")}`));
+    if (!isAutoConfirm()) {
+      const proceed = await confirm({ message: "Upload anyway?", default: false });
+      if (!proceed) return;
+    }
   }
 
   const spinner = createSilentSpinner("Uploading manifest...", silent).start();

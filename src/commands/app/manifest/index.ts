@@ -4,6 +4,7 @@ import { fetchApp } from "../../../apps/index.js";
 import { pickApp } from "../../../utils/app-picker.js";
 import { isInteractive } from "../../../utils/interactive.js";
 import { downloadManifest, uploadManifestFromFile } from "./actions.js";
+import { CliError } from "../../../utils/errors.js";
 import { logger } from "../../../utils/logger.js";
 import { manifestDownloadCommand } from "./download.js";
 import { manifestUploadCommand } from "./upload.js";
@@ -43,6 +44,9 @@ export const appManifestCommand = new Command("manifest")
             await downloadManifest(picked.token, app.appId, savePath || undefined);
           } catch (error) {
             logger.error(pc.red(error instanceof Error ? error.message : "Unknown error"));
+            if (error instanceof CliError && error.suggestion) {
+              logger.error(error.suggestion);
+            }
           }
         }
 
@@ -62,6 +66,9 @@ export const appManifestCommand = new Command("manifest")
             await uploadManifestFromFile(picked.token, picked.app.teamsAppId, filePath);
           } catch (error) {
             logger.error(pc.red(error instanceof Error ? error.message : "Unknown error"));
+            if (error instanceof CliError && error.suggestion) {
+              logger.error(error.suggestion);
+            }
           }
         }
       } catch (error) {
