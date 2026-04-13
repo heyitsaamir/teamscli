@@ -10,6 +10,7 @@ import { logger } from "./logger.js";
 
 const STATE_FILE = join(paths.cache, "update-check.json");
 const CHECK_INTERVAL_MS = 24 * 60 * 60 * 1000; // 24 hours
+let alreadyChecked = false;
 const RELEASE_API = "https://api.github.com/repos/heyitsaamir/teamscli/releases/latest";
 
 interface UpdateState {
@@ -56,6 +57,8 @@ async function fetchLatestVersion(): Promise<string | null> {
  */
 export async function checkForUpdates(options?: { autoUpdate?: boolean }): Promise<void> {
   if (!isInteractive()) return;
+  if (alreadyChecked) return;
+  alreadyChecked = true;
 
   const autoUpdate = options?.autoUpdate ?? true;
 
