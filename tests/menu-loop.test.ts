@@ -427,12 +427,10 @@ describe("project menu loop", () => {
     setupMocks();
   });
 
-  it("loops back to menu after selecting New", async () => {
+  it("exits after selecting New (project creation exits CLI)", async () => {
     const { select } = await import("@inquirer/prompts");
     const mockedSelect = vi.mocked(select);
-    mockedSelect
-      .mockResolvedValueOnce("new" as never)
-      .mockResolvedValueOnce("back" as never);
+    mockedSelect.mockResolvedValueOnce("new" as never);
 
     const { projectCommand } = await import(
       "../src/commands/project/index.js"
@@ -446,7 +444,7 @@ describe("project menu loop", () => {
 
     await projectCommand.parseAsync([], { from: "user" });
 
-    expect(mockedSelect).toHaveBeenCalledTimes(2);
+    expect(mockedSelect).toHaveBeenCalledTimes(1);
     expect(newParseSpy).toHaveBeenCalledTimes(1);
   });
 
