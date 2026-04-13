@@ -20,7 +20,7 @@ export function setYamlValue(filePath: string, dotPath: string, value?: unknown)
   const content = fs.readFileSync(filePath, "utf8");
   const obj = yaml.parse(content);
   setNestedValue(obj, dotPath, value);
-  fs.writeFileSync(filePath, yaml.stringify(obj, null, 2) + "\n", "utf8");
+  fs.writeFileSync(filePath, yaml.stringify(obj, { indent: 2 }) + "\n", "utf8");
 }
 
 /**

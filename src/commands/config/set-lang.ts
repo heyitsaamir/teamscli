@@ -12,7 +12,7 @@ interface SetLangOptions {
 }
 
 interface SetLangOutput {
-  language: string;
+  language: string | null;
 }
 
 const LANGUAGES = ["typescript", "csharp", "python"] as const;
@@ -43,7 +43,7 @@ export const setLangCommand = new Command("set-lang")
 
     if (!value) {
       if (options.json) {
-        outputJson({ language: current ?? null } as SetLangOutput);
+        outputJson({ language: current ?? null } satisfies SetLangOutput);
       } else {
         logger.info(current ?? pc.dim("not set"));
       }
@@ -62,7 +62,7 @@ export const setLangCommand = new Command("set-lang")
 
     if (resolved === current) {
       if (options.json) {
-        outputJson({ language: resolved } as SetLangOutput);
+        outputJson({ language: resolved } satisfies SetLangOutput);
       } else {
         logger.info(pc.dim(`language is already ${resolved}`));
       }
@@ -72,7 +72,7 @@ export const setLangCommand = new Command("set-lang")
     await setConfig("language", resolved);
 
     if (options.json) {
-      outputJson({ language: resolved } as SetLangOutput);
+      outputJson({ language: resolved } satisfies SetLangOutput);
     } else {
       logger.info(`${pc.dim("language")} = ${pc.bold(pc.green(resolved))}`);
     }
