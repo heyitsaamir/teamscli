@@ -10,7 +10,6 @@ export interface JsonHelpOption {
   optional: boolean;
   mandatory: boolean;
   variadic: boolean;
-  hidden: boolean;
   defaultValue?: string;
   choices?: string[];
 }
@@ -47,7 +46,6 @@ function serializeOption(opt: Option): JsonHelpOption {
     optional: opt.optional,
     mandatory: opt.mandatory,
     variadic: opt.variadic,
-    hidden: opt.hidden,
     ...(opt.defaultValue != null ? { defaultValue: String(opt.defaultValue) } : {}),
     ...(opt.argChoices ? { choices: opt.argChoices } : {}),
   };
