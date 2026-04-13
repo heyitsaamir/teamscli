@@ -1,3 +1,4 @@
+import type { Argument, Option } from "commander";
 import { Command, Help } from "commander";
 import { outputJson } from "./json-output.js";
 
@@ -7,6 +8,7 @@ export interface JsonHelpOption {
   description: string;
   required: boolean;
   optional: boolean;
+  mandatory: boolean;
   variadic: boolean;
   hidden: boolean;
   defaultValue?: string;
@@ -37,12 +39,13 @@ export interface JsonHelpOutput extends JsonHelpCommand {
   version: string;
 }
 
-function serializeOption(opt: InstanceType<typeof import("commander").Option>): JsonHelpOption {
+function serializeOption(opt: Option): JsonHelpOption {
   return {
     flags: opt.flags,
     description: opt.description,
     required: opt.required,
     optional: opt.optional,
+    mandatory: opt.mandatory,
     variadic: opt.variadic,
     hidden: opt.hidden,
     ...(opt.defaultValue != null ? { defaultValue: String(opt.defaultValue) } : {}),
@@ -50,9 +53,7 @@ function serializeOption(opt: InstanceType<typeof import("commander").Option>): 
   };
 }
 
-function serializeArgument(
-  arg: InstanceType<typeof import("commander").Argument>,
-): JsonHelpArgument {
+function serializeArgument(arg: Argument): JsonHelpArgument {
   return {
     name: arg.name(),
     description: arg.description,

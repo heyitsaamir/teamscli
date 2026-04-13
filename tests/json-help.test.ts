@@ -122,6 +122,26 @@ describe("serializeCommand", () => {
 
     expect(result.options[0].choices).toEqual(["Application", "Delegated"]);
   });
+
+  it("distinguishes mandatory options from options with required values", () => {
+    const cmd = new Command("add")
+      .description("Add")
+      .requiredOption("--type <type>", "Permission type")
+      .option("--name <name>", "Optional name with required value");
+
+    const result = serializeCommand(cmd);
+
+    const typeOpt = result.options.find((o) => o.flags.includes("--type"));
+    const nameOpt = result.options.find((o) => o.flags.includes("--name"));
+
+    // --type is mandatory (must be provided) AND has a required value
+    expect(typeOpt!.mandatory).toBe(true);
+    expect(typeOpt!.required).toBe(true);
+
+    // --name is not mandatory but has a required value
+    expect(nameOpt!.mandatory).toBe(false);
+    expect(nameOpt!.required).toBe(true);
+  });
 });
 
 describe("serializeCommandTree", () => {
