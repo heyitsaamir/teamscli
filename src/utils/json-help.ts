@@ -6,10 +6,10 @@ import { outputJson } from "./json-output.js";
 export interface JsonHelpOption {
   flags: string;
   description: string;
-  required: boolean;
-  optional: boolean;
-  mandatory: boolean;
-  variadic: boolean;
+  required?: boolean;
+  optional?: boolean;
+  mandatory?: boolean;
+  variadic?: boolean;
   defaultValue?: string;
   choices?: string[];
 }
@@ -18,8 +18,8 @@ export interface JsonHelpOption {
 export interface JsonHelpArgument {
   name: string;
   description: string;
-  required: boolean;
-  variadic: boolean;
+  required?: boolean;
+  variadic?: boolean;
   defaultValue?: string;
   choices?: string[];
 }
@@ -42,10 +42,10 @@ function serializeOption(opt: Option): JsonHelpOption {
   return {
     flags: opt.flags,
     description: opt.description,
-    required: opt.required,
-    optional: opt.optional,
-    mandatory: opt.mandatory,
-    variadic: opt.variadic,
+    ...(opt.required ? { required: true } : {}),
+    ...(opt.optional ? { optional: true } : {}),
+    ...(opt.mandatory ? { mandatory: true } : {}),
+    ...(opt.variadic ? { variadic: true } : {}),
     ...(opt.defaultValue != null ? { defaultValue: String(opt.defaultValue) } : {}),
     ...(opt.argChoices ? { choices: opt.argChoices } : {}),
   };
@@ -55,8 +55,8 @@ function serializeArgument(arg: Argument): JsonHelpArgument {
   return {
     name: arg.name(),
     description: arg.description,
-    required: arg.required,
-    variadic: arg.variadic,
+    ...(arg.required ? { required: true } : {}),
+    ...(arg.variadic ? { variadic: true } : {}),
     ...(arg.defaultValue != null ? { defaultValue: String(arg.defaultValue) } : {}),
     ...(arg.argChoices ? { choices: arg.argChoices } : {}),
   };

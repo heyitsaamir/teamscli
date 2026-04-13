@@ -86,7 +86,17 @@ describe("serializeCommand", () => {
 
     const result = serializeCommand(cmd);
 
-    expect(result.arguments[0].required).toBe(false);
+    expect(result.arguments[0].required).toBeUndefined();
+  });
+
+  it("serializes required arguments correctly", () => {
+    const cmd = new Command("view")
+      .description("View")
+      .argument("<appId>", "App ID");
+
+    const result = serializeCommand(cmd);
+
+    expect(result.arguments[0].required).toBe(true);
   });
 
   it("includes default values when present", () => {
@@ -139,8 +149,24 @@ describe("serializeCommand", () => {
     expect(typeOpt!.required).toBe(true);
 
     // --name is not mandatory but has a required value
-    expect(nameOpt!.mandatory).toBe(false);
+    expect(nameOpt!.mandatory).toBeUndefined();
     expect(nameOpt!.required).toBe(true);
+  });
+
+  it("omits false boolean fields for clean output", () => {
+    const cmd = new Command("run")
+      .description("Run")
+      .option("--json", "[OPTIONAL] Output as JSON");
+
+    const result = serializeCommand(cmd);
+    const jsonOpt = result.options[0];
+
+    // Boolean flag: no required/optional/mandatory/variadic
+    expect(jsonOpt.flags).toBe("--json");
+    expect(jsonOpt.required).toBeUndefined();
+    expect(jsonOpt.optional).toBeUndefined();
+    expect(jsonOpt.mandatory).toBeUndefined();
+    expect(jsonOpt.variadic).toBeUndefined();
   });
 });
 
