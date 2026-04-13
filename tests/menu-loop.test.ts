@@ -332,6 +332,85 @@ describe("oauth menu loop", () => {
   });
 });
 
+describe("manifest menu loop", () => {
+  beforeEach(() => {
+    vi.resetModules();
+    vi.clearAllMocks();
+    setupMocks();
+
+    vi.mock("../src/utils/app-picker.js", () => ({
+      pickApp: vi.fn().mockResolvedValue({
+        app: { appId: "test-app-id", teamsAppId: "test-teams-app-id" },
+        token: "test-token",
+      }),
+    }));
+
+    vi.mock("../src/apps/index.js", () => ({
+      fetchApp: vi.fn().mockResolvedValue({
+        appId: "test-app-id",
+        appName: "Test App",
+      }),
+    }));
+
+    vi.mock("../src/commands/app/manifest/actions.js", () => ({
+      downloadManifest: vi.fn().mockResolvedValue(undefined),
+      uploadManifestFromFile: vi.fn().mockResolvedValue(undefined),
+    }));
+  });
+
+  it("loops back to menu after selecting Download", async () => {
+    const { select, input } = await import("@inquirer/prompts");
+    const mockedSelect = vi.mocked(select);
+    const mockedInput = vi.mocked(input);
+
+    mockedSelect
+      .mockResolvedValueOnce("download" as never)
+      .mockResolvedValueOnce("back" as never);
+    mockedInput.mockResolvedValueOnce("" as never);
+
+    const { appManifestCommand } = await import(
+      "../src/commands/app/manifest/index.js"
+    );
+
+    await appManifestCommand.parseAsync([], { from: "user" });
+
+    expect(mockedSelect).toHaveBeenCalledTimes(2);
+  });
+
+  it("loops back to menu after selecting Upload", async () => {
+    const { select, input } = await import("@inquirer/prompts");
+    const mockedSelect = vi.mocked(select);
+    const mockedInput = vi.mocked(input);
+
+    mockedSelect
+      .mockResolvedValueOnce("upload" as never)
+      .mockResolvedValueOnce("back" as never);
+    mockedInput.mockResolvedValueOnce("./manifest.json" as never);
+
+    const { appManifestCommand } = await import(
+      "../src/commands/app/manifest/index.js"
+    );
+
+    await appManifestCommand.parseAsync([], { from: "user" });
+
+    expect(mockedSelect).toHaveBeenCalledTimes(2);
+  });
+
+  it("exits immediately when Back is selected", async () => {
+    const { select } = await import("@inquirer/prompts");
+    const mockedSelect = vi.mocked(select);
+    mockedSelect.mockResolvedValueOnce("back" as never);
+
+    const { appManifestCommand } = await import(
+      "../src/commands/app/manifest/index.js"
+    );
+
+    await appManifestCommand.parseAsync([], { from: "user" });
+
+    expect(mockedSelect).toHaveBeenCalledTimes(1);
+  });
+});
+
 describe("sso menu loop", () => {
   beforeEach(() => {
     vi.resetModules();

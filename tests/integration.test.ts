@@ -29,9 +29,9 @@ function run(command: string): { stdout: string; exitCode: number } {
     const stdout = execSync(command, { encoding: "utf-8", stdio: "pipe" });
     return { stdout, exitCode: 0 };
   } catch (error: unknown) {
-    const execError = error as { stdout?: string; status?: number };
+    const execError = error as { stdout?: string; stderr?: string; status?: number };
     return {
-      stdout: execError.stdout ?? "",
+      stdout: (execError.stdout ?? "") + (execError.stderr ?? ""),
       exitCode: execError.status ?? 1,
     };
   }
