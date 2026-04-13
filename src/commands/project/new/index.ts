@@ -1,7 +1,7 @@
 import { Command } from "commander";
 import { select, input } from "@inquirer/prompts";
 import { isInteractive } from "../../../utils/interactive.js";
-import { listTemplates, listToolkits, type ProjectLanguage } from "../../../project/scaffold.js";
+import { listTemplates, type ProjectLanguage } from "../../../project/scaffold.js";
 import { projectNewTypescriptCommand } from "./typescript.js";
 import { projectNewCsharpCommand } from "./csharp.js";
 import { projectNewPythonCommand } from "./python.js";
@@ -40,25 +40,7 @@ export const projectNewCommand = new Command("new")
             })
           : templates[0] ?? "echo";
 
-        const toolkits = listToolkits(language);
-        let toolkit: string | undefined;
-        if (toolkits.length > 0) {
-          const toolkitChoice = await select({
-            message: "Include Agents Toolkit config?",
-            choices: [
-              { name: "None", value: "none" },
-              ...toolkits.map((t) => ({ name: t, value: t })),
-            ],
-          });
-          if (toolkitChoice !== "none") {
-            toolkit = toolkitChoice;
-          }
-        }
-
         const args = [name, "--template", template];
-        if (toolkit) {
-          args.push("--toolkit", toolkit);
-        }
 
         const cmd =
           language === "typescript"
