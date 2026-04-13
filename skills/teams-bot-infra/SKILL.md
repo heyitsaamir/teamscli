@@ -5,7 +5,7 @@ description: Manage Microsoft Teams bot infrastructure using the Teams CLI. Use 
 
 # Teams Bot Infrastructure Management
 
-This skill guides you through creating, configuring, and troubleshooting Microsoft Teams bot infrastructure using the Teams CLI. It does NOT cover building or hosting bot application code.
+This skill will guide you in creating, configuring, and troubleshooting Microsoft Teams bot infrastructure using the Teams CLI. It does NOT cover building or hosting bot application code.
 
 ## 1. Prerequisites Verification
 
@@ -52,11 +52,18 @@ teams status
 
 **Checkpoint:** Authentication verified before proceeding.
 
-### Step 3: Verify Bot Endpoint Availability
+### Step 3: Verify Bot Endpoint Availability (Optional)
 
-Ask the user: **"Do you have a bot messaging endpoint URL?"**
+Ask the user: **"Do you have a bot messaging endpoint URL, or will this bot only send proactive messages?"**
 
-**If YES:**
+**If using proactive flows only (no endpoint needed):**
+- Proactive flows = bot sends messages to Teams without first receiving a message from users
+- Examples: Notifications, scheduled updates, alerts from external systems
+- ⚠️ **Warning:** Without an endpoint, your bot **cannot receive messages from Teams users**. It can only send proactive messages programmatically.
+- 💡 **Note:** You can always add an endpoint later using `teams app edit <appId> --endpoint <url>` (here, `<appId>` is the `teamsAppId` returned by `teams app create`; see Section 4)
+- **Skip to Section 2** — no endpoint required for creation
+
+**If the bot needs to receive messages (endpoint required):**
 - Confirm the endpoint format: `https://your-domain/api/messages`
 - Common formats:
   - Devtunnels: `https://your-tunnel.devtunnels.ms/api/messages`
@@ -64,14 +71,14 @@ Ask the user: **"Do you have a bot messaging endpoint URL?"**
   - Azure: `https://your-app.azurewebsites.net/api/messages`
 - Default port for Teams SDK samples: `3978`
 
-**If NO:**
+**If NO endpoint yet:**
 - Recommend **Microsoft devtunnels** (recommended, Microsoft product)
 - Link: https://learn.microsoft.com/en-us/azure/developer/dev-tunnels/get-started?tabs=windows
 - Alternative: ngrok
 - **Out of scope:** Setting up the tunnel itself (point user to docs)
 - User should set up tunnel first, then return to this workflow
 
-**Checkpoint:** Bot endpoint URL is ready.
+**Checkpoint:** Either endpoint URL is ready OR confirmed proactive-only use case.
 
 ---
 
@@ -83,13 +90,19 @@ Now create the Teams bot with infrastructure.
 
 Execute the following command (replace placeholders):
 
+**With endpoint (bot receives messages):**
 ```bash
 teams app create --name "YourBotName" --endpoint "https://your-endpoint/api/messages" --json
 ```
 
+**Without endpoint (proactive flows only):**
+```bash
+teams app create --name "YourBotName" --json
+```
+
 **Parameters:**
 - `--name`: Your bot's display name (e.g., "Notification Bot", "MyBot")
-- `--endpoint`: The bot messaging endpoint URL from Step 2
+- `--endpoint`: **[OPTIONAL]** The bot messaging endpoint URL. Omit this for proactive-only bots.
 - `--json`: Output structured JSON (required for parsing)
 
 **Expected:** Command completes successfully and returns JSON output.
@@ -105,7 +118,7 @@ The command returns JSON with these fields:
   "botId": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
   "endpoint": "https://your-endpoint/api/messages",
   "installLink": "https://teams.microsoft.com/l/app/...",
-  "botLocation": "bf",
+  "botLocation": "teams-managed",
   "credentials": {
     "CLIENT_ID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
     "CLIENT_SECRET": "your-secret-value",
@@ -114,9 +127,25 @@ The command returns JSON with these fields:
 }
 ```
 
-### Step 3: Display Credentials
+**Note:** If no endpoint was provided, `endpoint` will be `null`. This is normal for proactive-only bots.
 
-Extract and display the credentials clearly:
+### Step 3: Save Credentials to .env File
+
+Ask the user: **"Do you already have a .env file for this project?"**
+
+**If YES:**
+- Prompt: "What is the path to your .env file?"
+- Default suggestion: `.env` (current directory)
+- Example paths: `.env`, `./bot/.env`, `../config/.env`
+
+**If NO:**
+- Prompt: "Where should I create the .env file?"
+- Default: `.env` (current directory)
+- Inform: "I'll create a new .env file at this location"
+
+**After getting the path:**
+
+Write the credentials to the .env file using the values from JSON output:
 
 ```
 CLIENT_ID=<value-from-json>
@@ -126,9 +155,9 @@ TENANT_ID=<value-from-json>
 
 **Instruct the user:**
 
-"Add these credentials to your .env file. Your bot application code will need these values to authenticate with Microsoft Teams."
+"Credentials saved to [path]. Your bot application code will use these values to authenticate with Microsoft Teams."
 
-**Do NOT automatically write to .env file** - let the developer decide where to store credentials.
+**Important:** If the .env file already exists, replace any existing `CLIENT_ID`, `CLIENT_SECRET`, and `TENANT_ID` entries in place with the new values. Append only the keys that are missing. Do not create duplicate entries for these keys, and do not overwrite any other existing values in the file.
 
 ### Step 4: Display Install Link
 
@@ -164,7 +193,7 @@ teams app view <teamsAppId> --json
 **Expected output:** Returns app details matching what was created:
 - `teamsAppId` matches
 - `botId` matches
-- `endpoint` matches
+- `endpoint` matches (or is empty if not configured)
 - App shows as active
 
 **If verification fails:** Check the error message and refer to Error Recovery section.
@@ -246,6 +275,20 @@ teams app list
 
 **Admin steps:** Admin must enable "Allow interaction with custom apps" in Teams admin center.
 
+### "This app cannot be found" Error
+
+**Symptom:** Install link shows "This app cannot be found", "App not found", or "We couldn't find this app" when trying to install
+
+**Cause:** The app was created in a different Microsoft 365 tenant than where you're trying to install it
+
+**Common scenario:** App was created in the Microsoft 365 Developer Program tenant (https://developer.microsoft.com/en-us/microsoft-365/dev-program) but you're trying to install it in your work/organization tenant
+
+**Solution:**
+
+1. Open Teams in the same tenant where you created the app
+2. If using M365 Developer Program, sign into Teams with your developer account
+3. Use the install link - it will now work
+
 ### AUTH_REQUIRED Error
 
 **Symptom:** Command fails with "Not logged in", "AUTH_REQUIRED", or "authentication required" message
@@ -312,21 +355,23 @@ This skill covers bot infrastructure only. To build the actual bot code:
 1. Prerequisites
    ├─ Install CLI: npm install -g <url>
    ├─ Authenticate: teams login
-   └─ Prepare endpoint: https://your-domain/api/messages
+   └─ [OPTIONAL] Prepare endpoint: https://your-domain/api/messages
+      (Skip endpoint for proactive-only bots)
 
 2. Create Bot
-   └─ teams app create --name X --endpoint Y --json
+   ├─ With endpoint: teams app create --name X --endpoint Y --json
+   └─ Without endpoint (proactive-only): teams app create --name X --json
 
 3. Handle Output
-   ├─ Display credentials (CLIENT_ID, CLIENT_SECRET, TENANT_ID)
-   ├─ Instruct: Add to .env file
+   ├─ Ask: "Do you have a .env file?" → Get/create path
+   ├─ Write credentials to .env (CLIENT_ID, CLIENT_SECRET, TENANT_ID)
    └─ Display install link
 
 4. Verify
    └─ teams app view <teamsAppId> --json
 
 5. Common Operations
-   └─ Update endpoint: teams app edit <appId> --endpoint <new-url>
+   └─ Add/update endpoint: teams app edit <appId> --endpoint <new-url>
 
 6. Troubleshoot
    ├─ Sideload disabled → Admin enables custom app upload
