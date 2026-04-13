@@ -14,7 +14,7 @@ export const manifestUploadCommand = new Command("upload")
   .description("Upload a manifest.json to update an existing Teams app")
   .argument("<file-path>", "Path to manifest.json file")
   .argument("[appId]", "Teams app ID (prompted if not provided)")
-  .option("--json", "[OPTIONAL] Output result as JSON")
+  .option("--json", "[OPTIONAL] Output as JSON")
   .action(wrapAction(async (filePathArg: string, appIdArg: string | undefined, options: { json?: boolean }) => {
     let teamsAppId: string;
     let token: string;
