@@ -1,12 +1,13 @@
 #!/usr/bin/env node
 import { createRequire } from "node:module";
-import { program } from "commander";
+import { program, Command } from "commander";
 import { loginCommand, logoutCommand } from "./commands/auth/index.js";
 import { statusCommand } from "./commands/status.js";
 import { appCommand, appsCommand } from "./commands/app/index.js";
 import { scaffoldCommand } from "./commands/scaffold/index.js";
 import { selfUpdateCommand } from "./commands/self-update.js";
 import { configCommand } from "./commands/config/index.js";
+import { projectCommand } from "./commands/project/index.js";
 import { CliError } from "./utils/errors.js";
 import { logger, setVerbose } from "./utils/logger.js";
 import { isInteractive, setAutoConfirm } from "./utils/interactive.js";
@@ -65,5 +66,17 @@ program.addCommand(appsCommand);
 program.addCommand(scaffoldCommand);
 program.addCommand(selfUpdateCommand);
 program.addCommand(configCommand);
+program.addCommand(projectCommand);
+
+// Redirect `teams new` → `teams project new`
+const newRedirect = new Command("new")
+  .description("Create a new project (see: teams project new)")
+  .argument("[args...]")
+  .allowUnknownOption()
+  .action(() => {
+    logger.info(`Did you mean ${pc.cyan("teams project new")}?`);
+    logger.info(`Run ${pc.cyan("teams project new --help")} for usage.`);
+  });
+program.addCommand(newRedirect);
 
 program.parse();
