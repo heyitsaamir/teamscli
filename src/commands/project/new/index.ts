@@ -50,6 +50,7 @@ export const projectNewCommand = new Command("new")
               : projectNewPythonCommand;
 
         await cmd.parseAsync(args, { from: "user" });
+        return; // Exit after project creation
       } catch (error) {
         if (error instanceof Error && error.name === "ExitPromptError") return;
         throw error;
