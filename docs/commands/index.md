@@ -57,6 +57,16 @@ teams
 └── self-update                    Update to latest version
 ```
 
+## Machine-Readable Help
+
+Use `--help --json` on any command to get the command tree as structured JSON — useful for AI agents and tooling that need to discover CLI capabilities programmatically:
+
+```bash
+teams --help --json          # Full command tree with version
+teams app --help --json      # Subtree for 'app'
+teams app rsc --help --json  # Subtree for 'app rsc'
+```
+
 ## Interactive vs Scripted
 
 Most commands work in two modes:

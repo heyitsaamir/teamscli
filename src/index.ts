@@ -9,6 +9,7 @@ import { selfUpdateCommand } from "./commands/self-update.js";
 import { configCommand } from "./commands/config/index.js";
 import { projectCommand } from "./commands/project/index.js";
 import { CliError } from "./utils/errors.js";
+import { handleJsonHelp } from "./utils/json-help.js";
 import { logger, setVerbose } from "./utils/logger.js";
 import { isInteractive, setAutoConfirm } from "./utils/interactive.js";
 import { checkForUpdates } from "./utils/update-check.js";
@@ -79,4 +80,6 @@ const newRedirect = new Command("new")
   });
 program.addCommand(newRedirect);
 
-program.parse();
+if (!handleJsonHelp(program, version)) {
+  program.parse();
+}
