@@ -96,6 +96,11 @@ export async function removeToolkitConfig(opts: {
     language,
   };
 
+  // Check that at least one config file exists in the project before removing
+  if (!hasConfigFiles(configDir, targetDir, context)) {
+    throw new Error(`Config "${toolkit}" is not applied to this project.`);
+  }
+
   // Remove files that were copied from the config
   removeConfigFiles(configDir, targetDir, context);
 
@@ -289,6 +294,30 @@ function revertCsharpToolkit(targetDir: string): void {
       return JSON.stringify(filtered, null, 2);
     });
   }
+}
+
+/**
+ * Check if any files from a config directory exist in the target project.
+ */
+function hasConfigFiles(configDir: string, targetDir: string, context: CopyContext): boolean {
+  const items = fs.readdirSync(configDir);
+  for (const item of items) {
+    const configPath = path.join(configDir, item);
+    let targetName = item;
+    if (item.endsWith(".hbs")) {
+      targetName = renderTemplate(item, context).replace(/\.hbs$/, "");
+    }
+    const targetPath = path.join(targetDir, targetName);
+
+    if (fs.statSync(configPath).isDirectory()) {
+      if (fs.existsSync(targetPath) && hasConfigFiles(configPath, targetPath, context)) {
+        return true;
+      }
+    } else if (fs.existsSync(targetPath)) {
+      return true;
+    }
+  }
+  return false;
 }
 
 function removeConfigFiles(configDir: string, targetDir: string, context: CopyContext): void {
