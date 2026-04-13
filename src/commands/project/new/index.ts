@@ -1,5 +1,6 @@
 import { Command } from "commander";
-import { select, input } from "@inquirer/prompts";
+import { select, input, confirm } from "@inquirer/prompts";
+import pc from "picocolors";
 import { isInteractive } from "../../../utils/interactive.js";
 import { listTemplates, type ProjectLanguage } from "../../../project/scaffold.js";
 import { projectNewTypescriptCommand } from "./typescript.js";
@@ -39,6 +40,13 @@ export const projectNewCommand = new Command("new")
               default: "echo",
             })
           : templates[0] ?? "echo";
+
+        const languageLabel = language === "typescript" ? "TypeScript" : language === "csharp" ? "C#" : "Python";
+        const ok = await confirm({
+          message: `Create ${languageLabel} app "${pc.bold(name)}" using ${pc.bold(template)} template?`,
+        });
+
+        if (!ok) continue;
 
         const args = [name, "--template", template];
 
