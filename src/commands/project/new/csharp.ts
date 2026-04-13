@@ -6,6 +6,7 @@ import pc from "picocolors";
 import { pascalCase } from "change-case";
 import { wrapAction, CliError } from "../../../utils/errors.js";
 import { logger } from "../../../utils/logger.js";
+import { confirmAction } from "../../../utils/interactive.js";
 import { outputJson } from "../../../utils/json-output.js";
 import { scaffoldProject, listTemplates, listToolkits } from "../../../project/scaffold.js";
 import { gatherEnvVars, type ProjectNewOutput } from "../shared.js";
@@ -56,6 +57,12 @@ export const projectNewCsharpCommand = new Command("csharp")
       if (fs.existsSync(targetDir)) {
         throw new CliError("VALIDATION_CONFLICT", `"${name}" already exists.`);
       }
+
+      const confirmed = await confirmAction(
+        `Create C# app "${name}" using ${options.template} template?`,
+        options.json,
+      );
+      if (!confirmed) return;
 
       // C# uses different env var key conventions
       const baseEnvVars = gatherEnvVars(options);

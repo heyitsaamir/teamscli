@@ -5,6 +5,7 @@ import { Command } from "commander";
 import pc from "picocolors";
 import { wrapAction, CliError } from "../../../utils/errors.js";
 import { logger } from "../../../utils/logger.js";
+import { confirmAction } from "../../../utils/interactive.js";
 import { outputJson } from "../../../utils/json-output.js";
 import { scaffoldProject, listTemplates, listToolkits } from "../../../project/scaffold.js";
 import { normalizePackageName, gatherEnvVars, type ProjectNewOutput } from "../shared.js";
@@ -59,6 +60,12 @@ export const projectNewTypescriptCommand = new Command("typescript")
       if (fs.existsSync(targetDir)) {
         throw new CliError("VALIDATION_CONFLICT", `"${name}" already exists.`);
       }
+
+      const confirmed = await confirmAction(
+        `Create TypeScript app "${name}" using ${options.template} template?`,
+        options.json,
+      );
+      if (!confirmed) return;
 
       const envVars = gatherEnvVars(options);
 
