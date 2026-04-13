@@ -27,6 +27,7 @@ export const projectCommand = new Command("project")
 
         if (action === "new") {
           await projectNewCommand.parseAsync([], { from: "user" });
+          return; // Exit after project creation
         } else if (action === "config") {
           await projectConfigCommand.parseAsync([], { from: "user" });
         }
