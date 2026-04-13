@@ -60,7 +60,7 @@ Ask the user: **"Do you have a bot messaging endpoint URL, or will this bot only
 - Proactive flows = bot sends messages to Teams without first receiving a message from users
 - Examples: Notifications, scheduled updates, alerts from external systems
 - ⚠️ **Warning:** Without an endpoint, your bot **cannot receive messages from Teams users**. It can only send proactive messages programmatically.
-- 💡 **Note:** You can always add an endpoint later using `teams app edit <appId> --endpoint <url>` (see Section 4)
+- 💡 **Note:** You can always add an endpoint later using `teams app edit <appId> --endpoint <url>` (here, `<appId>` is the `teamsAppId` returned by `teams app create`; see Section 4)
 - **Skip to Section 2** — no endpoint required for creation
 
 **If the bot needs to receive messages (endpoint required):**
@@ -157,7 +157,7 @@ TENANT_ID=<value-from-json>
 
 "Credentials saved to [path]. Your bot application code will use these values to authenticate with Microsoft Teams."
 
-**Important:** If the .env file already exists, update/append the credentials without overwriting other values.
+**Important:** If the .env file already exists, replace any existing `CLIENT_ID`, `CLIENT_SECRET`, and `TENANT_ID` entries in place with the new values. Append only the keys that are missing. Do not create duplicate entries for these keys, and do not overwrite any other existing values in the file.
 
 ### Step 4: Display Install Link
 
