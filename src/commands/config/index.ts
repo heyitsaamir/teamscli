@@ -6,6 +6,7 @@ import { isInteractive } from "../../utils/interactive.js";
 import { CliError, wrapAction } from "../../utils/errors.js";
 import { logger } from "../../utils/logger.js";
 import type { BotLocation } from "../../apps/bot-location.js";
+import { setLangCommand } from "./set-lang.js";
 
 const botLocationCommand = new Command("default-bot-location")
   .description("Default bot location for app create (teams-managed or azure)")
@@ -56,13 +57,15 @@ export const configCommand = new Command("config")
     }
 
     while (true) {
-      const current = ((await getConfig("default-bot-location")) as BotLocation) ?? "tm";
+      const currentBotLoc = ((await getConfig("default-bot-location")) as BotLocation) ?? "tm";
+      const currentLang = (await getConfig("language")) ?? "not set";
 
       try {
         const setting = await select({
           message: "Configure",
           choices: [
-            { name: `Default bot location ${pc.dim(`(${current === "tm" ? "teams-managed" : "azure"})`)}`, value: "default-bot-location" },
+            { name: `Default bot location ${pc.dim(`(${currentBotLoc === "tm" ? "teams-managed" : "azure"})`)}`, value: "default-bot-location" },
+            { name: `Default language ${pc.dim(`(${currentLang})`)}`, value: "set-lang" },
             { name: "Back", value: "back" },
           ],
         });
@@ -71,6 +74,8 @@ export const configCommand = new Command("config")
 
         if (setting === "default-bot-location") {
           await botLocationCommand.parseAsync([], { from: "user" });
+        } else if (setting === "set-lang") {
+          await setLangCommand.parseAsync([], { from: "user" });
         }
       } catch (error) {
         if (error instanceof Error && error.name === "ExitPromptError") return;
@@ -80,3 +85,4 @@ export const configCommand = new Command("config")
   });
 
 configCommand.addCommand(botLocationCommand);
+configCommand.addCommand(setLangCommand);

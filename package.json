@@ -19,7 +19,9 @@
     "docs:preview": "vitepress preview docs"
   },
   "files": [
-    "dist"
+    "dist",
+    "templates",
+    "configs"
   ],
   "keywords": [
     "teams",
@@ -49,11 +51,14 @@
     "@azure/msal-node-extensions": "^5.0.4",
     "@inquirer/prompts": "^7.2.1",
     "adm-zip": "^0.5.16",
+    "change-case": "^5.4.4",
     "commander": "^12.1.0",
     "env-paths": "^4.0.0",
+    "handlebars": "^4.7.9",
     "nanospinner": "^1.2.2",
     "open": "^11.0.0",
-    "picocolors": "^1.1.1"
+    "picocolors": "^1.1.1",
+    "yaml": "^2.8.3"
   },
   "devDependencies": {
     "@types/adm-zip": "^0.5.7",

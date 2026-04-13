@@ -61,6 +61,15 @@ function setupMocks(): void {
       },
     }),
   }));
+
+  vi.mock("../src/project/scaffold.js", () => ({
+    listTemplates: vi.fn().mockReturnValue(["echo", "ai", "graph", "mcp", "mcpclient", "tab"]),
+    listToolkits: vi.fn().mockReturnValue(["basic", "oauth", "embed"]),
+    scaffoldProject: vi.fn().mockResolvedValue(undefined),
+    addToolkitConfig: vi.fn().mockResolvedValue(undefined),
+    removeToolkitConfig: vi.fn().mockResolvedValue(undefined),
+    detectLanguage: vi.fn().mockReturnValue("typescript"),
+  }));
 }
 
 // ── Tests ───────────────────────────────────────────────────────────────
@@ -408,6 +417,194 @@ describe("manifest menu loop", () => {
     await appManifestCommand.parseAsync([], { from: "user" });
 
     expect(mockedSelect).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("project menu loop", () => {
+  beforeEach(() => {
+    vi.resetModules();
+    vi.clearAllMocks();
+    setupMocks();
+  });
+
+  it("exits after selecting New (project creation exits CLI)", async () => {
+    const { select } = await import("@inquirer/prompts");
+    const mockedSelect = vi.mocked(select);
+    mockedSelect.mockResolvedValueOnce("new" as never);
+
+    const { projectCommand } = await import(
+      "../src/commands/project/index.js"
+    );
+
+    const newParseSpy = vi.fn().mockResolvedValue(undefined);
+    const newSub = projectCommand.commands.find(
+      (c: Command) => c.name() === "new"
+    );
+    if (newSub) newSub.parseAsync = newParseSpy;
+
+    await projectCommand.parseAsync([], { from: "user" });
+
+    expect(mockedSelect).toHaveBeenCalledTimes(1);
+    expect(newParseSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it("loops back to menu after selecting Config", async () => {
+    const { select } = await import("@inquirer/prompts");
+    const mockedSelect = vi.mocked(select);
+    mockedSelect
+      .mockResolvedValueOnce("config" as never)
+      .mockResolvedValueOnce("back" as never);
+
+    const { projectCommand } = await import(
+      "../src/commands/project/index.js"
+    );
+
+    const configParseSpy = vi.fn().mockResolvedValue(undefined);
+    const configSub = projectCommand.commands.find(
+      (c: Command) => c.name() === "config"
+    );
+    if (configSub) configSub.parseAsync = configParseSpy;
+
+    await projectCommand.parseAsync([], { from: "user" });
+
+    expect(mockedSelect).toHaveBeenCalledTimes(2);
+    expect(configParseSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it("exits immediately when Back is selected", async () => {
+    const { select } = await import("@inquirer/prompts");
+    const mockedSelect = vi.mocked(select);
+    mockedSelect.mockResolvedValueOnce("back" as never);
+
+    const { projectCommand } = await import(
+      "../src/commands/project/index.js"
+    );
+
+    await projectCommand.parseAsync([], { from: "user" });
+
+    expect(mockedSelect).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("project new menu loop", () => {
+  beforeEach(() => {
+    vi.resetModules();
+    vi.clearAllMocks();
+    setupMocks();
+  });
+
+  it("loops back to menu after creating a project", async () => {
+    const { select, input } = await import("@inquirer/prompts");
+    const mockedSelect = vi.mocked(select);
+    const mockedInput = vi.mocked(input);
+
+    mockedSelect
+      .mockResolvedValueOnce("typescript" as never)
+      .mockResolvedValueOnce("back" as never);
+    mockedInput.mockResolvedValueOnce("test-app" as never);
+
+    const { projectNewCommand } = await import(
+      "../src/commands/project/new/index.js"
+    );
+
+    // Stub the TS subcommand to avoid actually scaffolding
+    const tsSub = projectNewCommand.commands.find(
+      (c: Command) => c.name() === "typescript"
+    );
+    if (tsSub) tsSub.parseAsync = vi.fn().mockResolvedValue(undefined);
+
+    await projectNewCommand.parseAsync([], { from: "user" });
+
+    expect(mockedSelect).toHaveBeenCalledTimes(2);
+  });
+
+  it("exits immediately when Back is selected", async () => {
+    const { select } = await import("@inquirer/prompts");
+    const mockedSelect = vi.mocked(select);
+    mockedSelect.mockResolvedValueOnce("back" as never);
+
+    const { projectNewCommand } = await import(
+      "../src/commands/project/new/index.js"
+    );
+
+    await projectNewCommand.parseAsync([], { from: "user" });
+
+    expect(mockedSelect).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("project config menu loop", () => {
+  beforeEach(() => {
+    vi.resetModules();
+    vi.clearAllMocks();
+    setupMocks();
+  });
+
+  it("loops back to menu after adding a toolkit", async () => {
+    const { select } = await import("@inquirer/prompts");
+    const mockedSelect = vi.mocked(select);
+    mockedSelect
+      .mockResolvedValueOnce("add" as never)
+      .mockResolvedValueOnce("atk.basic" as never)
+      .mockResolvedValueOnce("back" as never);
+
+    const { projectConfigCommand } = await import(
+      "../src/commands/project/config/index.js"
+    );
+
+    const addParseSpy = vi.fn().mockResolvedValue(undefined);
+    const addSub = projectConfigCommand.commands.find(
+      (c: Command) => c.name() === "add"
+    );
+    if (addSub) addSub.parseAsync = addParseSpy;
+
+    await projectConfigCommand.parseAsync([], { from: "user" });
+
+    expect(mockedSelect).toHaveBeenCalledTimes(3);
+    expect(addParseSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it("exits immediately when Back is selected", async () => {
+    const { select } = await import("@inquirer/prompts");
+    const mockedSelect = vi.mocked(select);
+    mockedSelect.mockResolvedValueOnce("back" as never);
+
+    const { projectConfigCommand } = await import(
+      "../src/commands/project/config/index.js"
+    );
+
+    await projectConfigCommand.parseAsync([], { from: "user" });
+
+    expect(mockedSelect).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("config menu includes set-lang", () => {
+  beforeEach(() => {
+    vi.resetModules();
+    vi.clearAllMocks();
+    setupMocks();
+  });
+
+  it("loops back to menu after selecting set-lang", async () => {
+    const { select } = await import("@inquirer/prompts");
+    const mockedSelect = vi.mocked(select);
+    mockedSelect
+      .mockResolvedValueOnce("set-lang" as never)
+      .mockResolvedValueOnce("back" as never);
+
+    const { configCommand } = await import(
+      "../src/commands/config/index.js"
+    );
+
+    const setLangSub = configCommand.commands.find(
+      (c: Command) => c.name() === "set-lang"
+    );
+    if (setLangSub) setLangSub.parseAsync = vi.fn().mockResolvedValue(undefined);
+
+    await configCommand.parseAsync([], { from: "user" });
+
+    expect(mockedSelect).toHaveBeenCalledTimes(2);
   });
 });
 
