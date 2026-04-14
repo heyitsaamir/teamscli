@@ -41,7 +41,6 @@ program
   .version(version)
   .option("-v, --verbose", "[OPTIONAL] Enable verbose logging")
   .option("-y, --yes", "[OPTIONAL] Auto-confirm prompts (for CI/agent use)")
-  .option("--disable-auto-update", "[OPTIONAL] Disable automatic updates")
   .addHelpText("after", () => {
     const status = isInteractive() ? pc.green("on") : pc.yellow("off");
     return `\nInteractive mode: ${status}\n  Set ${pc.cyan("TEAMS_NO_INTERACTIVE=1")} to disable, unset to enable.`;
@@ -55,7 +54,7 @@ program
       setAutoConfirm(true);
     }
     if (actionCommand.name() !== "self-update") {
-      await checkForUpdates({ autoUpdate: !opts.disableAutoUpdate });
+      await checkForUpdates();
     }
   });
 
