@@ -9,6 +9,7 @@ import { selfUpdateCommand } from "./commands/self-update.js";
 import { configCommand } from "./commands/config/index.js";
 import { projectCommand } from "./commands/project/index.js";
 import { CliError } from "./utils/errors.js";
+import { handleJsonHelp } from "./utils/json-help.js";
 import { logger, setVerbose } from "./utils/logger.js";
 import { isInteractive, setAutoConfirm } from "./utils/interactive.js";
 import { checkForUpdates } from "./utils/update-check.js";
@@ -36,7 +37,8 @@ function teamsColor(text: string): string {
 
 program
   .name("teams")
-  .addHelpText("beforeAll", `${pc.bold(teamsColor("Teams CLI"))} ${pc.bold(pc.yellow("[Beta]"))}\nWork seamlessly with Teams apps from the command line.\n`)
+  .description("CLI for managing Microsoft Teams apps")
+  .addHelpText("beforeAll", `${pc.bold(teamsColor("Teams CLI"))} ${pc.bold(pc.yellow("[Beta]"))}\n`)
   .version(version)
   .option("-v, --verbose", "[OPTIONAL] Enable verbose logging")
   .option("-y, --yes", "[OPTIONAL] Auto-confirm prompts (for CI/agent use)")
@@ -79,4 +81,6 @@ const newRedirect = new Command("new")
   });
 program.addCommand(newRedirect);
 
-program.parse();
+if (!handleJsonHelp(program, version)) {
+  program.parse();
+}

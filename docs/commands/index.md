@@ -22,8 +22,8 @@ teams
 ├── app                            Manage Teams apps (interactive menu)
 │   ├── list                       List your Teams apps
 │   ├── create                     Create a new Teams app with bot
-│   ├── view [appId]               View a Teams app
-│   ├── edit [appId]               Edit app properties
+│   ├── get [appId]                Get a Teams app
+│   ├── update [appId]             Update app properties
 │   ├── doctor [appId]             Run diagnostic checks
 │   ├── manifest
 │   │   ├── download [appId]       Download manifest
@@ -31,7 +31,7 @@ teams
 │   ├── package
 │   │   └── download [appId]       Download app package
 │   ├── bot
-│   │   ├── status [appId]         Show bot location
+│   │   ├── get [appId]            Get bot location
 │   │   └── migrate [appId]        Migrate bot to Azure
 │   ├── rsc
 │   │   ├── list <teamsAppId>      List RSC permissions
@@ -49,13 +49,23 @@ teams
 │       └── sso
 │           ├── setup [appId]      Set up SSO
 │           ├── list [appId]       List SSO connections
-│           ├── edit [appId]       Edit SSO connection
+│           ├── update [appId]     Update SSO connection
 │           └── remove [appId]     Remove SSO connection
 ├── scaffold
 │   └── manifest                   Create a manifest.json file
 ├── config                         Manage CLI configuration
 │   └── default-bot-location       Set default bot location
 └── self-update                    Update to latest version
+```
+
+## Machine-Readable Help
+
+Use `--help --json` on any command to get the command tree as structured JSON — useful for AI agents and tooling that need to discover CLI capabilities programmatically:
+
+```bash
+teams --help --json          # Full command tree with version
+teams app --help --json      # Subtree for 'app'
+teams app rsc --help --json  # Subtree for 'app rsc'
 ```
 
 ## Interactive vs Scripted

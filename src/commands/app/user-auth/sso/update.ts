@@ -20,10 +20,10 @@ interface AuthSetting {
   };
 }
 
-export const ssoEditCommand = new Command("edit")
-  .description("Edit an SSO connection's settings")
+export const ssoUpdateCommand = new Command("update")
+  .description("Update an SSO connection's settings")
   .argument("[appId]", "App ID")
-  .option("--connection-name <name>", "SSO connection to edit")
+  .option("--connection-name <name>", "SSO connection to update")
   .option("--scopes <scopes>", "[OPTIONAL] New scopes")
   .option("--new-connection-name <name>", "[OPTIONAL] Rename the connection")
   .option("--client-secret <secret>", "[OPTIONAL] Client secret (auto-generated if not provided)")
@@ -36,7 +36,7 @@ export const ssoEditCommand = new Command("edit")
     const { botId, azure } = await requireAzureBot(appIdArg);
     const interactive = isInteractive();
 
-    // Pick connection to edit
+    // Pick connection to update
     let connectionName = options.connectionName;
     if (!connectionName) {
       if (!interactive) {
@@ -58,7 +58,7 @@ export const ssoEditCommand = new Command("edit")
       });
 
       if (aadConnections.length === 0) {
-        logger.info(pc.dim("No SSO connections to edit."));
+        logger.info(pc.dim("No SSO connections to update."));
         return;
       }
 
@@ -68,7 +68,7 @@ export const ssoEditCommand = new Command("edit")
       });
 
       connectionName = await search<string>({
-        message: "Select SSO connection to edit",
+        message: "Select SSO connection to update",
         source: (term) => {
           if (!term) return choices;
           return choices.filter((c) => c.value.toLowerCase().includes(term.toLowerCase()));
@@ -94,13 +94,13 @@ export const ssoEditCommand = new Command("edit")
     let newScopes = options.scopes ?? currentScopes;
     let newName = options.newConnectionName ?? connectionName;
 
-    // Interactive: field-by-field editor
+    // Interactive: field-by-field updater
     if (interactive && !options.scopes && !options.newConnectionName) {
       let changed = false;
 
       while (true) {
         const field = await select({
-          message: `Edit "${connectionName}"`,
+          message: `Update "${connectionName}"`,
           choices: [
             { name: `Scopes: ${pc.bold(newScopes)}`, value: "scopes" },
             { name: `Connection name: ${pc.bold(newName)}`, value: "name" },
