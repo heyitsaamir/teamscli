@@ -19,7 +19,6 @@ import {
   removeRscPermissions,
   setRscPermissions,
   diffRscPermissions,
-  permKey,
 } from "./actions.js";
 
 // ─── Interactive menu ───────────────────────────────────────────────
@@ -337,10 +336,7 @@ const rscSetCommand = new Command("set")
     const current = await listRscPermissions(token, teamsAppId);
 
     // Guard against silently dropping non-catalog permissions
-    const desiredKeys = new Set(desired.map(permKey));
-    const droppedNonCatalog = current.filter(
-      (p) => findPermission(p.name) === null && !desiredKeys.has(permKey(p)),
-    );
+    const droppedNonCatalog = current.filter((p) => findPermission(p.name) === null);
     if (droppedNonCatalog.length > 0) {
       spinner.stop();
       const droppedNames = droppedNonCatalog.map((p) => p.name);
