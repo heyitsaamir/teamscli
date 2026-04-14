@@ -23,7 +23,6 @@ The Teams Developer Portal (TDP) is the web UI at [dev.teams.microsoft.com](http
 | `teams app user-auth sso list` | Azure Portal → Bot Service → Configuration (filtered) |
 | `teams app user-auth sso update` | Azure Portal → Bot Service → Configuration → edit connection |
 | `teams app user-auth sso remove` | Azure Portal → Bot Service + TDP manifest |
-| `teams scaffold manifest` | *No portal equivalent* |
 | `teams config` | *No portal equivalent* |
 
 ## Key Differences
