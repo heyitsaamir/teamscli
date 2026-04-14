@@ -346,10 +346,10 @@ const rscSetCommand = new Command("set")
     );
     if (droppedNonCatalog.length > 0) {
       spinner.stop();
-      const names = droppedNonCatalog.map((p) => p.name);
+      const droppedNames = droppedNonCatalog.map((p) => p.name);
       throw new CliError(
         "VALIDATION_CONFLICT",
-        `This app has non-catalog permissions that would be removed: ${names.join(", ")}`,
+        `This app has non-catalog permissions that would be removed: ${droppedNames.join(", ")}`,
         "Remove them first with `teams app rsc remove`, or include them via `teams app rsc add`.",
       );
     }

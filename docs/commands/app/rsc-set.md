@@ -38,6 +38,8 @@ Computes the diff between the app's current RSC permissions and the desired list
 
 Permission types (Application/Delegated) are automatically inferred from the RSC catalog. Only catalog permissions are accepted — use `teams app rsc add` for custom permissions not in the catalog.
 
+If the app already has non-catalog permissions (added via `teams app rsc add`), the command will error rather than silently removing them. Remove them first with `teams app rsc remove` before using `set`.
+
 ## Examples
 
 ```bash
