@@ -7,7 +7,6 @@ import { showAppDetail, downloadAppPackage } from "../../apps/index.js";
 import { logger } from "../../utils/logger.js";
 import { downloadManifest } from "./manifest/actions.js";
 import { authCommand } from "./auth/index.js";
-import { userAuthCommand } from "./user-auth/index.js";
 import { appDoctorCommand } from "./doctor.js";
 import { showRscMenu } from "./rsc/index.js";
 import type { AppSummary } from "../../apps/types.js";
@@ -26,7 +25,6 @@ export async function showAppActions(app: AppSummary, token: string): Promise<vo
         { name: "Download package", value: "package" },
         { name: "Download manifest", value: "manifest" },
         { name: "Auth (secrets)", value: "credentials" },
-        { name: "User Auth (OAuth/SSO)", value: "user-auth" },
         { name: "Permissions (RSC)", value: "rsc" },
         { name: "Doctor (diagnostics)", value: "doctor" },
         { name: "Back", value: "back" },
@@ -59,13 +57,6 @@ export async function showAppActions(app: AppSummary, token: string): Promise<vo
     } else if (action === "credentials") {
       try {
         await authCommand.parseAsync(["secret", "create", app.teamsAppId], { from: "user" });
-      } catch (error) {
-        if (error instanceof Error && error.name === "ExitPromptError") continue;
-        logger.error(pc.red(error instanceof Error ? error.message : "Unknown error"));
-      }
-    } else if (action === "user-auth") {
-      try {
-        await userAuthCommand.parseAsync([app.teamsAppId], { from: "user" });
       } catch (error) {
         if (error instanceof Error && error.name === "ExitPromptError") continue;
         logger.error(pc.red(error instanceof Error ? error.message : "Unknown error"));

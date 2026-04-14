@@ -301,7 +301,7 @@ describeWithEnv("--json output (requires auth)", () => {
 });
 
 // ── Lifecycle tests (auth + Azure subscription) ─────────────────────
-// Creates a real app, migrates to Azure, sets up SSO.
+// Creates a real app and migrates to Azure.
 // Skipped if TEST_AZ_SUBSCRIPTION is not set in .testenv.
 
 describeWithEnv("--json lifecycle (requires Azure)", () => {
@@ -413,46 +413,4 @@ describeWithEnv("--json lifecycle (requires Azure)", () => {
     });
   });
 
-  describe("app user-auth sso setup --json", () => {
-    it("configures SSO with all expected fields", () => {
-      if (!hasAzure) return;
-
-      const { data, exitCode } = runJson(
-        `${CLI} app user-auth sso setup "${createdAppId}" ` +
-          `--connection-name "sso-vitest" --json`
-      );
-      expect(exitCode).toBe(0);
-
-      expect(data.botId).toBe(createdBotId);
-      expect(data.connectionName).toBe("sso-vitest");
-      expect(data.identifierUri).toBe(
-        `api://botid-${createdBotId}`
-      );
-      expect(data.scopes).toBe("User.Read");
-      expect(typeof data.clientSecretCreated).toBe("boolean");
-      expect(typeof data.manifestUpdated).toBe("boolean");
-    });
-
-    it("auto-creates client secret when not provided", () => {
-      if (!hasAzure) return;
-
-      const { data, exitCode } = runJson(
-        `${CLI} app user-auth sso setup "${createdAppId}" ` +
-          `--connection-name "sso-vitest-auto" --json`
-      );
-      expect(exitCode).toBe(0);
-      expect(data.clientSecretCreated).toBe(true);
-    });
-
-    it("produces no non-JSON output (no spinner leakage)", () => {
-      if (!hasAzure) return;
-
-      const { stdout } = run(
-        `${CLI} app user-auth sso setup "${createdAppId}" ` +
-          `--connection-name "sso-vitest-clean" --json`
-      );
-      const parsed = JSON.parse(stdout);
-      expect(stdout.trim()).toBe(JSON.stringify(parsed, null, 2));
-    });
-  });
 });

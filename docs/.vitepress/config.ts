@@ -44,13 +44,6 @@ export default defineConfig({
               { text: "app bot status", link: "/commands/app/bot-status" },
               { text: "app bot migrate", link: "/commands/app/bot-migrate" },
               { text: "app auth secret create", link: "/commands/app/auth-secret-create" },
-              { text: "app user-auth oauth add", link: "/commands/app/user-auth-oauth-add" },
-              { text: "app user-auth oauth list", link: "/commands/app/user-auth-oauth-list" },
-              { text: "app user-auth oauth remove", link: "/commands/app/user-auth-oauth-remove" },
-              { text: "app user-auth sso setup", link: "/commands/app/user-auth-sso-setup" },
-              { text: "app user-auth sso list", link: "/commands/app/user-auth-sso-list" },
-              { text: "app user-auth sso edit", link: "/commands/app/user-auth-sso-edit" },
-              { text: "app user-auth sso remove", link: "/commands/app/user-auth-sso-remove" },
             ],
           },
           {
