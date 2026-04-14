@@ -2,8 +2,33 @@ import { fetchAppDetailsV2, updateAppDetails } from "../../../apps/api.js";
 import type { RscPermissionEntry, AppAuthorization } from "../../../apps/types.js";
 
 /** Composite key for deduplication: "name|type" */
-function permKey(p: RscPermissionEntry): string {
+export function permKey(p: RscPermissionEntry): string {
   return `${p.name}|${p.type}`;
+}
+
+export interface RscDiffResult {
+  added: RscPermissionEntry[];
+  removed: RscPermissionEntry[];
+  unchanged: RscPermissionEntry[];
+  final: RscPermissionEntry[];
+}
+
+/**
+ * Compute the diff between current and desired RSC permissions.
+ * Pure function — no API calls.
+ */
+export function diffRscPermissions(
+  current: RscPermissionEntry[],
+  desired: RscPermissionEntry[],
+): RscDiffResult {
+  const currentKeys = new Set(current.map(permKey));
+  const desiredKeys = new Set(desired.map(permKey));
+
+  const added = desired.filter((p) => !currentKeys.has(permKey(p)));
+  const removed = current.filter((p) => !desiredKeys.has(permKey(p)));
+  const unchanged = desired.filter((p) => currentKeys.has(permKey(p)));
+
+  return { added, removed, unchanged, final: desired };
 }
 
 /**

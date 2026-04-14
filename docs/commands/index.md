@@ -36,7 +36,8 @@ teams
 │   ├── rsc
 │   │   ├── list <teamsAppId>      List RSC permissions
 │   │   ├── add <teamsAppId>       Add RSC permission
-│   │   └── remove <teamsAppId>    Remove RSC permission
+│   │   ├── remove <teamsAppId>    Remove RSC permission
+│   │   └── set <teamsAppId>       Declaratively set RSC permissions
 │   ├── auth
 │   │   └── secret
 │   │       └── create [appId]     Generate client secret

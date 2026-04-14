@@ -13,7 +13,13 @@ import {
   type RscScope,
 } from "../../../apps/rsc-catalog.js";
 import type { RscPermissionEntry, AppSummary } from "../../../apps/types.js";
-import { listRscPermissions, addRscPermissions, removeRscPermissions, setRscPermissions } from "./actions.js";
+import {
+  listRscPermissions,
+  addRscPermissions,
+  removeRscPermissions,
+  setRscPermissions,
+  diffRscPermissions,
+} from "./actions.js";
 
 // ─── Interactive menu ───────────────────────────────────────────────
 
@@ -284,9 +290,86 @@ const rscRemoveCommand = new Command("remove")
     logger.info(pc.green(`Removed ${permission}.`));
   }));
 
+interface RscSetOptions {
+  permissions: string;
+  json?: boolean;
+}
+
+interface RscSetOutput {
+  added: RscPermissionEntry[];
+  removed: RscPermissionEntry[];
+  unchanged: RscPermissionEntry[];
+}
+
+const rscSetCommand = new Command("set")
+  .description("Declaratively set RSC permissions to an exact list")
+  .argument("<teamsAppId>", "Teams app ID")
+  .requiredOption("--permissions <list>", "Comma-separated permission names (e.g. TeamSettings.ReadWrite.Group,ChannelMessage.Read.Group)")
+  .option("--json", "[OPTIONAL] Output as JSON")
+  .action(wrapAction(async (teamsAppId: string, options: RscSetOptions) => {
+    // Parse comma-separated names
+    const names = options.permissions.split(",").map((s) => s.trim()).filter(Boolean);
+    if (names.length === 0) {
+      throw new CliError("VALIDATION_FORMAT", "No permission names provided.", "Pass a comma-separated list via --permissions.");
+    }
+
+    // Resolve each name to a typed entry via catalog
+    const desired: RscPermissionEntry[] = [];
+    const unrecognized: string[] = [];
+    for (const name of names) {
+      const found = findPermission(name);
+      if (!found) {
+        unrecognized.push(name);
+      } else {
+        desired.push({ name: found.name, type: found.type });
+      }
+    }
+
+    if (unrecognized.length > 0) {
+      throw new CliError(
+        "VALIDATION_FORMAT",
+        `Unrecognized permission(s): ${unrecognized.join(", ")}`,
+        "Use `teams app rsc add` for permissions not in the catalog.",
+      );
+    }
+
+    const token = await requireToken();
+
+    const spinner = createSilentSpinner("Setting RSC permissions...", options.json).start();
+    const current = await listRscPermissions(token, teamsAppId);
+    const diff = diffRscPermissions(current, desired);
+
+    if (diff.added.length === 0 && diff.removed.length === 0) {
+      spinner.stop();
+      if (options.json) {
+        const result: RscSetOutput = { added: [], removed: [], unchanged: diff.unchanged };
+        outputJson(result);
+        return;
+      }
+      logger.info(pc.dim("No changes needed — permissions already match."));
+      return;
+    }
+
+    await setRscPermissions(token, teamsAppId, diff.final);
+    spinner.stop();
+
+    if (options.json) {
+      const result: RscSetOutput = { added: diff.added, removed: diff.removed, unchanged: diff.unchanged };
+      outputJson(result);
+      return;
+    }
+
+    const parts: string[] = [];
+    if (diff.added.length > 0) parts.push(`added ${diff.added.length}`);
+    if (diff.removed.length > 0) parts.push(`removed ${diff.removed.length}`);
+    if (diff.unchanged.length > 0) parts.push(`unchanged ${diff.unchanged.length}`);
+    logger.info(pc.green(`RSC permissions updated (${parts.join(", ")}).`));
+  }));
+
 export const rscCommand = new Command("rsc")
   .description("Manage RSC (Resource-Specific Consent) permissions");
 
 rscCommand.addCommand(rscListCommand);
 rscCommand.addCommand(rscAddCommand);
 rscCommand.addCommand(rscRemoveCommand);
+rscCommand.addCommand(rscSetCommand);
