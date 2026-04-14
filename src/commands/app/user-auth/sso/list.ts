@@ -81,12 +81,12 @@ export const ssoListCommand = new Command("list")
         return;
       }
 
-      // In interactive mode, offer to edit
+      // In interactive mode, offer to update
       if (isInteractive() && ssoConnections.length > 0) {
         const action = await select({
           message: "Action",
           choices: [
-            ...ssoConnections.map((c) => ({ name: `Edit "${c.name}"`, value: c.name })),
+            ...ssoConnections.map((c) => ({ name: `Update "${c.name}"`, value: c.name })),
             { name: "Back", value: "back" },
           ],
         });

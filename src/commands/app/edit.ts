@@ -51,7 +51,7 @@ interface AppUpdateOutput {
 }
 
 /**
- * Interactive edit menu for a single app. Returns when user selects "Back".
+ * Interactive update menu for a single app. Returns when user selects "Back".
  */
 export async function showUpdateMenu(app: AppSummary, token: string): Promise<void> {
   const spinner = createSilentSpinner("Fetching details...").start();
@@ -102,7 +102,7 @@ export async function showUpdateMenu(app: AppSummary, token: string): Promise<vo
 
     const showEndpoint = bot || botLocation === "azure";
     const action = await select({
-      message: "What would you like to edit?",
+      message: "What would you like to update?",
       choices: [
         { name: "Basic info", value: "edit-basic-info" },
         ...(showEndpoint ? [{ name: "Endpoint", value: "edit-endpoint" }] : []),
@@ -289,7 +289,7 @@ export const appUpdateCommand = new Command("update")
 
     const app = await fetchApp(token, appId);
 
-    // Interactive mode with --id: single edit session, "Back" exits
+    // Interactive mode with --id: single update session, "Back" exits
     if (!hasMutationFlags) {
       await showUpdateMenu(app, token);
       return;

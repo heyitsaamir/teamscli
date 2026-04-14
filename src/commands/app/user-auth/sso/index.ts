@@ -63,7 +63,7 @@ export const ssoCommand = new Command("sso")
           const name = s.name.split("/").pop() ?? s.name;
           return {
             name: s.properties?.scopes ? `${name} ${pc.dim(`(${s.properties.scopes})`)}` : name,
-            value: `edit:${name}`,
+            value: `update:${name}`,
           };
         });
 
@@ -80,8 +80,8 @@ export const ssoCommand = new Command("sso")
 
         if (action === "setup") {
           await ssoSetupCommand.parseAsync([appId], { from: "user" });
-        } else if (action.startsWith("edit:")) {
-          const connectionName = action.slice(5);
+        } else if (action.startsWith("update:")) {
+          const connectionName = action.slice(7);
           await ssoUpdateCommand.parseAsync([appId, "--connection-name", connectionName], { from: "user" });
         }
       } catch (error) {

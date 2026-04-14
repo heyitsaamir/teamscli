@@ -26,13 +26,13 @@ teams apps                           # List your Teams apps (alias for app list)
 teams app                            # Manage a Teams app (interactive menu)
 teams app list                       # List your Teams apps
 teams app create                     # Create a new Teams app with bot
-teams app view [appId]               # View a Teams app
-teams app edit [appId]               # Edit app properties
+teams app get [appId]                # Get a Teams app
+teams app update [appId]             # Update app properties
 teams app doctor [appId]             # Run diagnostic checks
 teams app manifest download [appId]  # Download manifest
 teams app manifest upload [appId]    # Upload manifest
 teams app package download [appId]   # Download app package
-teams app bot status [appId]         # Show bot location (Teams-managed vs Azure)
+teams app bot get [appId]            # Get bot location (Teams-managed vs Azure)
 teams app bot migrate [appId]        # Migrate bot to Azure
 teams app auth secret create [appId] # Generate a client secret
 teams app user-auth oauth add [appId]    # Add OAuth connection
@@ -40,7 +40,7 @@ teams app user-auth oauth list [appId]   # List OAuth connections
 teams app user-auth oauth remove [appId] # Remove OAuth connection
 teams app user-auth sso setup [appId]    # Set up SSO
 teams app user-auth sso list [appId]     # List SSO connections
-teams app user-auth sso edit [appId]     # Edit SSO connection
+teams app user-auth sso update [appId]   # Update SSO connection
 teams app user-auth sso remove [appId]   # Remove SSO connection
 teams scaffold manifest              # Create a manifest.json file
 teams config                         # Manage CLI configuration
