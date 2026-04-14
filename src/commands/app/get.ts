@@ -9,7 +9,7 @@ import { CliError, wrapAction } from "../../utils/errors.js";
 import { logger } from "../../utils/logger.js";
 import { printLinkBanner } from "../../utils/browser.js";
 
-interface AppViewOutput {
+interface AppGetOutput {
   appId: string;
   teamsAppId: string;
   name: string;
@@ -26,8 +26,8 @@ interface AppViewOutput {
   portalLink: string;
 }
 
-export const appViewCommand = new Command("view")
-  .description("View a Teams app")
+export const appGetCommand = new Command("get")
+  .description("Get a Teams app")
   .argument("[appId]", "App ID")
   .option("--json", "[OPTIONAL] Output as JSON")
   .option("--web", "[OPTIONAL] Print the install and Developer Portal links")
@@ -67,7 +67,7 @@ export const appViewCommand = new Command("view")
       const details = await fetchAppDetailsV2(token, app.teamsAppId);
       spinner.stop();
 
-      const enriched: AppViewOutput = {
+      const enriched: AppGetOutput = {
         appId: details.appId,
         teamsAppId: details.teamsAppId,
         name: details.shortName,

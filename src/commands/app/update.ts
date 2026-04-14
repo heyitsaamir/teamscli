@@ -14,7 +14,7 @@ import type { AppSummary, AppDetails } from "../../apps/types.js";
 import type { BotDetails } from "../../apps/tdp.js";
 import type { BotLocation } from "../../apps/bot-location.js";
 
-interface EditOptions {
+interface UpdateOptions {
   endpoint?: string;
   name?: string;
   longName?: string;
@@ -30,7 +30,7 @@ interface EditOptions {
   json?: boolean;
 }
 
-interface AppEditOutput {
+interface AppUpdateOutput {
   teamsAppId: string;
   botId?: string;
   validDomains?: string[];
@@ -51,9 +51,9 @@ interface AppEditOutput {
 }
 
 /**
- * Interactive edit menu for a single app. Returns when user selects "Back".
+ * Interactive update menu for a single app. Returns when user selects "Back".
  */
-export async function showEditMenu(app: AppSummary, token: string): Promise<void> {
+export async function showUpdateMenu(app: AppSummary, token: string): Promise<void> {
   const spinner = createSilentSpinner("Fetching details...").start();
 
   let appDetails: AppDetails;
@@ -102,7 +102,7 @@ export async function showEditMenu(app: AppSummary, token: string): Promise<void
 
     const showEndpoint = bot || botLocation === "azure";
     const action = await select({
-      message: "What would you like to edit?",
+      message: "What would you like to update?",
       choices: [
         { name: "Basic info", value: "edit-basic-info" },
         ...(showEndpoint ? [{ name: "Endpoint", value: "edit-endpoint" }] : []),
@@ -215,8 +215,8 @@ export async function showEditMenu(app: AppSummary, token: string): Promise<void
   }
 }
 
-export const appEditCommand = new Command("edit")
-  .description("Edit a Teams app's properties")
+export const appUpdateCommand = new Command("update")
+  .description("Update a Teams app's properties")
   .argument("[appId]", "App ID")
   .option("--endpoint <url>", "[OPTIONAL] Set the bot messaging endpoint URL")
   .option("--name <name>", "[OPTIONAL] Set the app short name (max 30 chars)")
@@ -231,7 +231,7 @@ export const appEditCommand = new Command("edit")
   .option("--color-icon <path>", "[OPTIONAL] Set the color icon (192x192 PNG)")
   .option("--outline-icon <path>", "[OPTIONAL] Set the outline icon (32x32 PNG)")
   .option("--json", "[OPTIONAL] Output as JSON")
-  .action(wrapAction(async (appIdArg: string | undefined, options: EditOptions) => {
+  .action(wrapAction(async (appIdArg: string | undefined, options: UpdateOptions) => {
     const silent = !!options.json;
 
     // Check if any mutation flags were provided
@@ -262,7 +262,7 @@ export const appEditCommand = new Command("edit")
       while (true) {
         const picked = await pickApp();
         const app = await fetchApp(picked.token, picked.app.teamsAppId);
-        await showEditMenu(app, picked.token);
+        await showUpdateMenu(app, picked.token);
       }
     }
 
@@ -289,14 +289,14 @@ export const appEditCommand = new Command("edit")
 
     const app = await fetchApp(token, appId);
 
-    // Interactive mode with --id: single edit session, "Back" exits
+    // Interactive mode with --id: single update session, "Back" exits
     if (!hasMutationFlags) {
-      await showEditMenu(app, token);
+      await showUpdateMenu(app, token);
       return;
     }
 
     // Scripting mode: apply all mutation flags
-    const allUpdates: AppEditOutput["updated"] = {};
+    const allUpdates: AppUpdateOutput["updated"] = {};
     let endpointBotId: string | undefined;
     let endpointValidDomains: string[] | undefined;
 
@@ -447,7 +447,7 @@ export const appEditCommand = new Command("edit")
 
     // Single JSON output for all updates
     if (options.json) {
-      const result: AppEditOutput = {
+      const result: AppUpdateOutput = {
         teamsAppId: appId,
         ...(endpointBotId ? { botId: endpointBotId } : {}),
         ...(endpointValidDomains ? { validDomains: endpointValidDomains } : {}),

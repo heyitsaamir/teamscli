@@ -638,7 +638,7 @@ describe("sso menu loop", () => {
     expect(setupParseSpy).toHaveBeenCalledTimes(1);
   });
 
-  it("loops back to menu after editing a connection", async () => {
+  it("loops back to menu after updating a connection", async () => {
     const { select } = await import("@inquirer/prompts");
     const { runAz } = await import("../src/utils/az.js");
     const mockedSelect = vi.mocked(select);
@@ -654,23 +654,23 @@ describe("sso menu loop", () => {
     ]);
 
     mockedSelect
-      .mockResolvedValueOnce("edit:MyConnection" as never)
+      .mockResolvedValueOnce("update:MyConnection" as never)
       .mockResolvedValueOnce("back" as never);
 
     const { ssoCommand } = await import(
       "../src/commands/app/user-auth/sso/index.js"
     );
 
-    const editParseSpy = vi.fn().mockResolvedValue(undefined);
-    const editSub = ssoCommand.commands.find(
-      (c: Command) => c.name() === "edit"
+    const updateParseSpy = vi.fn().mockResolvedValue(undefined);
+    const updateSub = ssoCommand.commands.find(
+      (c: Command) => c.name() === "update"
     );
-    if (editSub) editSub.parseAsync = editParseSpy;
+    if (updateSub) updateSub.parseAsync = updateParseSpy;
 
     await ssoCommand.parseAsync([], { from: "user" });
 
     expect(mockedSelect).toHaveBeenCalledTimes(2);
-    expect(editParseSpy).toHaveBeenCalledTimes(1);
+    expect(updateParseSpy).toHaveBeenCalledTimes(1);
   });
 
   it("exits immediately when Back is selected", async () => {

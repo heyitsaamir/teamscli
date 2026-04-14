@@ -72,6 +72,6 @@ teams app bot migrate <appId> --resource-group my-rg --create-resource-group --r
 
 - Azure CLI (`az`) installed and logged in
 - An Azure subscription
-- Bot must not already be in Azure (check with `teams app bot status`)
+- Bot must not already be in Azure (check with `teams app bot get`)
 
 See [Bot Locations](/concepts/bot-locations) for more on why and when to migrate.

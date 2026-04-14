@@ -7,7 +7,7 @@ import { isInteractive } from "../../../../utils/interactive.js";
 import { logger } from "../../../../utils/logger.js";
 import { CliError, wrapAction } from "../../../../utils/errors.js";
 import { requireAzureBot } from "../require-azure.js";
-import { ssoEditCommand } from "./edit.js";
+import { ssoUpdateCommand } from "./update.js";
 
 interface AuthSetting {
   name: string;
@@ -81,18 +81,18 @@ export const ssoListCommand = new Command("list")
         return;
       }
 
-      // In interactive mode, offer to edit
+      // In interactive mode, offer to update
       if (isInteractive() && ssoConnections.length > 0) {
         const action = await select({
           message: "Action",
           choices: [
-            ...ssoConnections.map((c) => ({ name: `Edit "${c.name}"`, value: c.name })),
+            ...ssoConnections.map((c) => ({ name: `Update "${c.name}"`, value: c.name })),
             { name: "Back", value: "back" },
           ],
         });
 
         if (action !== "back") {
-          await ssoEditCommand.parseAsync([appId, "--connection-name", action], { from: "user" });
+          await ssoUpdateCommand.parseAsync([appId, "--connection-name", action], { from: "user" });
         }
       }
     } catch (error) {

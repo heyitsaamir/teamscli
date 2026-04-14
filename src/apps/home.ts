@@ -75,7 +75,7 @@ async function printAppHeader(appSummary: AppSummary, token: string): Promise<{ 
  */
 export async function showAppDetail(appSummary: AppSummary, token: string, options?: { interactive?: boolean }): Promise<void> {
   const { appDetails, installLink, portalLink } = await printAppHeader(appSummary, token);
-  logger.info(pc.dim(`\nTip: ${pc.cyan(`teams app view ${appDetails.teamsAppId}`)} to view this app`));
+  logger.info(pc.dim(`\nTip: ${pc.cyan(`teams app get ${appDetails.teamsAppId}`)} to view this app`));
 
   if (options?.interactive) {
     try {

@@ -60,7 +60,7 @@ Ask the user: **"Do you have a bot messaging endpoint URL, or will this bot only
 - Proactive flows = bot sends messages to Teams without first receiving a message from users
 - Examples: Notifications, scheduled updates, alerts from external systems
 - ⚠️ **Warning:** Without an endpoint, your bot **cannot receive messages from Teams users**. It can only send proactive messages programmatically.
-- 💡 **Note:** You can always add an endpoint later using `teams app edit <appId> --endpoint <url>` (here, `<appId>` is the `teamsAppId` returned by `teams app create`; see Section 4)
+- 💡 **Note:** You can always add an endpoint later using `teams app update <appId> --endpoint <url>` (here, `<appId>` is the `teamsAppId` returned by `teams app create`; see Section 4)
 - **Skip to Section 2** — no endpoint required for creation
 
 **If the bot needs to receive messages (endpoint required):**
@@ -187,7 +187,7 @@ Verify the bot was created successfully.
 Run the following command (use the `teamsAppId` from creation output):
 
 ```bash
-teams app view <teamsAppId> --json
+teams app get <teamsAppId> --json
 ```
 
 **Expected output:** Returns app details matching what was created:
@@ -228,7 +228,7 @@ teams self-update
 **Command:**
 
 ```bash
-teams app edit <appId> --endpoint "https://new-endpoint-url/api/messages"
+teams app update <appId> --endpoint "https://new-endpoint-url/api/messages"
 ```
 
 **When to use:**
@@ -242,7 +242,7 @@ teams app edit <appId> --endpoint "https://new-endpoint-url/api/messages"
 **Command:**
 
 ```bash
-teams app view <appId> --json
+teams app get <appId> --json
 ```
 
 **Use case:** Check current bot configuration, verify settings
@@ -368,10 +368,10 @@ This skill covers bot infrastructure only. To build the actual bot code:
    └─ Display install link
 
 4. Verify
-   └─ teams app view <teamsAppId> --json
+   └─ teams app get <teamsAppId> --json
 
 5. Common Operations
-   └─ Add/update endpoint: teams app edit <appId> --endpoint <new-url>
+   └─ Add/update endpoint: teams app update <appId> --endpoint <new-url>
 
 6. Troubleshoot
    ├─ Sideload disabled → Admin enables custom app upload
