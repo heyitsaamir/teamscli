@@ -36,7 +36,7 @@ SSO setup in the portal requires jumping between three different UIs:
 - Azure Portal → Bot Service (OAuth connection)
 - TDP → App manifest (webApplicationInfo)
 
-For streamlined SSO and OAuth setup, see the [User Authentication Setup guide](/guides/user-authentication-setup) or use the **teams-bot-infra** skill.
+For streamlined SSO and OAuth setup, see the [User Authentication Setup guide](/guides/user-authentication-setup) or use the **teams-dev** skill.
 
 ### App Doctor
 

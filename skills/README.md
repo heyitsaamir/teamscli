@@ -4,7 +4,7 @@ Agent skills for managing Microsoft Teams bot infrastructure using the Teams CLI
 
 ## Available Skills
 
-### teams-bot-infra
+### teams-dev
 
 Manage Microsoft Teams bot infrastructure using the Teams CLI. This skill guides AI coding assistants through creating, configuring, and troubleshooting Teams bot apps and registrations.
 
@@ -33,10 +33,10 @@ Manage Microsoft Teams bot infrastructure using the Teams CLI. This skill guides
 Install skills using the `skills` CLI tool:
 
 ```bash
-npx skills add heyitsaamir/teamscli --skill teams-bot-infra
+npx skills add heyitsaamir/teamscli --skill teams-dev
 ```
 
-This installs the `teams-bot-infra` skill for use with AI coding assistants like Claude Code, Cursor, GitHub Copilot, and others.
+This installs the `teams-dev` skill for use with AI coding assistants like Claude Code, Cursor, GitHub Copilot, and others.
 
 ### Install All Skills
 
@@ -62,7 +62,7 @@ You can also explicitly invoke a skill in compatible agents:
 
 **Claude Code:**
 ```
-/teams-bot-infra
+/teams-dev
 ```
 
 **Other agents:** Check your agent's documentation for skill invocation syntax.
@@ -72,7 +72,7 @@ You can also explicitly invoke a skill in compatible agents:
 ```
 skills/
 ├── README.md                    (this file)
-└── teams-bot-infra/
+└── teams-dev/
     └── SKILL.md                 (skill instructions)
 ```
 
@@ -93,7 +93,7 @@ Skills are developed using the agent skills development lifecycle:
 4. **Testing** - Validate against real scenarios
 5. **Distribution** - Package and publish
 
-See the [teams-bot-infra development](https://github.com/heyitsaamir/teamscli/issues/37) for an example of this process.
+See the [teams-dev development](https://github.com/heyitsaamir/teamscli/issues/37) for an example of this process.
 
 ## Resources
 
