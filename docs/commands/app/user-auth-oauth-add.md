@@ -68,4 +68,4 @@ teams app user-auth oauth add <appId> \
 ### Prerequisites
 
 - Azure CLI (`az`) installed and logged in
-- Bot must be in Azure (check with `teams app bot status`)
+- Bot must be in Azure (check with `teams app bot get`)
