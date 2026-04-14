@@ -50,7 +50,7 @@ teams self-update                    # Update to the latest version
 | Flag | Description |
 |------|-------------|
 | `-v, --verbose` | Enable verbose logging |
-| `--json` | Output results as JSON (machine-readable) |
+| `--json` | Output results as JSON (structured output, recommended for agents) |
 | `--yes` / `-y` | Skip confirmation prompts (CI/agent use) |
 | `--disable-auto-update` | Disable automatic update checks |
 

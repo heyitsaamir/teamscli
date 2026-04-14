@@ -51,7 +51,7 @@ teams
 └── self-update                    Update to latest version
 ```
 
-## Machine-Readable Help
+## Structured Help
 
 Use `--help --json` on any command to get the command tree as structured JSON — useful for AI agents and tooling that need to discover CLI capabilities programmatically:
 
@@ -66,6 +66,6 @@ teams app rsc --help --json  # Subtree for 'app rsc'
 Most commands work in two modes:
 
 - **Interactive** — omit the `[appId]` argument and the CLI presents a searchable app picker. Subcommands like `app` and `app manifest` show action menus.
-- **Scripted** — pass `[appId]` and all required flags directly for CI/CD or automation. Use `--json` where available for machine-readable output.
+- **Scripted** — pass `[appId]` and all required flags directly for CI/CD or automation. Use `--json` where available for structured output.
 
 Set `TEAMS_NO_INTERACTIVE=1` to disable interactive prompts entirely.

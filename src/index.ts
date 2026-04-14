@@ -41,6 +41,7 @@ program
   .version(version)
   .option("-v, --verbose", "[OPTIONAL] Enable verbose logging")
   .option("-y, --yes", "[OPTIONAL] Auto-confirm prompts (for CI/agent use)")
+  .helpOption("-h, --help", "Display help (use with --json for structured output)")
   .addHelpText("after", () => {
     const status = isInteractive() ? pc.green("on") : pc.yellow("off");
     return `\nInteractive mode: ${status}\n  Set ${pc.cyan("TEAMS_NO_INTERACTIVE=1")} to disable, unset to enable.`;
