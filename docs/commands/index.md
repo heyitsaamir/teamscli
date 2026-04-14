@@ -45,9 +45,6 @@ teams
 │   │   ├── typescript <name>      Create a new TypeScript Teams app
 │   │   ├── csharp <name>          Create a new C# Teams app
 │   │   └── python <name>          Create a new Python Teams app
-│   └── config                     Manage Agents Toolkit configuration
-│       ├── add <name>             Add Agents Toolkit configuration
-│       └── remove <name>          Remove Agents Toolkit configuration
 ├── config                         Manage CLI configuration
 │   ├── default-bot-location       Set default bot location
 │   └── set-lang                   Set default language for project creation

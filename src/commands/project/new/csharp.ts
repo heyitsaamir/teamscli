@@ -8,12 +8,11 @@ import { wrapAction, CliError } from "../../../utils/errors.js";
 import { logger } from "../../../utils/logger.js";
 import { confirmAction } from "../../../utils/interactive.js";
 import { outputJson } from "../../../utils/json-output.js";
-import { scaffoldProject, listTemplates, listToolkits } from "../../../project/scaffold.js";
+import { scaffoldProject, listTemplates } from "../../../project/scaffold.js";
 import { gatherEnvVars, type ProjectNewOutput } from "../shared.js";
 
 interface ProjectNewCsOptions {
   template: string;
-  toolkit?: string;
   clientId?: string;
   clientSecret?: string;
   start?: boolean;
@@ -21,14 +20,12 @@ interface ProjectNewCsOptions {
 }
 
 const templates = listTemplates("csharp");
-const toolkits = listToolkits("csharp");
 
 export const projectNewCsharpCommand = new Command("csharp")
   .alias("cs")
   .description("Create a new C# Teams app")
   .argument("<name>", "App name (converted to PascalCase)")
   .option(`-t, --template <template>`, `App template (${templates.join(", ")})`, "echo")
-  .option(`--toolkit <toolkit>`, `[OPTIONAL] M365 Agents Toolkit config (${toolkits.join(", ")})`)
   .option("--client-id <id>", "[OPTIONAL] Azure app client ID")
   .option("--client-secret <secret>", "[OPTIONAL] Azure app client secret")
   .option("-s, --start", "[OPTIONAL] Auto-start project after creation")
@@ -42,14 +39,6 @@ export const projectNewCsharpCommand = new Command("csharp")
           "VALIDATION_FORMAT",
           `Unknown template "${options.template}".`,
           `Available templates: ${templates.join(", ")}`,
-        );
-      }
-
-      if (options.toolkit && !toolkits.includes(options.toolkit)) {
-        throw new CliError(
-          "VALIDATION_FORMAT",
-          `Unknown toolkit "${options.toolkit}".`,
-          `Available toolkits: ${toolkits.join(", ")}`,
         );
       }
 
@@ -80,7 +69,6 @@ export const projectNewCsharpCommand = new Command("csharp")
         language: "csharp",
         template: options.template,
         targetDir,
-        toolkit: options.toolkit,
         envVars: Object.keys(envVars).length > 0 ? envVars : undefined,
       });
 
@@ -89,7 +77,6 @@ export const projectNewCsharpCommand = new Command("csharp")
           name,
           language: "csharp",
           template: options.template,
-          toolkit: options.toolkit,
           path: targetDir,
         };
         outputJson(output);

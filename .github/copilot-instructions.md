@@ -80,7 +80,7 @@ Create AAD apps via TDP's `/aadapp/v2` endpoint (`createAadAppViaTdp` in `src/ap
 
 ### Auth Client ID
 
-Uses ATK's shared public client `7ea7c24c-b1f6-4a20-9d11-9ae12e9e7ac0`. TDP's own web UI uses a different first-party client ID (`e1979c22`) which we cannot use for CLI auth.
+Uses shared public client `7ea7c24c-b1f6-4a20-9d11-9ae12e9e7ac0`. TDP's own web UI uses a different first-party client ID (`e1979c22`) which we cannot use for CLI auth.
 
 ### Credential Output
 

@@ -2,7 +2,6 @@ import { Command } from "commander";
 import { select } from "@inquirer/prompts";
 import { isInteractive } from "../../utils/interactive.js";
 import { projectNewCommand } from "./new/index.js";
-import { projectConfigCommand } from "./config/index.js";
 
 export const projectCommand = new Command("project")
   .description("Create and configure Teams app projects")
@@ -18,7 +17,6 @@ export const projectCommand = new Command("project")
           message: "Project",
           choices: [
             { name: "New project", value: "new" },
-            { name: "Configure project (Agents Toolkit)", value: "config" },
             { name: "Back", value: "back" },
           ],
         });
@@ -28,8 +26,6 @@ export const projectCommand = new Command("project")
         if (action === "new") {
           await projectNewCommand.parseAsync([], { from: "user" });
           return; // Exit after project creation
-        } else if (action === "config") {
-          await projectConfigCommand.parseAsync([], { from: "user" });
         }
       } catch (error) {
         if (error instanceof Error && error.name === "ExitPromptError") return;
@@ -39,4 +35,3 @@ export const projectCommand = new Command("project")
   });
 
 projectCommand.addCommand(projectNewCommand);
-projectCommand.addCommand(projectConfigCommand);

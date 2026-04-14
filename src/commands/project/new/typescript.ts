@@ -7,12 +7,11 @@ import { wrapAction, CliError } from "../../../utils/errors.js";
 import { logger } from "../../../utils/logger.js";
 import { confirmAction } from "../../../utils/interactive.js";
 import { outputJson } from "../../../utils/json-output.js";
-import { scaffoldProject, listTemplates, listToolkits } from "../../../project/scaffold.js";
+import { scaffoldProject, listTemplates } from "../../../project/scaffold.js";
 import { normalizePackageName, gatherEnvVars, type ProjectNewOutput } from "../shared.js";
 
 interface ProjectNewTsOptions {
   template: string;
-  toolkit?: string;
   clientId?: string;
   clientSecret?: string;
   start?: boolean;
@@ -20,14 +19,12 @@ interface ProjectNewTsOptions {
 }
 
 const templates = listTemplates("typescript");
-const toolkits = listToolkits("typescript");
 
 export const projectNewTypescriptCommand = new Command("typescript")
   .alias("ts")
   .description("Create a new TypeScript Teams app")
   .argument("<name>", "App name")
   .option(`-t, --template <template>`, `App template (${templates.join(", ")})`, "echo")
-  .option(`--toolkit <toolkit>`, `[OPTIONAL] M365 Agents Toolkit config (${toolkits.join(", ")})`)
   .option("--client-id <id>", "[OPTIONAL] Azure app client ID")
   .option("--client-secret <secret>", "[OPTIONAL] Azure app client secret")
   .option("-s, --start", "[OPTIONAL] Auto-start project after creation")
@@ -41,14 +38,6 @@ export const projectNewTypescriptCommand = new Command("typescript")
           "VALIDATION_FORMAT",
           `Unknown template "${options.template}".`,
           `Available templates: ${templates.join(", ")}`,
-        );
-      }
-
-      if (options.toolkit && !toolkits.includes(options.toolkit)) {
-        throw new CliError(
-          "VALIDATION_FORMAT",
-          `Unknown toolkit "${options.toolkit}".`,
-          `Available toolkits: ${toolkits.join(", ")}`,
         );
       }
 
@@ -74,7 +63,6 @@ export const projectNewTypescriptCommand = new Command("typescript")
         language: "typescript",
         template: options.template,
         targetDir,
-        toolkit: options.toolkit,
         envVars: Object.keys(envVars).length > 0 ? envVars : undefined,
       });
 
@@ -83,7 +71,6 @@ export const projectNewTypescriptCommand = new Command("typescript")
           name,
           language: "typescript",
           template: options.template,
-          toolkit: options.toolkit,
           path: targetDir,
         };
         outputJson(output);

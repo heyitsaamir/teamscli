@@ -2,8 +2,7 @@ import { Configuration, LogLevel } from "@azure/msal-node";
 import envPaths from "env-paths";
 import { logger } from "../utils/logger.js";
 
-// Client ID from Microsoft 365 Agents Toolkit - shared public client for CLI auth
-// https://github.com/OfficeDev/microsoft-365-agents-toolkit
+// Shared public client ID for CLI auth
 const CLIENT_ID = "7ea7c24c-b1f6-4a20-9d11-9ae12e9e7ac0";
 
 const AUTHORITY = "https://login.microsoftonline.com/common";
