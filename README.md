@@ -34,19 +34,18 @@ teams app package download [appId]   # Download app package
 teams app bot get [appId]            # Get bot location (Teams-managed vs Azure)
 teams app bot migrate [appId]        # Migrate bot to Azure
 teams app auth secret create [appId] # Generate a client secret
-teams app user-auth oauth add [appId]    # Add OAuth connection
-teams app user-auth oauth list [appId]   # List OAuth connections
-teams app user-auth oauth remove [appId] # Remove OAuth connection
-teams app user-auth sso setup [appId]    # Set up SSO
-teams app user-auth sso list [appId]     # List SSO connections
-teams app user-auth sso update [appId]   # Update SSO connection
-teams app user-auth sso remove [appId]   # Remove SSO connection
+teams app rsc list [appId]           # List RSC permissions
+teams app rsc add [appId]            # Add RSC permission
+teams app rsc remove [appId]         # Remove RSC permission
+teams app rsc set [appId]            # Declaratively set RSC permissions
 teams project new                    # Create a new Teams app project
 teams project config add <name>      # Add Agents Toolkit configuration
 teams project config remove <name>   # Remove Agents Toolkit configuration
 teams config                         # Manage CLI configuration
 teams self-update                    # Update to the latest version
 ```
+
+> **Note:** For SSO and OAuth setup, see the [User Authentication Setup guide](https://heyitsaamir.github.io/teamscli/guides/user-authentication-setup) or use the **teams-bot-infra** skill.
 
 ## Global Options
 
