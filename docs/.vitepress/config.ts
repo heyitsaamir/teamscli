@@ -45,13 +45,6 @@ export default defineConfig({
               { text: "app bot get", link: "/commands/app/bot-get" },
               { text: "app bot migrate", link: "/commands/app/bot-migrate" },
               { text: "app auth secret create", link: "/commands/app/auth-secret-create" },
-              { text: "app user-auth oauth add", link: "/commands/app/user-auth-oauth-add" },
-              { text: "app user-auth oauth list", link: "/commands/app/user-auth-oauth-list" },
-              { text: "app user-auth oauth remove", link: "/commands/app/user-auth-oauth-remove" },
-              { text: "app user-auth sso setup", link: "/commands/app/user-auth-sso-setup" },
-              { text: "app user-auth sso list", link: "/commands/app/user-auth-sso-list" },
-              { text: "app user-auth sso update", link: "/commands/app/user-auth-sso-update" },
-              { text: "app user-auth sso remove", link: "/commands/app/user-auth-sso-remove" },
             ],
           },
           {
@@ -87,6 +80,12 @@ export default defineConfig({
           { text: "AAD Apps", link: "/concepts/aad-apps" },
           { text: "TDP Portal", link: "/concepts/tdp-portal" },
           { text: "SSO Architecture", link: "/concepts/sso-architecture" },
+        ],
+      },
+      {
+        text: "Guides",
+        items: [
+          { text: "User Authentication Setup", link: "/guides/user-authentication-setup" },
         ],
       },
     ],

@@ -19,7 +19,7 @@ features:
   - title: Bot Registration
     details: Register bots with Teams or Azure, migrate between them, and configure messaging endpoints.
   - title: Authentication
-    details: Set up SSO, manage OAuth connections, and generate client secrets for your AAD apps.
+    details: Generate client secrets for your AAD apps and manage bot credentials.
   - title: AI Agent Friendly
     details: Serves llms.txt for structured AI consumption. Fetch the full docs in a single request.
 ---

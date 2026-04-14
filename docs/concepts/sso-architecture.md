@@ -1,6 +1,6 @@
 # SSO Architecture
 
-Single Sign-On (SSO) lets your Teams bot authenticate users silently using their existing Teams identity. This page explains the architecture and what `teams app user-auth sso setup` configures.
+Single Sign-On (SSO) lets your Teams bot authenticate users silently using their existing Teams identity. This page explains the high-level architecture and how SSO works.
 
 ## Overview
 
@@ -10,13 +10,13 @@ SSO for Teams bots involves three systems working together:
 2. **Azure Bot OAuth connection** — bridges the bot to AAD for token exchange
 3. **Teams app manifest** — tells Teams where to find the SSO configuration
 
-## What SSO Setup Configures
+## SSO Setup Components
 
-`teams app user-auth sso setup` performs three steps in sequence:
+Setting up SSO requires configuring three parts:
 
-### Step 1: AAD App Configuration
+### 1. AAD App Configuration
 
-Updates the AAD app registration via Microsoft Graph:
+The AAD app registration needs:
 
 - **Identifier URI** → `api://botid-{botId}`
   - The `botid-` prefix is required — Teams validates this with a regex
@@ -28,26 +28,25 @@ Updates the AAD app registration via Microsoft Graph:
   - `5e3ce6c0-2b1f-4285-8d4b-75ee78787346` (Teams web)
 - **Redirect URI** → `https://token.botframework.com/.auth/web/redirect`
   - Bot Framework's redirect endpoint for completing the OAuth flow
+- **Token version** → v2 tokens (AAD v2 endpoint)
 
-### Step 2: Azure Bot OAuth Connection
+### 2. Azure Bot OAuth Connection
 
-Creates an OAuth connection setting on the Azure Bot using `az bot authsetting create`:
+An OAuth connection setting on the Azure Bot that:
 
-- **Provider** → `Aadv2` (Azure AD v2)
-- **Connection name** → `sso` (default, customizable via `--connection-name`)
-- **Client ID/secret** → from the AAD app
-- **Token exchange URL** → `api://botid-{botId}`
-  - Must match the identifier URI exactly
-- **Tenant ID** → from the current MSAL session
-- **Scopes** → `User.Read` (default, customizable via `--scopes`)
+- Uses **Aadv2** provider (Azure AD v2)
+- Has a connection name (typically `sso`)
+- References the AAD app's client ID and secret
+- Sets **token exchange URL** → `api://botid-{botId}` (must match identifier URI exactly)
+- Specifies tenant ID and scopes (e.g., `User.Read`)
 
-### Step 3: Manifest Update
+### 3. Manifest Update
 
-Updates the Teams app manifest via TDP:
+The Teams app manifest needs:
 
 - **`webApplicationInfo.id`** → the bot's client ID
 - **`webApplicationInfo.resource`** → `api://botid-{botId}`
-- **`validDomains`** → adds `*.botframework.com`
+- **`validDomains`** → includes `*.botframework.com`
 
 ## Token Exchange Flow
 
@@ -82,6 +81,10 @@ If your bot is Teams-managed, [migrate it first](/commands/app/bot-migrate):
 ```bash
 teams app bot migrate <appId> --resource-group my-rg
 ```
+
+## Setting Up SSO
+
+For detailed implementation steps, see the [User Authentication Setup guide](/guides/user-authentication-setup). You can also use the **teams-bot-infra** skill which automates the SSO setup process.
 
 ## Diagnosing SSO Issues
 

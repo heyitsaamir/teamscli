@@ -11,6 +11,7 @@ Manage Microsoft Teams bot infrastructure using the Teams CLI. This skill guides
 **Use when:**
 - Creating a new Teams bot
 - Configuring bot credentials and endpoints
+- Setting up SSO (Single Sign-On) for a Teams bot
 - Troubleshooting Teams bot setup
 - Managing Teams bot infrastructure
 
@@ -21,8 +22,9 @@ Manage Microsoft Teams bot infrastructure using the Teams CLI. This skill guides
 
 **What it includes:**
 - Complete bot creation workflow (CLI install → auth → create → verify)
+- SSO setup workflow (AAD app configuration, Azure Bot OAuth connection, manifest update)
 - Verification checkpoints with evidence requirements
-- Common operations (update endpoint, view apps, update CLI)
+- Common operations (update endpoint, view apps, update CLI, manage OAuth connections)
 - Error recovery (authentication issues, sideload disabled)
 - Resource links (Teams SDK, devtunnels, documentation)
 

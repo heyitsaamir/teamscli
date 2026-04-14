@@ -37,19 +37,9 @@ teams
 │   │   ├── add <teamsAppId>       Add RSC permission
 │   │   ├── remove <teamsAppId>    Remove RSC permission
 │   │   └── set <teamsAppId>       Declaratively set RSC permissions
-│   ├── auth
-│   │   └── secret
-│   │       └── create [appId]     Generate client secret
-│   └── user-auth
-│       ├── oauth
-│       │   ├── add [appId]        Add OAuth connection
-│       │   ├── list [appId]       List OAuth connections
-│       │   └── remove [appId]     Remove OAuth connection
-│       └── sso
-│           ├── setup [appId]      Set up SSO
-│           ├── list [appId]       List SSO connections
-│           ├── update [appId]     Update SSO connection
-│           └── remove [appId]     Remove SSO connection
+│   └── auth
+│       └── secret
+│           └── create [appId]     Generate client secret
 ├── project                        Create and configure Teams app projects
 │   ├── new                        Create a new Teams app project
 │   │   ├── typescript <name>      Create a new TypeScript Teams app
@@ -78,7 +68,7 @@ teams app rsc --help --json  # Subtree for 'app rsc'
 
 Most commands work in two modes:
 
-- **Interactive** — omit the `[appId]` argument and the CLI presents a searchable app picker. Subcommands like `app`, `app user-auth`, and `app manifest` show action menus.
+- **Interactive** — omit the `[appId]` argument and the CLI presents a searchable app picker. Subcommands like `app` and `app manifest` show action menus.
 - **Scripted** — pass `[appId]` and all required flags directly for CI/CD or automation. Use `--json` where available for machine-readable output.
 
 Set `TEAMS_NO_INTERACTIVE=1` to disable interactive prompts entirely.
