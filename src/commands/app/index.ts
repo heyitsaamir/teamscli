@@ -16,7 +16,6 @@ import { pickApp } from "../../utils/app-picker.js";
 import { fetchApp } from "../../apps/index.js";
 import { showAppActions } from "./actions.js";
 
-
 export const appCommand = new Command("app")
   .description("Manage Teams apps")
   .action(async function (this: Command) {
