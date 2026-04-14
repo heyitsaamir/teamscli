@@ -4,7 +4,7 @@ import pc from "picocolors";
 import { createSilentSpinner } from "../../../../utils/spinner.js";
 import { ssoSetupCommand } from "./setup.js";
 import { ssoListCommand } from "./list.js";
-import { ssoUpdateCommand } from "./edit.js";
+import { ssoUpdateCommand } from "./update.js";
 import { ssoRemoveCommand } from "./remove.js";
 import { isInteractive } from "../../../../utils/interactive.js";
 import { runAz } from "../../../../utils/az.js";

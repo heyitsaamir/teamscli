@@ -7,7 +7,7 @@ import { isInteractive } from "../../../../utils/interactive.js";
 import { logger } from "../../../../utils/logger.js";
 import { CliError, wrapAction } from "../../../../utils/errors.js";
 import { requireAzureBot } from "../require-azure.js";
-import { ssoUpdateCommand } from "./edit.js";
+import { ssoUpdateCommand } from "./update.js";
 
 interface AuthSetting {
   name: string;

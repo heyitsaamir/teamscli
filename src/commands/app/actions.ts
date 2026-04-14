@@ -2,7 +2,7 @@ import { select, input } from "@inquirer/prompts";
 import pc from "picocolors";
 import { writeFile } from "node:fs/promises";
 import { createSilentSpinner } from "../../utils/spinner.js";
-import { showUpdateMenu } from "./edit.js";
+import { showUpdateMenu } from "./update.js";
 import { showAppDetail, downloadAppPackage } from "../../apps/index.js";
 import { logger } from "../../utils/logger.js";
 import { downloadManifest } from "./manifest/actions.js";

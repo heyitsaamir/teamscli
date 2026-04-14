@@ -1,5 +1,5 @@
 import { Command } from "commander";
-import { botGetCommand } from "./status.js";
+import { botGetCommand } from "./get.js";
 import { botMigrateCommand } from "./migrate.js";
 
 export const botCommand = new Command("bot")
