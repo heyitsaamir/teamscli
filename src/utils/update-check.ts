@@ -1,11 +1,9 @@
 import { readFile, writeFile, mkdir } from "node:fs/promises";
 import { join } from "node:path";
 import { createRequire } from "node:module";
-import { spawn } from "node:child_process";
 import pc from "picocolors";
 import { paths } from "../auth/config.js";
 import { isInteractive } from "./interactive.js";
-import { runSelfUpdate } from "../commands/self-update.js";
 import { logger } from "./logger.js";
 
 const STATE_FILE = join(paths.cache, "update-check.json");
@@ -51,29 +49,22 @@ async function fetchLatestVersion(): Promise<string | null> {
 }
 
 /**
- * Check for updates once daily. Auto-updates and re-runs the command by default.
- * Pass autoUpdate: false to just show a hint instead.
+ * Check for updates once daily and show a warning if a newer version is available.
  * Non-blocking — silently skips on any failure.
  */
-export async function checkForUpdates(options?: { autoUpdate?: boolean }): Promise<void> {
+export async function checkForUpdates(): Promise<void> {
   if (!isInteractive()) return;
   if (alreadyChecked) return;
   alreadyChecked = true;
-
-  const autoUpdate = options?.autoUpdate ?? true;
 
   try {
     const state = await readState();
     const now = Date.now();
 
     if (state && now - state.lastCheck < CHECK_INTERVAL_MS) {
-      // Already checked recently — auto-update or show hint if we cached a newer version
+      // Already checked recently — show hint if we cached a newer version
       if (state.latestVersion) {
-        if (autoUpdate) {
-          await autoUpdateAndRerun();
-        } else {
-          showUpdateHint(state.latestVersion);
-        }
+        showUpdateHint(state.latestVersion);
       }
       return;
     }
@@ -83,36 +74,13 @@ export async function checkForUpdates(options?: { autoUpdate?: boolean }): Promi
 
     if (latestVersion && isNewer(latestVersion)) {
       newState.latestVersion = latestVersion;
-
-      if (autoUpdate) {
-        await writeState(newState);
-        await autoUpdateAndRerun();
-      } else {
-        showUpdateHint(latestVersion);
-      }
+      showUpdateHint(latestVersion);
     }
 
     await writeState(newState);
   } catch {
     // Never block the CLI
   }
-}
-
-async function autoUpdateAndRerun(): Promise<void> {
-  const success = await runSelfUpdate();
-  if (success) {
-    // Re-run the original command using spawn with an argv array (no shell, no injection risk)
-    const filteredArgs = process.argv.slice(2).filter((a) => a !== "--disable-auto-update");
-    const [bin, spawnArgs] = process.argv[1]
-      ? [process.execPath, [process.argv[1], "--disable-auto-update", ...filteredArgs]]
-      : ["teams", ["--disable-auto-update", ...filteredArgs]];
-    await new Promise<void>((resolve) => {
-      const child = spawn(bin, spawnArgs, { stdio: "inherit", shell: false });
-      child.on("close", () => resolve());
-    });
-    process.exit(0);
-  }
-  // On failure, runSelfUpdate already printed the error — continue with current version
 }
 
 function showUpdateHint(latestVersion: string): void {
