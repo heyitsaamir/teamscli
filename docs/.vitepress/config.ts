@@ -53,13 +53,6 @@ export default defineConfig({
               { text: "app user-auth sso remove", link: "/commands/app/user-auth-sso-remove" },
             ],
           },
-          {
-            text: "scaffold",
-            collapsed: true,
-            items: [
-              { text: "scaffold manifest", link: "/commands/scaffold/manifest" },
-            ],
-          },
           { text: "config", link: "/commands/config" },
           { text: "self-update", link: "/commands/self-update" },
         ],
