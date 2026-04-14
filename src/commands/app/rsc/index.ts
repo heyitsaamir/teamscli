@@ -19,6 +19,7 @@ import {
   removeRscPermissions,
   setRscPermissions,
   diffRscPermissions,
+  permKey,
 } from "./actions.js";
 
 // ─── Interactive menu ───────────────────────────────────────────────
@@ -307,8 +308,8 @@ const rscSetCommand = new Command("set")
   .requiredOption("--permissions <list>", "Comma-separated permission names (e.g. TeamSettings.ReadWrite.Group,ChannelMessage.Read.Group)")
   .option("--json", "[OPTIONAL] Output as JSON")
   .action(wrapAction(async (teamsAppId: string, options: RscSetOptions) => {
-    // Parse comma-separated names
-    const names = options.permissions.split(",").map((s) => s.trim()).filter(Boolean);
+    // Parse comma-separated names and deduplicate
+    const names = [...new Set(options.permissions.split(",").map((s) => s.trim()).filter(Boolean))];
     if (names.length === 0) {
       throw new CliError("VALIDATION_FORMAT", "No permission names provided.", "Pass a comma-separated list via --permissions.");
     }
@@ -337,6 +338,22 @@ const rscSetCommand = new Command("set")
 
     const spinner = createSilentSpinner("Setting RSC permissions...", options.json).start();
     const current = await listRscPermissions(token, teamsAppId);
+
+    // Guard against silently dropping non-catalog permissions
+    const desiredKeys = new Set(desired.map(permKey));
+    const droppedNonCatalog = current.filter(
+      (p) => findPermission(p.name) === null && !desiredKeys.has(permKey(p)),
+    );
+    if (droppedNonCatalog.length > 0) {
+      spinner.stop();
+      const names = droppedNonCatalog.map((p) => p.name);
+      throw new CliError(
+        "VALIDATION_CONFLICT",
+        `This app has non-catalog permissions that would be removed: ${names.join(", ")}`,
+        "Remove them first with `teams app rsc remove`, or include them via `teams app rsc add`.",
+      );
+    }
+
     const diff = diffRscPermissions(current, desired);
 
     if (diff.added.length === 0 && diff.removed.length === 0) {

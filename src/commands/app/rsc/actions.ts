@@ -15,20 +15,32 @@ export interface RscDiffResult {
 
 /**
  * Compute the diff between current and desired RSC permissions.
+ * Deduplicates desired by composite key before diffing.
  * Pure function — no API calls.
  */
 export function diffRscPermissions(
   current: RscPermissionEntry[],
   desired: RscPermissionEntry[],
 ): RscDiffResult {
+  // Deduplicate desired entries by composite key
+  const seen = new Set<string>();
+  const deduped: RscPermissionEntry[] = [];
+  for (const p of desired) {
+    const key = permKey(p);
+    if (!seen.has(key)) {
+      seen.add(key);
+      deduped.push(p);
+    }
+  }
+
   const currentKeys = new Set(current.map(permKey));
-  const desiredKeys = new Set(desired.map(permKey));
+  const dedupedKeys = new Set(deduped.map(permKey));
 
-  const added = desired.filter((p) => !currentKeys.has(permKey(p)));
-  const removed = current.filter((p) => !desiredKeys.has(permKey(p)));
-  const unchanged = desired.filter((p) => currentKeys.has(permKey(p)));
+  const added = deduped.filter((p) => !currentKeys.has(permKey(p)));
+  const removed = current.filter((p) => !dedupedKeys.has(permKey(p)));
+  const unchanged = deduped.filter((p) => currentKeys.has(permKey(p)));
 
-  return { added, removed, unchanged, final: desired };
+  return { added, removed, unchanged, final: deduped };
 }
 
 /**

@@ -79,6 +79,23 @@ describe("diffRscPermissions", () => {
     expect(result.removed).toEqual([{ name: "LiveShareSession.ReadWrite.Group", type: "Application" }]);
     expect(result.unchanged).toEqual([]);
   });
+
+  it("deduplicates desired entries by composite key", () => {
+    const desired: RscPermissionEntry[] = [
+      { name: "ChannelMessage.Read.Group", type: "Application" },
+      { name: "ChannelMessage.Read.Group", type: "Application" },
+      { name: "TeamSettings.ReadWrite.Group", type: "Application" },
+    ];
+
+    const result = diffRscPermissions([], desired);
+
+    expect(result.added).toHaveLength(2);
+    expect(result.final).toHaveLength(2);
+    expect(result.final).toEqual([
+      { name: "ChannelMessage.Read.Group", type: "Application" },
+      { name: "TeamSettings.ReadWrite.Group", type: "Application" },
+    ]);
+  });
 });
 
 // ─── rscSetCommand integration tests ────────────────────────────────
@@ -148,11 +165,17 @@ vi.mock("../src/utils/json-output.js", () => ({
   }),
 }));
 
+// Mock process.exit to throw instead of exiting
+const mockExit = vi.spyOn(process, "exit").mockImplementation((code) => {
+  throw new Error(`process.exit(${code})`);
+});
+
 describe("rsc set command", () => {
   beforeEach(() => {
     capturedUpdate = null;
     currentPerms = [];
     jsonOutput = null;
+    mockExit.mockClear();
   });
 
   it("adds missing and removes extras in one operation", async () => {
@@ -200,28 +223,53 @@ describe("rsc set command", () => {
     });
   });
 
-  it("errors on unrecognized permission names", async () => {
+  it("outputs JSON error for unrecognized permission names", async () => {
     const { rscCommand } = await import("../src/commands/app/rsc/index.js");
 
-    // Commander exits on error, so we catch via the command's error handling
-    let thrownError: Error | null = null;
-    rscCommand.exitOverride();
-    rscCommand.configureOutput({
-      writeErr: () => {},
-      writeOut: () => {},
-    });
-
-    try {
-      await rscCommand.parseAsync(
+    await expect(
+      rscCommand.parseAsync(
         ["set", "test-teams-app-id", "--permissions", "Fake.Permission.Group", "--json"],
         { from: "user" },
-      );
-    } catch (e) {
-      thrownError = e as Error;
-    }
+      ),
+    ).rejects.toThrow("process.exit(1)");
 
-    // The CliError should have been thrown (wrapAction catches it, but in JSON mode outputs it)
-    // Since wrapAction handles the error, we check that no update was made
+    // wrapAction catches the CliError and outputs JSON error
+    expect(jsonOutput).toEqual({
+      ok: false,
+      error: {
+        code: "VALIDATION_FORMAT",
+        message: "Unrecognized permission(s): Fake.Permission.Group",
+        suggestion: "Use `teams app rsc add` for permissions not in the catalog.",
+      },
+    });
+
+    expect(capturedUpdate).toBeNull();
+  });
+
+  it("errors when non-catalog permissions would be dropped", async () => {
+    currentPerms = [
+      { name: "Custom.Permission.Group", type: "Application" },
+      { name: "TeamSettings.ReadWrite.Group", type: "Application" },
+    ];
+
+    const { rscCommand } = await import("../src/commands/app/rsc/index.js");
+
+    await expect(
+      rscCommand.parseAsync(
+        ["set", "test-teams-app-id", "--permissions", "TeamSettings.ReadWrite.Group", "--json"],
+        { from: "user" },
+      ),
+    ).rejects.toThrow("process.exit(1)");
+
+    expect(jsonOutput).toEqual({
+      ok: false,
+      error: {
+        code: "VALIDATION_CONFLICT",
+        message: "This app has non-catalog permissions that would be removed: Custom.Permission.Group",
+        suggestion: "Remove them first with `teams app rsc remove`, or include them via `teams app rsc add`.",
+      },
+    });
+
     expect(capturedUpdate).toBeNull();
   });
 });
