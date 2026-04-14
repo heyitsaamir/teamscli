@@ -1,7 +1,7 @@
 // RED/GREEN: verified 2026-04-13 — broke diffRscPermissions to return empty
 // arrays and confirmed diff tests failed. Restored and confirmed they pass.
 
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterAll } from "vitest";
 import type { RscPermissionEntry, AppDetails } from "../src/apps/types.js";
 import { diffRscPermissions } from "../src/commands/app/rsc/actions.js";
 
@@ -170,6 +170,10 @@ const mockExit = vi.spyOn(process, "exit").mockImplementation((code) => {
   throw new Error(`process.exit(${code})`);
 });
 
+afterAll(() => {
+  mockExit.mockRestore();
+});
+
 describe("rsc set command", () => {
   beforeEach(() => {
     capturedUpdate = null;
@@ -266,10 +270,33 @@ describe("rsc set command", () => {
       error: {
         code: "VALIDATION_CONFLICT",
         message: "This app has non-catalog permissions that would be removed: Custom.Permission.Group",
-        suggestion: "Remove them first with `teams app rsc remove`, or include them via `teams app rsc add`.",
+        suggestion: "Remove them first with `teams app rsc remove`, then re-run this command. Use `add`/`remove` instead of `set` if you need to keep custom permissions.",
       },
     });
 
     expect(capturedUpdate).toBeNull();
+  });
+
+  it("clears all permissions when --permissions is empty string", async () => {
+    currentPerms = [
+      { name: "TeamSettings.ReadWrite.Group", type: "Application" },
+    ];
+
+    const { rscCommand } = await import("../src/commands/app/rsc/index.js");
+
+    await rscCommand.parseAsync(
+      ["set", "test-teams-app-id", "--permissions", "", "--json"],
+      { from: "user" },
+    );
+
+    expect(capturedUpdate).not.toBeNull();
+    const rsc = capturedUpdate!.authorization?.permissions?.resourceSpecific;
+    expect(rsc).toEqual([]);
+
+    expect(jsonOutput).toEqual({
+      added: [],
+      removed: [{ name: "TeamSettings.ReadWrite.Group", type: "Application" }],
+      unchanged: [],
+    });
   });
 });

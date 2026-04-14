@@ -305,14 +305,11 @@ interface RscSetOutput {
 const rscSetCommand = new Command("set")
   .description("Declaratively set RSC permissions to an exact list")
   .argument("<teamsAppId>", "Teams app ID")
-  .requiredOption("--permissions <list>", "Comma-separated permission names (e.g. TeamSettings.ReadWrite.Group,ChannelMessage.Read.Group)")
+  .requiredOption("--permissions <list>", 'Comma-separated permission names (e.g. TeamSettings.ReadWrite.Group,ChannelMessage.Read.Group). Pass "" to clear all.')
   .option("--json", "[OPTIONAL] Output as JSON")
   .action(wrapAction(async (teamsAppId: string, options: RscSetOptions) => {
-    // Parse comma-separated names and deduplicate
+    // Parse comma-separated names and deduplicate. Empty string = clear all.
     const names = [...new Set(options.permissions.split(",").map((s) => s.trim()).filter(Boolean))];
-    if (names.length === 0) {
-      throw new CliError("VALIDATION_FORMAT", "No permission names provided.", "Pass a comma-separated list via --permissions.");
-    }
 
     // Resolve each name to a typed entry via catalog
     const desired: RscPermissionEntry[] = [];
@@ -350,7 +347,7 @@ const rscSetCommand = new Command("set")
       throw new CliError(
         "VALIDATION_CONFLICT",
         `This app has non-catalog permissions that would be removed: ${droppedNames.join(", ")}`,
-        "Remove them first with `teams app rsc remove`, or include them via `teams app rsc add`.",
+        "Remove them first with `teams app rsc remove`, then re-run this command. Use `add`/`remove` instead of `set` if you need to keep custom permissions.",
       );
     }
 

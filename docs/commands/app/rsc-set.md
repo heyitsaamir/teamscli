@@ -48,6 +48,9 @@ teams app rsc set abc123 --permissions TeamSettings.ReadWrite.Group,ChannelMessa
 
 # JSON output for automation
 teams app rsc set abc123 --permissions TeamSettings.ReadWrite.Group --json
+
+# Clear all RSC permissions
+teams app rsc set abc123 --permissions ""
 ```
 
 ### JSON output
