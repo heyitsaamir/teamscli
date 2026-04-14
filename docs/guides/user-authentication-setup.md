@@ -1,33 +1,38 @@
-# SSO & OAuth Internals
+# User Authentication Setup Guide
 
-This document captures the implementation details of the SSO and OAuth features that were previously available as `teams app user-auth sso` and `teams app user-auth oauth` commands. It is intended as a reference for authoring equivalent workflows in skills or external tooling.
-
-> **Note:** These commands have been removed from the CLI. The underlying operations are all performed via `az` CLI and Microsoft Graph API, so they can be replicated in any environment that has `az` installed and authenticated.
+This guide shows you how to set up SSO and OAuth authentication for your Teams bot using the Azure CLI and Microsoft Graph API. Use this guide to implement authentication workflows in skills, scripts, or external tooling.
 
 ---
 
 ## Prerequisites
 
-Both SSO and OAuth required the bot to be **Azure-managed** (not Teams-managed). The CLI enforced this via a shared `requireAzureBot` helper (described below).
+Before setting up SSO or OAuth, ensure your bot meets these requirements:
 
-### requireAzureBot
+### Azure-Managed Bot Required
 
-This helper was the shared preamble for all user-auth commands. It:
+Your bot must be **Azure-managed** (not Teams-managed). If your bot is Teams-managed, migrate it to Azure first using:
 
-1. Verifies the user is logged in (`teams login`)
-2. Resolves the Teams app (from argument or interactive picker)
-3. Fetches bot details from TDP and determines bot location via `getBotLocation`
-4. If the bot is **Teams-managed (`tm`)**: offers to migrate it to Azure using `teams app bot migrate`
-5. Verifies `az` CLI is installed and authenticated (`ensureAz`)
-6. Discovers the Azure bot's subscription, resource group, and tenant ID via `discoverAzureBot`
+```bash
+teams app bot migrate <appId> --resource-group <your-resource-group>
+```
 
-The resulting context (`botId`, `azure.subscription`, `azure.resourceGroup`, `azure.tenantId`) is used by all subsequent `az bot authsetting` calls.
+### Required Tools and Authentication
+
+1. **Teams CLI** — Log in with `teams login`
+2. **Azure CLI** — Install and authenticate with `az login`
+3. **Bot Context** — You'll need these values for all operations:
+   - `botId` — Your bot's client ID
+   - `azure.subscription` — Azure subscription ID
+   - `azure.resourceGroup` — Resource group containing the bot
+   - `azure.tenantId` — Azure AD tenant ID
+
+You can discover these values using `teams app bot get <appId>` and `az bot show`.
 
 ---
 
-## Relationship: SSO is a constrained superset of OAuth
+## Understanding SSO vs OAuth
 
-SSO is built on top of the same Azure Bot Service OAuth connection infrastructure as generic OAuth — both ultimately call `az bot authsetting create` and both produce a connection that appears in `az bot authsetting list`. The difference is in what SSO **additionally requires**:
+SSO builds on top of the same Azure Bot Service OAuth connection infrastructure as generic OAuth. Both use `az bot authsetting create` and both appear in `az bot authsetting list`. However, SSO has additional requirements:
 
 | | Generic OAuth | SSO |
 |---|---|---|
@@ -42,11 +47,11 @@ SSO is built on top of the same Azure Bot Service OAuth connection infrastructur
 
 ---
 
-## SSO
+## Setting Up SSO
 
-### sso setup
+### Complete SSO Setup
 
-The most complex operation. Performs three sequential steps:
+Setting up SSO requires three sequential steps:
 
 #### Step 1: AAD App Configuration (Microsoft Graph)
 
@@ -76,7 +81,6 @@ Two separate PATCH requests to `PATCH /v1.0/applications/{objectId}` — the sco
 ```
 
 > **Key detail:** `requestedAccessTokenVersion: 2` must be set. Teams issues v2 tokens (AAD v2 endpoint); if the app is still configured for v1, the token exchange will fail because the formats don't match.
-```
 
 **PATCH 2 — pre-authorized apps** (after scope exists):
 ```json
@@ -108,14 +112,16 @@ The two pre-authorized app IDs are:
 #### Step 2: Azure Bot OAuth Connection
 
 ```bash
+# default connectionName: "sso"
+# default scopes: "User.Read"
 az bot authsetting create \
   --name {botId} \
   --resource-group {resourceGroup} \
-  --setting-name {connectionName} \     # default: "sso"
+  --setting-name {connectionName} \
   --service Aadv2 \
   --client-id {botId} \
   --client-secret {clientSecret} \
-  --provider-scope-string {scopes} \   # default: "User.Read"
+  --provider-scope-string {scopes} \
   --parameters \
     tenantId={tenantId} \
     tokenExchangeUrl=api://botid-{botId} \
@@ -137,9 +143,11 @@ Called `PATCH /api/v1.0/apps/{appId}` (TDP internal API) with:
 }
 ```
 
-This step was non-fatal — if it failed, SSO was still partially configured and the manifest could be updated manually via Developer Portal.
+If this step fails, SSO is still partially configured and you can update the manifest manually via Developer Portal.
 
-### sso list
+### Listing SSO Connections
+
+To list all SSO connections, use:
 
 ```bash
 az bot authsetting list \
@@ -148,18 +156,21 @@ az bot authsetting list \
   --subscription {subscription}
 ```
 
-Then filtered to AAD connections by checking `properties.serviceProviderDisplayName` contains `"Azure Active Directory"`. Each candidate was fetched individually with `az bot authsetting show` to check for the presence of a `tokenExchangeUrl` parameter — only connections with that parameter were considered SSO connections.
+Filter to AAD connections by checking if `properties.serviceProviderDisplayName` contains `"Azure Active Directory"`. Then fetch each candidate with `az bot authsetting show` and check for a `tokenExchangeUrl` parameter — only connections with this parameter are SSO connections.
 
-### sso edit
+### Updating SSO Connections
 
-Azure CLI has no `az bot authsetting update` command. The CLI worked around this by:
-1. Fetching the existing connection with `az bot authsetting show`
-2. `az bot authsetting delete` the old connection
-3. `az bot authsetting create` with the new settings (new scopes or new name)
+The Azure CLI doesn't have an `az bot authsetting update` command. To update an SSO connection:
 
-A new client secret was required for the recreate step (auto-generated if not provided).
+1. Fetch the existing connection with `az bot authsetting show`
+2. Delete the old connection with `az bot authsetting delete`
+3. Recreate it with `az bot authsetting create` using the new settings (scopes or name)
 
-### sso remove
+You'll need a new client secret for the recreate step.
+
+### Removing SSO Connections
+
+To remove an SSO connection:
 
 ```bash
 az bot authsetting delete \
@@ -169,15 +180,15 @@ az bot authsetting delete \
   --subscription {subscription}
 ```
 
-Note: removal did **not** clean up the AAD app registration (identifier URI, scopes, pre-authorized apps) or the manifest `webApplicationInfo` field — those required manual cleanup.
+**Important:** This only removes the OAuth connection. You'll need to manually clean up the AAD app registration (identifier URI, scopes, pre-authorized apps) and the manifest `webApplicationInfo` field.
 
 ---
 
-## OAuth
+## Setting Up OAuth
 
-### oauth add
+### Adding OAuth Connections
 
-Supports any provider supported by Azure Bot Service (Aadv2, GitHub, Google, etc.).
+You can add OAuth connections for any provider supported by Azure Bot Service (Aadv2, GitHub, Google, etc.).
 
 #### Step 1: Create the OAuth connection
 
@@ -211,8 +222,7 @@ PATCH /v1.0/applications/{objectId}
 }
 ```
 
-This step was non-fatal — on failure, the CLI printed a manual fallback instruction:
-> Add it manually: Entra portal → App registrations → Authentication → Web → Redirect URIs → `https://token.botframework.com/.auth/web/redirect`
+If this step fails, you can add it manually: Entra portal → App registrations → Authentication → Web → Redirect URIs → `https://token.botframework.com/.auth/web/redirect`
 
 #### Step 3: Update TDP manifest validDomains
 
@@ -220,9 +230,11 @@ This step was non-fatal — on failure, the CLI printed a manual fallback instru
 { "validDomains": ["*.botframework.com"] }
 ```
 
-Also non-fatal — manual fallback: Developer Portal → App → Domains → add `*.botframework.com`.
+If this fails, add it manually: Developer Portal → App → Domains → add `*.botframework.com`.
 
-### oauth list
+### Listing OAuth Connections
+
+To list all OAuth connections:
 
 ```bash
 az bot authsetting list \
@@ -231,9 +243,11 @@ az bot authsetting list \
   --subscription {subscription}
 ```
 
-Returns all connections (not filtered by provider type, unlike SSO list).
+This returns all connections regardless of provider type (unlike SSO listing which filters to AAD).
 
-### oauth remove
+### Removing OAuth Connections
+
+To remove an OAuth connection:
 
 ```bash
 az bot authsetting delete \
@@ -245,9 +259,9 @@ az bot authsetting delete \
 
 ---
 
-## Token Exchange Flow (SSO)
+## How SSO Works: Token Exchange Flow
 
-Once SSO is configured, the silent auth flow works as follows:
+Once you've configured SSO, here's how the silent authentication flow works:
 
 ```
 1. User opens bot in Teams
@@ -269,9 +283,10 @@ The user sees no login prompt — the flow is completely silent when the AAD app
 
 ---
 
-## Diagnosing Issues
+## Troubleshooting
 
-`teams app doctor` checks SSO configuration health:
+Use `teams app doctor` to verify your SSO configuration. It checks:
+
 - Identifier URI format (`api://botid-{botId}`)
 - `access_as_user` scope exists
 - Teams clients are pre-authorized

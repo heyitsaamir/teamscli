@@ -22,8 +22,8 @@ A **Teams-managed** bot is registered in a Microsoft-managed environment via the
 An **Azure bot** is a bot registration in your own Azure subscription (via Azure Bot Service). You get full control over the registration and access to features that require Azure.
 
 **Pros:**
-- Full OAuth connection support (`teams app user-auth oauth`)
-- SSO configuration (`teams app user-auth sso setup`)
+- Full OAuth connection support (see [authentication guide](/guides/user-authentication-setup))
+- SSO configuration (see [authentication guide](/guides/user-authentication-setup))
 - Managed via Azure Portal or `az` CLI
 - Enterprise-grade control and auditing
 

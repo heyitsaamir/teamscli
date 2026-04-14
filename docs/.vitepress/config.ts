@@ -82,6 +82,12 @@ export default defineConfig({
           { text: "SSO Architecture", link: "/concepts/sso-architecture" },
         ],
       },
+      {
+        text: "Guides",
+        items: [
+          { text: "User Authentication Setup", link: "/guides/user-authentication-setup" },
+        ],
+      },
     ],
 
     search: {

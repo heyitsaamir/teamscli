@@ -74,5 +74,5 @@ teams app
 
 - [Update your app's properties](/commands/app/update) — name, endpoint, version
 - [Download the manifest](/commands/app/manifest-download) to customize it locally
-- [Set up SSO](/commands/app/user-auth-sso-setup) for single sign-on
+- [Set up SSO](/guides/user-authentication-setup) using the teams-bot-infra skill or manual guide
 - [Understand bot locations](/concepts/bot-locations) — Teams-managed vs Azure

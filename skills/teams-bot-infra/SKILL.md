@@ -217,12 +217,12 @@ Configure Single Sign-On so your bot can acquire access tokens silently — no l
 SSO requires an Azure-managed bot. Check:
 
 ```bash
-teams app view <teamsAppId> --json
+teams app bot get <teamsAppId>
 ```
 
-Look at `botLocation` in the output:
-- `"azure-managed"` → proceed to Step 2, note the `resourceGroup` and `subscription` for your Azure bot
-- `"teams-managed"` → migrate first:
+Look at the `Location` in the output:
+- `Azure` → proceed to Step 2, note the `resourceGroup` and `subscription` for your Azure bot
+- `Teams (managed)` → migrate first:
 
 ```bash
 teams app bot migrate <teamsAppId> --resource-group <your-resource-group>
@@ -413,7 +413,7 @@ teams app manifest download <teamsAppId> manifest.json
 }
 ```
 
-> **Note:** `*.botframework.com` is already present in `validDomains` by default — no changes needed there.
+> **Note:** Ensure `*.botframework.com` is in `validDomains` (included by default for CLI-generated manifests, but may be missing in older/manual apps).
 
 **Upload:**
 ```bash
