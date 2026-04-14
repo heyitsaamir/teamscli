@@ -14,7 +14,7 @@ import path from "node:path";
 // Import all command objects directly (avoids triggering program.parse())
 import { loginCommand, logoutCommand } from "../src/commands/auth/index.js";
 import { statusCommand } from "../src/commands/status.js";
-import { appCommand, appsCommand } from "../src/commands/app/index.js";
+import { appCommand } from "../src/commands/app/index.js";
 import { selfUpdateCommand } from "../src/commands/self-update.js";
 import { configCommand } from "../src/commands/config/index.js";
 import { projectCommand } from "../src/commands/project/index.js";
@@ -35,7 +35,6 @@ program.addCommand(loginCommand);
 program.addCommand(logoutCommand);
 program.addCommand(statusCommand);
 program.addCommand(appCommand);
-program.addCommand(appsCommand);
 program.addCommand(selfUpdateCommand);
 program.addCommand(configCommand);
 program.addCommand(projectCommand);

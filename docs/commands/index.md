@@ -18,7 +18,6 @@ teams
 ├── login                          Log in to Microsoft 365
 ├── logout                         Log out of Microsoft 365
 ├── status                         Show current CLI status
-├── apps                           List Teams apps (alias for app list)
 ├── app                            Manage Teams apps (interactive menu)
 │   ├── list                       List your Teams apps
 │   ├── create                     Create a new Teams app with bot

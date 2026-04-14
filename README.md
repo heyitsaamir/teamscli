@@ -22,7 +22,6 @@ This launches an interactive CLI. You can also run specific commands directly:
 teams login                          # Sign in with your Microsoft account
 teams logout                         # Sign out
 teams status                         # Check authentication status
-teams apps                           # List your Teams apps (alias for app list)
 teams app                            # Manage a Teams app (interactive menu)
 teams app list                       # List your Teams apps
 teams app create                     # Create a new Teams app with bot
