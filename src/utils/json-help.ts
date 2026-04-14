@@ -6,8 +6,9 @@ import { outputJson } from "./json-output.js";
 export interface JsonHelpOption {
   flags: string;
   description: string;
-  required?: boolean;
-  optional?: boolean;
+  /** If true, a value must be provided when this flag is used (e.g. --name <name>). */
+  requiredIfProvided?: boolean;
+  /** Whether this flag must be specified. Always present when requiredIfProvided is set. */
   mandatory?: boolean;
   variadic?: boolean;
   defaultValue?: string;
@@ -42,9 +43,10 @@ function serializeOption(opt: Option): JsonHelpOption {
   return {
     flags: opt.flags,
     description: opt.description,
-    ...(opt.required ? { required: true } : {}),
-    ...(opt.optional ? { optional: true } : {}),
-    ...(opt.mandatory ? { mandatory: true } : {}),
+    ...(opt.required
+      ? { requiredIfProvided: true, mandatory: opt.mandatory }
+      : {}),
+    ...(!opt.required && opt.mandatory ? { mandatory: true } : {}),
     ...(opt.variadic ? { variadic: true } : {}),
     ...(opt.defaultValue != null ? { defaultValue: String(opt.defaultValue) } : {}),
     ...(opt.argChoices ? { choices: opt.argChoices } : {}),

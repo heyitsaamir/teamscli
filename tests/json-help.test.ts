@@ -140,16 +140,16 @@ describe("serializeCommand", () => {
     const typeOpt = result.options.find((o) => o.flags.includes("--type"));
     const nameOpt = result.options.find((o) => o.flags.includes("--name"));
 
-    // --type is mandatory (must be provided) AND has a required value
+    // --type: must be provided, and needs a value
+    expect(typeOpt!.requiredIfProvided).toBe(true);
     expect(typeOpt!.mandatory).toBe(true);
-    expect(typeOpt!.required).toBe(true);
 
-    // --name is not mandatory but has a required value
-    expect(nameOpt!.mandatory).toBeUndefined();
-    expect(nameOpt!.required).toBe(true);
+    // --name: optional flag, but needs a value if used
+    expect(nameOpt!.requiredIfProvided).toBe(true);
+    expect(nameOpt!.mandatory).toBe(false);
   });
 
-  it("omits false boolean fields for clean output", () => {
+  it("omits value fields for boolean flags", () => {
     const cmd = new Command("run")
       .description("Run")
       .option("--json", "[OPTIONAL] Output as JSON");
@@ -157,10 +157,9 @@ describe("serializeCommand", () => {
     const result = serializeCommand(cmd);
     const jsonOpt = result.options[0];
 
-    // Boolean flag: no required/optional/mandatory/variadic
+    // Boolean flag: no requiredIfProvided/mandatory/variadic
     expect(jsonOpt.flags).toBe("--json");
-    expect(jsonOpt.required).toBeUndefined();
-    expect(jsonOpt.optional).toBeUndefined();
+    expect(jsonOpt.requiredIfProvided).toBeUndefined();
     expect(jsonOpt.mandatory).toBeUndefined();
     expect(jsonOpt.variadic).toBeUndefined();
   });
