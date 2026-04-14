@@ -53,7 +53,7 @@ teams app create --name "My Bot" --env .env
 List all your apps:
 
 ```bash
-teams apps
+teams app list
 ```
 
 View details of a specific app:

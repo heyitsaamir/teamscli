@@ -22,7 +22,6 @@ This launches an interactive CLI. You can also run specific commands directly:
 teams login                          # Sign in with your Microsoft account
 teams logout                         # Sign out
 teams status                         # Check authentication status
-teams apps                           # List your Teams apps (alias for app list)
 teams app                            # Manage a Teams app (interactive menu)
 teams app list                       # List your Teams apps
 teams app create                     # Create a new Teams app with bot
@@ -42,7 +41,9 @@ teams app user-auth sso setup [appId]    # Set up SSO
 teams app user-auth sso list [appId]     # List SSO connections
 teams app user-auth sso update [appId]   # Update SSO connection
 teams app user-auth sso remove [appId]   # Remove SSO connection
-teams scaffold manifest              # Create a manifest.json file
+teams project new                    # Create a new Teams app project
+teams project config add <name>      # Add Agents Toolkit configuration
+teams project config remove <name>   # Remove Agents Toolkit configuration
 teams config                         # Manage CLI configuration
 teams self-update                    # Update to the latest version
 ```

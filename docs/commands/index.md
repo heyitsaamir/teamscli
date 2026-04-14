@@ -18,7 +18,6 @@ teams
 ├── login                          Log in to Microsoft 365
 ├── logout                         Log out of Microsoft 365
 ├── status                         Show current CLI status
-├── apps                           List Teams apps (alias for app list)
 ├── app                            Manage Teams apps (interactive menu)
 │   ├── list                       List your Teams apps
 │   ├── create                     Create a new Teams app with bot
@@ -51,10 +50,17 @@ teams
 │           ├── list [appId]       List SSO connections
 │           ├── update [appId]     Update SSO connection
 │           └── remove [appId]     Remove SSO connection
-├── scaffold
-│   └── manifest                   Create a manifest.json file
+├── project                        Create and configure Teams app projects
+│   ├── new                        Create a new Teams app project
+│   │   ├── typescript <name>      Create a new TypeScript Teams app
+│   │   ├── csharp <name>          Create a new C# Teams app
+│   │   └── python <name>          Create a new Python Teams app
+│   └── config                     Manage Agents Toolkit configuration
+│       ├── add <name>             Add Agents Toolkit configuration
+│       └── remove <name>          Remove Agents Toolkit configuration
 ├── config                         Manage CLI configuration
-│   └── default-bot-location       Set default bot location
+│   ├── default-bot-location       Set default bot location
+│   └── set-lang                   Set default language for project creation
 └── self-update                    Update to latest version
 ```
 
