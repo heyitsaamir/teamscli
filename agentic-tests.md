@@ -20,7 +20,7 @@ node dist/index.js <command>
 **Act:** Run `node dist/index.js apps`
 **Assert:** Outputs a list of apps (may be empty list, but should not error).
 
-## 3. `--help --json` outputs machine-readable command tree
+## 3. `--help --json` outputs structured command tree
 
 **Setup:** `pnpm build`
 **Act:** Run `node dist/index.js --help --json`
