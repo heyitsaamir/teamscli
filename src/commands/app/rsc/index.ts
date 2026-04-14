@@ -304,7 +304,7 @@ interface RscSetOutput {
 const rscSetCommand = new Command("set")
   .description("Declaratively set RSC permissions to an exact list")
   .argument("<teamsAppId>", "Teams app ID")
-  .requiredOption("--permissions <list>", 'Comma-separated permission names (e.g. TeamSettings.ReadWrite.Group,ChannelMessage.Read.Group). Pass "" to clear all.')
+  .requiredOption("--permissions <list>", "Comma-separated permission names (e.g. TeamSettings.ReadWrite.Group,ChannelMessage.Read.Group). Pass \"\" to clear all.")
   .option("--json", "[OPTIONAL] Output as JSON")
   .action(wrapAction(async (teamsAppId: string, options: RscSetOptions) => {
     // Parse comma-separated names and deduplicate. Empty string = clear all.

@@ -2,7 +2,7 @@ import { fetchAppDetailsV2, updateAppDetails } from "../../../apps/api.js";
 import type { RscPermissionEntry, AppAuthorization } from "../../../apps/types.js";
 
 /** Composite key for deduplication: "name|type" */
-export function permKey(p: RscPermissionEntry): string {
+function permKey(p: RscPermissionEntry): string {
   return `${p.name}|${p.type}`;
 }
 
