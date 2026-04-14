@@ -84,7 +84,7 @@ teams app bot migrate <appId> --resource-group my-rg
 
 ## Setting Up SSO
 
-For detailed implementation steps, see the [User Authentication Setup guide](/guides/user-authentication-setup). You can also use the **teams-bot-infra** skill which automates the SSO setup process.
+For detailed implementation steps, see the [User Authentication Setup guide](/guides/user-authentication-setup). You can also use the **teams-dev** skill which automates the SSO setup process.
 
 ## Diagnosing SSO Issues
 

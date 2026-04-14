@@ -78,6 +78,8 @@ All languages support the same template options via `-t, --template <template>`:
 | `mcpclient` | MCP client integration | Connect to MCP servers |
 | `tab` | Teams tab application | UI-based apps, embedded web content |
 
+**Note:** Template availability varies by language. Check `teams project new <language> --help` for the actual list of available templates for each language.
+
 **Recommendations:**
 - **First bot?** Start with `echo` to learn the basics
 - **AI features?** Use `ai` for LLM-powered responses

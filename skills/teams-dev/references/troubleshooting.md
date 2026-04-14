@@ -89,9 +89,9 @@ teams app bot get <teamsAppId>
 ```
 
 **Common migration errors:**
-- **Resource group doesn't exist**: Create the resource group first with `az group create`
+- **Resource group doesn't exist**: Re-run migration with `teams app bot migrate <teamsAppId> --create-resource-group --region <azureRegion>`, or create it manually with `az group create --name <resourceGroupName> --location <azureRegion>`
 - **Insufficient permissions**: Ensure you have Contributor role on the subscription
-- **Region mismatch**: Bot and resource group must be in the same Azure region
+- **Region mismatch**: Bot, resource group, and the `--region <azureRegion>` passed to migration must all use the same Azure region
 
 ---
 

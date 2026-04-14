@@ -43,7 +43,7 @@ teams config                         # Manage CLI configuration
 teams self-update                    # Update to the latest version
 ```
 
-> **Note:** For SSO and OAuth setup, see the [User Authentication Setup guide](https://heyitsaamir.github.io/teamscli/guides/user-authentication-setup) or use the **teams-bot-infra** skill.
+> **Note:** For SSO and OAuth setup, see the [User Authentication Setup guide](https://heyitsaamir.github.io/teamscli/guides/user-authentication-setup) or use the **teams-dev** skill.
 
 ## Global Options
 
@@ -59,7 +59,7 @@ teams self-update                    # Update to the latest version
 Install agent skills to help AI assistants manage Teams bot infrastructure:
 
 ```bash
-npx skills add heyitsaamir/teamscli --skill teams-bot-infra
+npx skills add heyitsaamir/teamscli --skill teams-dev
 ```
 
 See [skills/README.md](skills/README.md) for details.
