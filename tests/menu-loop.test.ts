@@ -169,29 +169,6 @@ describe("project menu loop", () => {
     expect(newParseSpy).toHaveBeenCalledTimes(1);
   });
 
-  it("loops back to menu after selecting Config", async () => {
-    const { select } = await import("@inquirer/prompts");
-    const mockedSelect = vi.mocked(select);
-    mockedSelect
-      .mockResolvedValueOnce("config" as never)
-      .mockResolvedValueOnce("back" as never);
-
-    const { projectCommand } = await import(
-      "../src/commands/project/index.js"
-    );
-
-    const configParseSpy = vi.fn().mockResolvedValue(undefined);
-    const configSub = projectCommand.commands.find(
-      (c: Command) => c.name() === "config"
-    );
-    if (configSub) configSub.parseAsync = configParseSpy;
-
-    await projectCommand.parseAsync([], { from: "user" });
-
-    expect(mockedSelect).toHaveBeenCalledTimes(2);
-    expect(configParseSpy).toHaveBeenCalledTimes(1);
-  });
-
   it("exits immediately when Back is selected", async () => {
     const { select } = await import("@inquirer/prompts");
     const mockedSelect = vi.mocked(select);
@@ -249,52 +226,6 @@ describe("project new menu loop", () => {
     );
 
     await projectNewCommand.parseAsync([], { from: "user" });
-
-    expect(mockedSelect).toHaveBeenCalledTimes(1);
-  });
-});
-
-describe("project config menu loop", () => {
-  beforeEach(() => {
-    vi.resetModules();
-    vi.clearAllMocks();
-    setupMocks();
-  });
-
-  it("loops back to menu after adding a toolkit", async () => {
-    const { select } = await import("@inquirer/prompts");
-    const mockedSelect = vi.mocked(select);
-    mockedSelect
-      .mockResolvedValueOnce("add" as never)
-      .mockResolvedValueOnce("atk.basic" as never)
-      .mockResolvedValueOnce("back" as never);
-
-    const { projectConfigCommand } = await import(
-      "../src/commands/project/config/index.js"
-    );
-
-    const addParseSpy = vi.fn().mockResolvedValue(undefined);
-    const addSub = projectConfigCommand.commands.find(
-      (c: Command) => c.name() === "add"
-    );
-    if (addSub) addSub.parseAsync = addParseSpy;
-
-    await projectConfigCommand.parseAsync([], { from: "user" });
-
-    expect(mockedSelect).toHaveBeenCalledTimes(3);
-    expect(addParseSpy).toHaveBeenCalledTimes(1);
-  });
-
-  it("exits immediately when Back is selected", async () => {
-    const { select } = await import("@inquirer/prompts");
-    const mockedSelect = vi.mocked(select);
-    mockedSelect.mockResolvedValueOnce("back" as never);
-
-    const { projectConfigCommand } = await import(
-      "../src/commands/project/config/index.js"
-    );
-
-    await projectConfigCommand.parseAsync([], { from: "user" });
 
     expect(mockedSelect).toHaveBeenCalledTimes(1);
   });

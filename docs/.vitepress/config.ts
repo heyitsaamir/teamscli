@@ -56,9 +56,6 @@ export default defineConfig({
               { text: "project new typescript", link: "/commands/project/new-typescript" },
               { text: "project new csharp", link: "/commands/project/new-csharp" },
               { text: "project new python", link: "/commands/project/new-python" },
-              { text: "project config", link: "/commands/project/config" },
-              { text: "project config add", link: "/commands/project/config-add" },
-              { text: "project config remove", link: "/commands/project/config-remove" },
             ],
           },
           {

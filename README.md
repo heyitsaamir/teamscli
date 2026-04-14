@@ -39,8 +39,6 @@ teams app rsc add [appId]            # Add RSC permission
 teams app rsc remove [appId]         # Remove RSC permission
 teams app rsc set [appId]            # Declaratively set RSC permissions
 teams project new                    # Create a new Teams app project
-teams project config add <name>      # Add Agents Toolkit configuration
-teams project config remove <name>   # Remove Agents Toolkit configuration
 teams config                         # Manage CLI configuration
 teams self-update                    # Update to the latest version
 ```

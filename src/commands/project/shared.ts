@@ -1,11 +1,7 @@
-import { CliError } from "../../utils/errors.js";
-import { listToolkits, type ProjectLanguage } from "../../project/scaffold.js";
-
 export interface ProjectNewOutput {
   name: string;
   language: string;
   template: string;
-  toolkit?: string;
   path: string;
 }
 
@@ -39,22 +35,4 @@ export function gatherEnvVars(opts: {
   if (process.env.AZURE_OPENAI_ENDPOINT)
     envVars.AZURE_OPENAI_ENDPOINT = process.env.AZURE_OPENAI_ENDPOINT;
   return envVars;
-}
-
-/**
- * Parse a toolkit name like "atk.basic" or "basic" and validate it.
- */
-export function parseToolkitName(name: string, language: ProjectLanguage): string {
-  const toolkit = name.startsWith("atk.") ? name.slice(4) : name;
-  const available = listToolkits(language);
-
-  if (!available.includes(toolkit)) {
-    throw new CliError(
-      "VALIDATION_FORMAT",
-      `Unknown toolkit "${name}" for ${language}.`,
-      `Available: ${available.map((t) => `atk.${t}`).join(", ")}`,
-    );
-  }
-
-  return toolkit;
 }
