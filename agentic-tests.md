@@ -19,3 +19,9 @@ node dist/index.js <command>
 **Setup:** `pnpm build` and be logged in
 **Act:** Run `node dist/index.js apps`
 **Assert:** Outputs a list of apps (may be empty list, but should not error).
+
+## 3. `--help --json` outputs machine-readable command tree
+
+**Setup:** `pnpm build`
+**Act:** Run `node dist/index.js --help --json`
+**Assert:** Outputs valid JSON with `name` ("teams"), `version`, and a non-empty `commands` array. No non-JSON text in output.
