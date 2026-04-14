@@ -58,39 +58,6 @@ function runJson<T = Record<string, unknown>>(
 // ── Offline validation tests (no auth needed) ────────────────────────
 
 describe("--json validation (offline)", () => {
-  describe("scaffold manifest --json", () => {
-    it("outputs valid JSON with manifest structure", () => {
-      const { data, exitCode } = runJson(
-        `${CLI} scaffold manifest --name "Test Bot" --bot-id "test-id-123" --path /tmp/vitest-scaffold --json`
-      );
-      expect(exitCode).toBe(0);
-      expect(data).toHaveProperty("outputPath");
-      expect(data.outputPath).toContain("manifest.json");
-
-      const manifest = data.manifest as Record<string, unknown>;
-      expect(manifest).toHaveProperty("$schema");
-      expect(manifest).toHaveProperty("manifestVersion");
-      expect(manifest).toHaveProperty("id", "test-id-123");
-      expect(manifest.name).toEqual({ short: "Test Bot", full: "Test Bot" });
-      expect(manifest.bots).toBeInstanceOf(Array);
-      expect((manifest.bots as Array<Record<string, unknown>>)[0].botId).toBe("test-id-123");
-    });
-
-    it("includes domain in validDomains when --domain is provided", () => {
-      const { data, exitCode } = runJson(
-        `${CLI} scaffold manifest --name "Domain Bot" --domain "example.com" --path /tmp/vitest-scaffold-domain --json`
-      );
-      expect(exitCode).toBe(0);
-      const manifest = data.manifest as Record<string, unknown>;
-      expect(manifest.validDomains).toContain("example.com");
-    });
-
-    it("fails with exit code 1 when --name is missing", () => {
-      const { exitCode } = run(`${CLI} scaffold manifest --json`);
-      expect(exitCode).toBe(1);
-    });
-  });
-
   describe("app update --json validation", () => {
     it("fails when --json is used without mutation flags", () => {
       const { exitCode } = run(

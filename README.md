@@ -42,7 +42,6 @@ teams app user-auth sso setup [appId]    # Set up SSO
 teams app user-auth sso list [appId]     # List SSO connections
 teams app user-auth sso update [appId]   # Update SSO connection
 teams app user-auth sso remove [appId]   # Remove SSO connection
-teams scaffold manifest              # Create a manifest.json file
 teams config                         # Manage CLI configuration
 teams self-update                    # Update to the latest version
 ```

@@ -51,8 +51,6 @@ teams
 │           ├── list [appId]       List SSO connections
 │           ├── update [appId]     Update SSO connection
 │           └── remove [appId]     Remove SSO connection
-├── scaffold
-│   └── manifest                   Create a manifest.json file
 ├── config                         Manage CLI configuration
 │   └── default-bot-location       Set default bot location
 └── self-update                    Update to latest version

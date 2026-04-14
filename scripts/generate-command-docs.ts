@@ -15,7 +15,6 @@ import path from "node:path";
 import { loginCommand, logoutCommand } from "../src/commands/auth/index.js";
 import { statusCommand } from "../src/commands/status.js";
 import { appCommand, appsCommand } from "../src/commands/app/index.js";
-import { scaffoldCommand } from "../src/commands/scaffold/index.js";
 import { selfUpdateCommand } from "../src/commands/self-update.js";
 import { configCommand } from "../src/commands/config/index.js";
 
@@ -36,7 +35,6 @@ program.addCommand(logoutCommand);
 program.addCommand(statusCommand);
 program.addCommand(appCommand);
 program.addCommand(appsCommand);
-program.addCommand(scaffoldCommand);
 program.addCommand(selfUpdateCommand);
 program.addCommand(configCommand);
 
