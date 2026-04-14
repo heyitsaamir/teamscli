@@ -1,6 +1,6 @@
 # Bot Infrastructure Creation Guide
 
-This guide walks through setting up the infrastructure for a Microsoft Teams bot: bot registration, AAD app creation, credentials, and Teams app manifest. This creates the bot identity and authentication, but not the bot application code itself (see the [Bot Application Development guide](guide-create-bot-app.md) for that).
+This guide walks through setting up the infrastructure for a Microsoft Teams bot: Teams-managed bot, AAD app creation, credentials, and Teams app manifest. **Note:** This creates a Teams-managed bot, not an Azure Bot Service registration. For SSO, you'll need to migrate to Azure-managed later. This creates the bot identity and authentication, but not the bot application code itself (see the [Bot Application Development guide](guide-create-bot-app.md) for that).
 
 ## 1. Prerequisites Verification
 
@@ -76,9 +76,9 @@ Ask the user: **"Do you have a bot messaging endpoint URL, or will this bot only
 
 ---
 
-## 2. Create Teams Bot
+## 2. Create Teams-Managed Bot
 
-Now create the Teams bot with infrastructure.
+Now create the Teams-managed bot with infrastructure.
 
 ### Step 1: Run Creation Command
 

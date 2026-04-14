@@ -17,9 +17,9 @@ Based on the user's request, route to the appropriate guide or handle directly:
 - Read and follow the **[Bot Application Development guide](references/guide-create-bot-app.md)**
 - This covers: Scaffolding a new bot project with `teams project new` (TypeScript/C#/Python, templates, connecting to infrastructure)
 
-**Setting up bot infrastructure (registration & credentials):**
+**Setting up bot infrastructure (Teams-managed bot & credentials):**
 - Read and follow the **[Bot Infrastructure Setup guide](references/guide-bot-infra-creation.md)**
-- This covers: Prerequisites → Create bot registration → Save credentials → Verify
+- This covers: Prerequisites → Create Teams-managed bot → Save credentials → Verify
 
 **Setting up SSO authentication:**
 - Read and follow the **[SSO Setup guide](references/guide-sso-setup.md)**
@@ -111,6 +111,8 @@ teams app list
 **Use case:** See all Teams apps you've created
 
 ### List and Manage OAuth Connections
+
+**Note:** OAuth connections require an Azure-managed bot. Teams-managed bots must be migrated to Azure first using `teams app bot migrate <teamsAppId> --resource-group <your-resource-group>`.
 
 **List all connections on an Azure bot:**
 ```bash
