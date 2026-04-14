@@ -328,4 +328,3 @@ describe("config menu includes set-lang", () => {
     expect(mockedSelect).toHaveBeenCalledTimes(2);
   });
 });
-

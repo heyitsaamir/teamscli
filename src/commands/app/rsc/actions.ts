@@ -6,6 +6,49 @@ function permKey(p: RscPermissionEntry): string {
   return `${p.name}|${p.type}`;
 }
 
+export interface RscDiffResult {
+  added: RscPermissionEntry[];
+  removed: RscPermissionEntry[];
+  unchanged: RscPermissionEntry[];
+  final: RscPermissionEntry[];
+}
+
+/** Deduplicate entries by composite key, preserving first occurrence. */
+function dedup(entries: RscPermissionEntry[]): RscPermissionEntry[] {
+  const seen = new Set<string>();
+  const result: RscPermissionEntry[] = [];
+  for (const p of entries) {
+    const key = permKey(p);
+    if (!seen.has(key)) {
+      seen.add(key);
+      result.push(p);
+    }
+  }
+  return result;
+}
+
+/**
+ * Compute the diff between current and desired RSC permissions.
+ * Deduplicates both sides by composite key before diffing.
+ * Pure function — no API calls.
+ */
+export function diffRscPermissions(
+  current: RscPermissionEntry[],
+  desired: RscPermissionEntry[],
+): RscDiffResult {
+  const dedupedCurrent = dedup(current);
+  const dedupedDesired = dedup(desired);
+
+  const currentKeys = new Set(dedupedCurrent.map(permKey));
+  const desiredKeys = new Set(dedupedDesired.map(permKey));
+
+  const added = dedupedDesired.filter((p) => !currentKeys.has(permKey(p)));
+  const removed = dedupedCurrent.filter((p) => !desiredKeys.has(permKey(p)));
+  const unchanged = dedupedDesired.filter((p) => currentKeys.has(permKey(p)));
+
+  return { added, removed, unchanged, final: dedupedDesired };
+}
+
 /**
  * Read current RSC permissions from the app.
  */

@@ -8,12 +8,12 @@ The Teams Developer Portal (TDP) is the web UI at [dev.teams.microsoft.com](http
 |-------------|-------------------|
 | `teams app list` | Apps → app list |
 | `teams app create` | Apps → New app *(CLI also handles AAD + bot registration in one step)* |
-| `teams app view` | Apps → select app → overview |
-| `teams app edit` | Apps → select app → Basic information |
+| `teams app get` | Apps → select app → overview |
+| `teams app update` | Apps → select app → Basic information |
 | `teams app manifest download` | Apps → select app → App package → Download |
 | `teams app package download` | Apps → select app → App package → Download (full zip) |
 | `teams app doctor` | *No portal equivalent* |
-| `teams app bot status` | Apps → select app → App features → Bot (location shown) |
+| `teams app bot get` | Apps → select app → App features → Bot (location shown) |
 | `teams app bot migrate` | *No portal equivalent* |
 | `teams app auth secret create` | Azure Portal → App registrations → Certificates & secrets |
 | `teams app user-auth oauth add` | Azure Portal → Bot Service → Configuration → OAuth |
@@ -21,9 +21,8 @@ The Teams Developer Portal (TDP) is the web UI at [dev.teams.microsoft.com](http
 | `teams app user-auth oauth remove` | Azure Portal → Bot Service → Configuration → OAuth |
 | `teams app user-auth sso setup` | *No single equivalent — requires Azure Portal + TDP manifest edits* |
 | `teams app user-auth sso list` | Azure Portal → Bot Service → Configuration (filtered) |
-| `teams app user-auth sso edit` | Azure Portal → Bot Service → Configuration → edit connection |
+| `teams app user-auth sso update` | Azure Portal → Bot Service → Configuration → edit connection |
 | `teams app user-auth sso remove` | Azure Portal → Bot Service + TDP manifest |
-| `teams scaffold manifest` | *No portal equivalent* |
 | `teams config` | *No portal equivalent* |
 
 ## Key Differences

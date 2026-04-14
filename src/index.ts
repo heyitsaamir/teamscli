@@ -3,12 +3,12 @@ import { createRequire } from "node:module";
 import { program, Command } from "commander";
 import { loginCommand, logoutCommand } from "./commands/auth/index.js";
 import { statusCommand } from "./commands/status.js";
-import { appCommand, appsCommand } from "./commands/app/index.js";
-import { scaffoldCommand } from "./commands/scaffold/index.js";
+import { appCommand } from "./commands/app/index.js";
 import { selfUpdateCommand } from "./commands/self-update.js";
 import { configCommand } from "./commands/config/index.js";
 import { projectCommand } from "./commands/project/index.js";
 import { CliError } from "./utils/errors.js";
+import { handleJsonHelp } from "./utils/json-help.js";
 import { logger, setVerbose } from "./utils/logger.js";
 import { isInteractive, setAutoConfirm } from "./utils/interactive.js";
 import { checkForUpdates } from "./utils/update-check.js";
@@ -36,7 +36,8 @@ function teamsColor(text: string): string {
 
 program
   .name("teams")
-  .addHelpText("beforeAll", `${pc.bold(teamsColor("Teams CLI"))} ${pc.bold(pc.yellow("[Beta]"))}\nWork seamlessly with Teams apps from the command line.\n`)
+  .description("CLI for managing Microsoft Teams apps")
+  .addHelpText("beforeAll", `${pc.bold(teamsColor("Teams CLI"))} ${pc.bold(pc.yellow("[Beta]"))}\n`)
   .version(version)
   .option("-v, --verbose", "[OPTIONAL] Enable verbose logging")
   .option("-y, --yes", "[OPTIONAL] Auto-confirm prompts (for CI/agent use)")
@@ -62,8 +63,6 @@ program.addCommand(loginCommand);
 program.addCommand(logoutCommand);
 program.addCommand(statusCommand);
 program.addCommand(appCommand);
-program.addCommand(appsCommand);
-program.addCommand(scaffoldCommand);
 program.addCommand(selfUpdateCommand);
 program.addCommand(configCommand);
 program.addCommand(projectCommand);
@@ -79,4 +78,6 @@ const newRedirect = new Command("new")
   });
 program.addCommand(newRedirect);
 
-program.parse();
+if (!handleJsonHelp(program, version)) {
+  program.parse();
+}

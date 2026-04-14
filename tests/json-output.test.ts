@@ -58,43 +58,10 @@ function runJson<T = Record<string, unknown>>(
 // ── Offline validation tests (no auth needed) ────────────────────────
 
 describe("--json validation (offline)", () => {
-  describe("scaffold manifest --json", () => {
-    it("outputs valid JSON with manifest structure", () => {
-      const { data, exitCode } = runJson(
-        `${CLI} scaffold manifest --name "Test Bot" --bot-id "test-id-123" --path /tmp/vitest-scaffold --json`
-      );
-      expect(exitCode).toBe(0);
-      expect(data).toHaveProperty("outputPath");
-      expect(data.outputPath).toContain("manifest.json");
-
-      const manifest = data.manifest as Record<string, unknown>;
-      expect(manifest).toHaveProperty("$schema");
-      expect(manifest).toHaveProperty("manifestVersion");
-      expect(manifest).toHaveProperty("id", "test-id-123");
-      expect(manifest.name).toEqual({ short: "Test Bot", full: "Test Bot" });
-      expect(manifest.bots).toBeInstanceOf(Array);
-      expect((manifest.bots as Array<Record<string, unknown>>)[0].botId).toBe("test-id-123");
-    });
-
-    it("includes domain in validDomains when --domain is provided", () => {
-      const { data, exitCode } = runJson(
-        `${CLI} scaffold manifest --name "Domain Bot" --domain "example.com" --path /tmp/vitest-scaffold-domain --json`
-      );
-      expect(exitCode).toBe(0);
-      const manifest = data.manifest as Record<string, unknown>;
-      expect(manifest.validDomains).toContain("example.com");
-    });
-
-    it("fails with exit code 1 when --name is missing", () => {
-      const { exitCode } = run(`${CLI} scaffold manifest --json`);
-      expect(exitCode).toBe(1);
-    });
-  });
-
-  describe("app edit --json validation", () => {
+  describe("app update --json validation", () => {
     it("fails when --json is used without mutation flags", () => {
       const { exitCode } = run(
-        `${CLI} app edit some-app-id --json`
+        `${CLI} app update some-app-id --json`
       );
       expect(exitCode).toBe(1);
     });
@@ -114,7 +81,7 @@ describe("--json validation (offline)", () => {
       writeFileSync("/tmp/vitest-icon-fake.txt", "not a png");
 
       const { data, exitCode } = runJson(
-        `${CLI} app edit some-app-id --color-icon /tmp/vitest-icon-fake.txt --json`
+        `${CLI} app update some-app-id --color-icon /tmp/vitest-icon-fake.txt --json`
       );
       expect(exitCode).toBe(1);
       expect((data as Record<string, unknown>).error).toBeDefined();
@@ -127,7 +94,7 @@ describe("--json validation (offline)", () => {
       writeFileSync("/tmp/vitest-icon-1x1.png", PNG_1X1);
 
       const { data, exitCode } = runJson(
-        `${CLI} app edit some-app-id --color-icon /tmp/vitest-icon-1x1.png --json`
+        `${CLI} app update some-app-id --color-icon /tmp/vitest-icon-1x1.png --json`
       );
       expect(exitCode).toBe(1);
       const error = (data as Record<string, { code: string; message: string }>).error;
@@ -137,7 +104,7 @@ describe("--json validation (offline)", () => {
 
     it("rejects missing icon file", () => {
       const { data, exitCode } = runJson(
-        `${CLI} app edit some-app-id --color-icon /tmp/vitest-nonexistent-icon.png --json`
+        `${CLI} app update some-app-id --color-icon /tmp/vitest-nonexistent-icon.png --json`
       );
       expect(exitCode).toBe(1);
       const error = (data as Record<string, { code: string; message: string }>).error;
@@ -149,7 +116,7 @@ describe("--json validation (offline)", () => {
       writeFileSync("/tmp/vitest-icon-1x1-outline.png", PNG_1X1);
 
       const { data, exitCode } = runJson(
-        `${CLI} app edit some-app-id --outline-icon /tmp/vitest-icon-1x1-outline.png --json`
+        `${CLI} app update some-app-id --outline-icon /tmp/vitest-icon-1x1-outline.png --json`
       );
       expect(exitCode).toBe(1);
       const error = (data as Record<string, { code: string; message: string }>).error;
@@ -217,11 +184,11 @@ describeWithEnv("--json output (requires auth)", () => {
     });
   });
 
-  describe("app edit --json", () => {
+  describe("app update --json", () => {
     it("returns updated fields for basic info changes", () => {
       const testDesc = `vitest-${Date.now()}`.slice(0, 80);
       const { data, exitCode } = runJson(
-        `${CLI} app edit "${appId}" --short-description "${testDesc}" --json`
+        `${CLI} app update "${appId}" --short-description "${testDesc}" --json`
       );
       expect(exitCode).toBe(0);
       expect(data.teamsAppId).toBe(appId);
@@ -235,7 +202,7 @@ describeWithEnv("--json output (requires auth)", () => {
       const testName = `VT${Date.now()}`.slice(0, 30);
       const testDesc = `desc-${Date.now()}`.slice(0, 80);
       const { data, exitCode } = runJson(
-        `${CLI} app edit "${appId}" --name "${testName}" --short-description "${testDesc}" --json`
+        `${CLI} app update "${appId}" --name "${testName}" --short-description "${testDesc}" --json`
       );
       expect(exitCode).toBe(0);
       expect(data.teamsAppId).toBe(appId);
@@ -248,7 +215,7 @@ describeWithEnv("--json output (requires auth)", () => {
     it("returns endpoint and validDomains for endpoint changes", () => {
       const endpoint = "https://test-vitest.example.com/api/messages";
       const { data, exitCode } = runJson(
-        `${CLI} app edit "${appId}" --endpoint "${endpoint}" --json`
+        `${CLI} app update "${appId}" --endpoint "${endpoint}" --json`
       );
       expect(exitCode).toBe(0);
       expect(data.teamsAppId).toBe(appId);

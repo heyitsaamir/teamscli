@@ -2,7 +2,7 @@ import { select, input } from "@inquirer/prompts";
 import pc from "picocolors";
 import { writeFile } from "node:fs/promises";
 import { createSilentSpinner } from "../../utils/spinner.js";
-import { showEditMenu } from "./edit.js";
+import { showUpdateMenu } from "./update.js";
 import { showAppDetail, downloadAppPackage } from "../../apps/index.js";
 import { logger } from "../../utils/logger.js";
 import { downloadManifest } from "./manifest/actions.js";
@@ -20,8 +20,8 @@ export async function showAppActions(app: AppSummary, token: string): Promise<vo
     const action = await select({
       message: `${app.appName ?? "Unnamed"}:`,
       choices: [
-        { name: "View", value: "view" },
-        { name: "Edit", value: "edit" },
+        { name: "Get", value: "get" },
+        { name: "Update", value: "update" },
         { name: "Download package", value: "package" },
         { name: "Download manifest", value: "manifest" },
         { name: "Auth (secrets)", value: "credentials" },
@@ -33,10 +33,10 @@ export async function showAppActions(app: AppSummary, token: string): Promise<vo
 
     if (action === "back") return;
 
-    if (action === "view") {
+    if (action === "get") {
       await showAppDetail(app, token, { interactive: true });
-    } else if (action === "edit") {
-      await showEditMenu(app, token);
+    } else if (action === "update") {
+      await showUpdateMenu(app, token);
     } else if (action === "package") {
       const outputPath = `${(app.appName || app.appId).replace(/\s+/g, "-")}.zip`;
       const spinner = createSilentSpinner("Downloading package...").start();
