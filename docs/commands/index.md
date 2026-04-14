@@ -51,6 +51,14 @@ teams
 │           ├── list [appId]       List SSO connections
 │           ├── update [appId]     Update SSO connection
 │           └── remove [appId]     Remove SSO connection
+├── project                        Create and configure Teams app projects
+│   ├── new                        Create a new Teams app project
+│   │   ├── typescript <name>      Create a new TypeScript Teams app
+│   │   ├── csharp <name>          Create a new C# Teams app
+│   │   └── python <name>          Create a new Python Teams app
+│   └── config                     Manage Agents Toolkit configuration
+│       ├── add <name>             Add Agents Toolkit configuration
+│       └── remove <name>          Remove Agents Toolkit configuration
 ├── config                         Manage CLI configuration
 │   └── default-bot-location       Set default bot location
 └── self-update                    Update to latest version

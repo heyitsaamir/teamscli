@@ -42,6 +42,9 @@ teams app user-auth sso setup [appId]    # Set up SSO
 teams app user-auth sso list [appId]     # List SSO connections
 teams app user-auth sso update [appId]   # Update SSO connection
 teams app user-auth sso remove [appId]   # Remove SSO connection
+teams project new                    # Create a new Teams app project
+teams project config add <name>      # Add Agents Toolkit configuration
+teams project config remove <name>   # Remove Agents Toolkit configuration
 teams config                         # Manage CLI configuration
 teams self-update                    # Update to the latest version
 ```
