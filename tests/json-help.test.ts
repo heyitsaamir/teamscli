@@ -1,7 +1,3 @@
-// RED/GREEN: verified 2026-04-13
-// RED: commented out handleJsonHelp call in index.ts → --help --json produced Commander text help, JSON.parse threw
-// GREEN: restored handleJsonHelp call → all tests pass
-
 import { describe, it, expect } from "vitest";
 import { Command, Option } from "commander";
 import { execSync } from "node:child_process";
