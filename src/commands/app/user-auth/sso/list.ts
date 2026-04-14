@@ -7,7 +7,7 @@ import { isInteractive } from "../../../../utils/interactive.js";
 import { logger } from "../../../../utils/logger.js";
 import { CliError, wrapAction } from "../../../../utils/errors.js";
 import { requireAzureBot } from "../require-azure.js";
-import { ssoEditCommand } from "./edit.js";
+import { ssoUpdateCommand } from "./edit.js";
 
 interface AuthSetting {
   name: string;
@@ -92,7 +92,7 @@ export const ssoListCommand = new Command("list")
         });
 
         if (action !== "back") {
-          await ssoEditCommand.parseAsync([appId, "--connection-name", action], { from: "user" });
+          await ssoUpdateCommand.parseAsync([appId, "--connection-name", action], { from: "user" });
         }
       }
     } catch (error) {

@@ -68,7 +68,7 @@ describeWithEnv("CLI Validation Tests", () => {
   it("rejects short name over 30 characters", () => {
     const longName = "x".repeat(31);
     const { stdout, exitCode } = run(
-      `${CLI} app edit "${appId}" --name "${longName}"`
+      `${CLI} app update "${appId}" --name "${longName}"`
     );
     expect(exitCode).toBe(1);
     expect(stdout).toMatch(/30 characters or less/);
@@ -77,7 +77,7 @@ describeWithEnv("CLI Validation Tests", () => {
   it("rejects long name over 100 characters", () => {
     const longName = "x".repeat(101);
     const { stdout, exitCode } = run(
-      `${CLI} app edit "${appId}" --long-name "${longName}"`
+      `${CLI} app update "${appId}" --long-name "${longName}"`
     );
     expect(exitCode).toBe(1);
     expect(stdout).toMatch(/100 characters or less/);
@@ -86,7 +86,7 @@ describeWithEnv("CLI Validation Tests", () => {
   it("rejects short description over 80 characters", () => {
     const longDesc = "x".repeat(81);
     const { stdout, exitCode } = run(
-      `${CLI} app edit "${appId}" --short-description "${longDesc}"`
+      `${CLI} app update "${appId}" --short-description "${longDesc}"`
     );
     expect(exitCode).toBe(1);
     expect(stdout).toMatch(/80 characters or less/);
@@ -95,7 +95,7 @@ describeWithEnv("CLI Validation Tests", () => {
   it("rejects long description over 4000 characters", () => {
     const longDesc = "x".repeat(4001);
     const { stdout, exitCode } = run(
-      `${CLI} app edit "${appId}" --long-description "${longDesc}"`
+      `${CLI} app update "${appId}" --long-description "${longDesc}"`
     );
     expect(exitCode).toBe(1);
     expect(stdout).toMatch(/4000 characters or less/);
@@ -103,7 +103,7 @@ describeWithEnv("CLI Validation Tests", () => {
 
   it("rejects website URL without https", () => {
     const { stdout, exitCode } = run(
-      `${CLI} app edit "${appId}" --website "http://example.com"`
+      `${CLI} app update "${appId}" --website "http://example.com"`
     );
     expect(exitCode).toBe(1);
     expect(stdout).toMatch(/https:\/\//);
@@ -111,7 +111,7 @@ describeWithEnv("CLI Validation Tests", () => {
 
   it("rejects website URL with only https://", () => {
     const { stdout, exitCode } = run(
-      `${CLI} app edit "${appId}" --website "https://"`
+      `${CLI} app update "${appId}" --website "https://"`
     );
     expect(exitCode).toBe(1);
     expect(stdout).toMatch(/include a domain/);
@@ -119,7 +119,7 @@ describeWithEnv("CLI Validation Tests", () => {
 
   it("rejects privacy URL without https", () => {
     const { stdout, exitCode } = run(
-      `${CLI} app edit "${appId}" --privacy-url "http://example.com"`
+      `${CLI} app update "${appId}" --privacy-url "http://example.com"`
     );
     expect(exitCode).toBe(1);
     expect(stdout).toMatch(/https:\/\//);
@@ -127,7 +127,7 @@ describeWithEnv("CLI Validation Tests", () => {
 
   it("rejects privacy URL with only https://", () => {
     const { stdout, exitCode } = run(
-      `${CLI} app edit "${appId}" --privacy-url "https://"`
+      `${CLI} app update "${appId}" --privacy-url "https://"`
     );
     expect(exitCode).toBe(1);
     expect(stdout).toMatch(/include a domain/);
@@ -135,7 +135,7 @@ describeWithEnv("CLI Validation Tests", () => {
 
   it("rejects terms URL without https", () => {
     const { stdout, exitCode } = run(
-      `${CLI} app edit "${appId}" --terms-url "http://example.com"`
+      `${CLI} app update "${appId}" --terms-url "http://example.com"`
     );
     expect(exitCode).toBe(1);
     expect(stdout).toMatch(/https:\/\//);
@@ -143,7 +143,7 @@ describeWithEnv("CLI Validation Tests", () => {
 
   it("rejects terms URL with only https://", () => {
     const { stdout, exitCode } = run(
-      `${CLI} app edit "${appId}" --terms-url "https://"`
+      `${CLI} app update "${appId}" --terms-url "https://"`
     );
     expect(exitCode).toBe(1);
     expect(stdout).toMatch(/include a domain/);
@@ -180,7 +180,7 @@ describeWithEnv("Integration Tests (requires auth + .testenv)", () => {
       if (!appId) return;
 
       run(
-        `${CLI} app edit "${appId}" ` +
+        `${CLI} app update "${appId}" ` +
           `--name "${originals["name.short"]}" ` +
           `--long-name "${originals["name.full"]}" ` +
           `--version "${originals["version"]}" ` +
@@ -198,7 +198,7 @@ describeWithEnv("Integration Tests (requires auth + .testenv)", () => {
   it("updates short name and verifies", () => {
     const testValue = `Test${Date.now()}`.slice(0, 30);
     const { exitCode } = run(
-      `${CLI} app edit "${appId}" --name "${testValue}"`
+      `${CLI} app update "${appId}" --name "${testValue}"`
     );
     expect(exitCode).toBe(0);
 
@@ -209,7 +209,7 @@ describeWithEnv("Integration Tests (requires auth + .testenv)", () => {
   it("updates long name and verifies", () => {
     const testValue = "Test Long Name " + Date.now();
     const { exitCode } = run(
-      `${CLI} app edit "${appId}" --long-name "${testValue}"`
+      `${CLI} app update "${appId}" --long-name "${testValue}"`
     );
     expect(exitCode).toBe(0);
 
@@ -220,7 +220,7 @@ describeWithEnv("Integration Tests (requires auth + .testenv)", () => {
   it("updates version and verifies", () => {
     const testValue = "9.8.7";
     const { exitCode } = run(
-      `${CLI} app edit "${appId}" --version "${testValue}"`
+      `${CLI} app update "${appId}" --version "${testValue}"`
     );
     expect(exitCode).toBe(0);
 
@@ -231,7 +231,7 @@ describeWithEnv("Integration Tests (requires auth + .testenv)", () => {
   it("updates developer name and verifies", () => {
     const testValue = "Test Developer " + Date.now();
     const { exitCode } = run(
-      `${CLI} app edit "${appId}" --developer "${testValue}"`
+      `${CLI} app update "${appId}" --developer "${testValue}"`
     );
     expect(exitCode).toBe(0);
 
@@ -242,7 +242,7 @@ describeWithEnv("Integration Tests (requires auth + .testenv)", () => {
   it("updates website URL and verifies", () => {
     const testValue = `https://test-${Date.now()}.example.com`;
     const { exitCode } = run(
-      `${CLI} app edit "${appId}" --website "${testValue}"`
+      `${CLI} app update "${appId}" --website "${testValue}"`
     );
     expect(exitCode).toBe(0);
 
@@ -253,7 +253,7 @@ describeWithEnv("Integration Tests (requires auth + .testenv)", () => {
   it("updates privacy URL and verifies", () => {
     const testValue = `https://test-${Date.now()}.example.com/privacy`;
     const { exitCode } = run(
-      `${CLI} app edit "${appId}" --privacy-url "${testValue}"`
+      `${CLI} app update "${appId}" --privacy-url "${testValue}"`
     );
     expect(exitCode).toBe(0);
 
@@ -264,7 +264,7 @@ describeWithEnv("Integration Tests (requires auth + .testenv)", () => {
   it("updates terms URL and verifies", () => {
     const testValue = `https://test-${Date.now()}.example.com/terms`;
     const { exitCode } = run(
-      `${CLI} app edit "${appId}" --terms-url "${testValue}"`
+      `${CLI} app update "${appId}" --terms-url "${testValue}"`
     );
     expect(exitCode).toBe(0);
 
@@ -275,7 +275,7 @@ describeWithEnv("Integration Tests (requires auth + .testenv)", () => {
   it("updates short description and verifies", () => {
     const testValue = "Test short description " + Date.now();
     const { exitCode } = run(
-      `${CLI} app edit "${appId}" --short-description "${testValue}"`
+      `${CLI} app update "${appId}" --short-description "${testValue}"`
     );
     expect(exitCode).toBe(0);
 
@@ -288,7 +288,7 @@ describeWithEnv("Integration Tests (requires auth + .testenv)", () => {
     () => {
       const testValue = "Test long description with more details " + Date.now();
       const { exitCode } = run(
-        `${CLI} app edit "${appId}" --long-description "${testValue}"`
+        `${CLI} app update "${appId}" --long-description "${testValue}"`
       );
       expect(exitCode).toBe(0);
 
@@ -302,7 +302,7 @@ describeWithEnv("Integration Tests (requires auth + .testenv)", () => {
     const testName = `Multi${Date.now()}`.slice(0, 30);
     const testVersion = "1.2.3";
     const { exitCode } = run(
-      `${CLI} app edit "${appId}" --name "${testName}" --version "${testVersion}"`
+      `${CLI} app update "${appId}" --name "${testName}" --version "${testVersion}"`
     );
     expect(exitCode).toBe(0);
 

@@ -20,8 +20,8 @@ interface AuthSetting {
   };
 }
 
-export const ssoEditCommand = new Command("edit")
-  .description("Edit an SSO connection's settings")
+export const ssoUpdateCommand = new Command("update")
+  .description("Update an SSO connection's settings")
   .argument("[appId]", "App ID")
   .option("--connection-name <name>", "SSO connection to edit")
   .option("--scopes <scopes>", "[OPTIONAL] New scopes")

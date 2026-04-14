@@ -8,8 +8,8 @@ import { isInteractive } from "../../../utils/interactive.js";
 import { CliError, wrapAction } from "../../../utils/errors.js";
 import { logger } from "../../../utils/logger.js";
 
-export const botStatusCommand = new Command("status")
-  .description("Show bot registration details")
+export const botGetCommand = new Command("get")
+  .description("Get bot registration details")
   .argument("[appId]", "App ID")
   .action(wrapAction(async (appIdArg?: string) => {
     let token: string;

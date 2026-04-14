@@ -59,7 +59,7 @@ teams apps
 View details of a specific app:
 
 ```bash
-teams app view <appId>
+teams app get <appId>
 ```
 
 ## 5. Interactive mode
@@ -72,7 +72,7 @@ teams app
 
 ## Next Steps
 
-- [Edit your app's properties](/commands/app/edit) — name, endpoint, version
+- [Update your app's properties](/commands/app/update) — name, endpoint, version
 - [Download the manifest](/commands/app/manifest-download) to customize it locally
 - [Set up SSO](/commands/app/user-auth-sso-setup) for single sign-on
 - [Understand bot locations](/concepts/bot-locations) — Teams-managed vs Azure

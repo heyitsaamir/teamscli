@@ -661,16 +661,16 @@ describe("sso menu loop", () => {
       "../src/commands/app/user-auth/sso/index.js"
     );
 
-    const editParseSpy = vi.fn().mockResolvedValue(undefined);
-    const editSub = ssoCommand.commands.find(
-      (c: Command) => c.name() === "edit"
+    const updateParseSpy = vi.fn().mockResolvedValue(undefined);
+    const updateSub = ssoCommand.commands.find(
+      (c: Command) => c.name() === "update"
     );
-    if (editSub) editSub.parseAsync = editParseSpy;
+    if (updateSub) updateSub.parseAsync = updateParseSpy;
 
     await ssoCommand.parseAsync([], { from: "user" });
 
     expect(mockedSelect).toHaveBeenCalledTimes(2);
-    expect(editParseSpy).toHaveBeenCalledTimes(1);
+    expect(updateParseSpy).toHaveBeenCalledTimes(1);
   });
 
   it("exits immediately when Back is selected", async () => {

@@ -4,7 +4,7 @@ import pc from "picocolors";
 import { createSilentSpinner } from "../../../../utils/spinner.js";
 import { ssoSetupCommand } from "./setup.js";
 import { ssoListCommand } from "./list.js";
-import { ssoEditCommand } from "./edit.js";
+import { ssoUpdateCommand } from "./edit.js";
 import { ssoRemoveCommand } from "./remove.js";
 import { isInteractive } from "../../../../utils/interactive.js";
 import { runAz } from "../../../../utils/az.js";
@@ -82,7 +82,7 @@ export const ssoCommand = new Command("sso")
           await ssoSetupCommand.parseAsync([appId], { from: "user" });
         } else if (action.startsWith("edit:")) {
           const connectionName = action.slice(5);
-          await ssoEditCommand.parseAsync([appId, "--connection-name", connectionName], { from: "user" });
+          await ssoUpdateCommand.parseAsync([appId, "--connection-name", connectionName], { from: "user" });
         }
       } catch (error) {
         if (error instanceof Error && error.name === "ExitPromptError") return;
@@ -93,5 +93,5 @@ export const ssoCommand = new Command("sso")
 
 ssoCommand.addCommand(ssoSetupCommand);
 ssoCommand.addCommand(ssoListCommand);
-ssoCommand.addCommand(ssoEditCommand);
+ssoCommand.addCommand(ssoUpdateCommand);
 ssoCommand.addCommand(ssoRemoveCommand);

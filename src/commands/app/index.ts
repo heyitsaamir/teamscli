@@ -2,8 +2,8 @@ import { Command } from "commander";
 import { select } from "@inquirer/prompts";
 import { appListCommand, runAppList } from "./list.js";
 import { appCreateCommand } from "./create.js";
-import { appViewCommand } from "./view.js";
-import { appEditCommand } from "./edit.js";
+import { appGetCommand } from "./view.js";
+import { appUpdateCommand } from "./edit.js";
 import { appPackageCommand } from "./package/index.js";
 import { appManifestCommand } from "./manifest/index.js";
 import { authCommand } from "./auth/index.js";
@@ -62,8 +62,8 @@ export const appsCommand = new Command("apps")
 
 appCommand.addCommand(appListCommand);
 appCommand.addCommand(appCreateCommand);
-appCommand.addCommand(appViewCommand);
-appCommand.addCommand(appEditCommand);
+appCommand.addCommand(appGetCommand);
+appCommand.addCommand(appUpdateCommand);
 appCommand.addCommand(appPackageCommand);
 appCommand.addCommand(appManifestCommand);
 appCommand.addCommand(authCommand);
