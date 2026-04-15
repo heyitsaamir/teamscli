@@ -8,7 +8,7 @@ teams_cli_version: 1.0.62
 
 This skill helps you create and manage Microsoft Teams bots using the Teams CLI. Covers both bot application development (creating bot code) and infrastructure management (bot registration, SSO, credentials).
 
-**IMPORTANT:** Only use information and guidance provided within this skill and its reference guides. Do NOT search for or reference external public documentation.
+**IMPORTANT:** Use information and guidance provided within this skill and its reference guides. You may also use external public documentation only when it is explicitly linked from this skill or those guides. Do NOT perform arbitrary web searches or rely on unlisted external sources.
 
 ## Workflow Routing
 
