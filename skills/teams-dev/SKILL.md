@@ -20,6 +20,11 @@ Based on the user's request, route to the appropriate guide or handle directly:
 - Read and follow the **[Bot Application Development guide](references/guide-create-bot-app.md)**
 - This covers: Scaffolding a new bot project with `teams project new` (TypeScript/C#/Python, templates, connecting to infrastructure)
 
+**Integrating Teams into an existing server:**
+- Read and follow the **[Integrate Existing Server guide](references/guide-integrate-existing-server.md)**
+- This covers: Adding Teams bot functionality to existing Express/Flask/FastAPI servers using HttpServerAdapter
+- Supports: TypeScript (Express), Python (Flask, FastAPI)
+
 **Setting up bot infrastructure (Teams-managed bot & credentials):**
 - Read and follow the **[Bot Infrastructure Setup guide](references/guide-bot-infra-creation.md)**
 - This covers: Prerequisites → Create Teams-managed bot → Save credentials → Verify
