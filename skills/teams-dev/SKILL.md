@@ -26,11 +26,11 @@ Based on the user's request, route to the appropriate guide or handle directly:
 - Supports: TypeScript (Express), Python (Flask, FastAPI)
 
 **Setting up bot infrastructure (Teams-managed bot & credentials):**
-- Read and follow the **[Bot Infrastructure Setup guide](references/guide-bot-infra-creation.md)**
+- Read and follow the **[Bot Infrastructure Setup guide](references/guide-create-bot-infra.md)**
 - This covers: Prerequisites → Create Teams-managed bot → Save credentials → Verify
 
 **Setting up SSO authentication:**
-- Read and follow the **[SSO Setup guide](references/guide-sso-setup.md)**
+- Read and follow the **[SSO Setup guide](references/guide-setup-sso.md)**
 - This covers: Bot migration → AAD app configuration → OAuth connection → Manifest update → Verification
 - Prerequisites: Existing bot (teamsAppId, botId), az CLI authenticated
 
