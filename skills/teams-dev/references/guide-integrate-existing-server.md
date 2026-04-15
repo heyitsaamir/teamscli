@@ -21,7 +21,7 @@ npm install @microsoft/teams.apps
 
 **Python:**
 ```bash
-pip install teams-ai
+pip install microsoft-teams-apps
 ```
 
 ### 2. Create the Adapter
@@ -45,7 +45,8 @@ const teamsApp = new App({ httpServerAdapter: adapter });
 **Python (Flask):**
 ```python
 from flask import Flask
-from teams import App, FlaskAdapter
+from microsoft_teams.apps import App
+from microsoft_teams.hosting.flask import FlaskAdapter
 
 app = Flask(__name__)
 
