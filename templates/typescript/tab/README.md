@@ -1,6 +1,6 @@
 # TypeScript Teams Bot with Tab
 
-This is a Microsoft Teams bot template that includes a personal tab served by Vite.
+This is a Microsoft Teams bot template that includes a personal tab built with Vite.
 
 ## Structure
 
