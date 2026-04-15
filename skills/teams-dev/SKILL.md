@@ -22,15 +22,15 @@ Based on the user's request, route to the appropriate guide or handle directly:
 
 **Integrating Teams into an existing server:**
 - Read and follow the **[Integrate Existing Server guide](references/guide-integrate-existing-server.md)**
-- This covers: Adding Teams bot functionality to existing Express/Flask/FastAPI servers using HttpServerAdapter
+- This covers: Adding Teams bot functionality to existing Express/Flask/FastAPI servers using server adapters (ExpressAdapter, FlaskAdapter)
 - Supports: TypeScript (Express), Python (Flask, FastAPI)
 
 **Setting up bot infrastructure (Teams-managed bot & credentials):**
-- Read and follow the **[Bot Infrastructure Setup guide](references/guide-bot-infra-creation.md)**
+- Read and follow the **[Bot Infrastructure Setup guide](references/guide-create-bot-infra.md)**
 - This covers: Prerequisites → Create Teams-managed bot → Save credentials → Verify
 
 **Setting up SSO authentication:**
-- Read and follow the **[SSO Setup guide](references/guide-sso-setup.md)**
+- Read and follow the **[SSO Setup guide](references/guide-setup-sso.md)**
 - This covers: Bot migration → AAD app configuration → OAuth connection → Manifest update → Verification
 - Prerequisites: Existing bot (teamsAppId, botId), az CLI authenticated
 
@@ -118,30 +118,6 @@ teams app list
 
 **Use case:** See all Teams apps you've created
 
-### List and Manage OAuth Connections
-
-**Note:** OAuth connections require an Azure-managed bot. Teams-managed bots must be migrated to Azure first using `teams app bot migrate <teamsAppId> --resource-group <your-resource-group>`.
-
-**List all connections on an Azure bot:**
-```bash
-az bot authsetting list \
-  --name <botId> \
-  --resource-group <resourceGroup> \
-  --subscription <subscription>
-```
-
-**View a specific connection (shows `tokenExchangeUrl` and other parameters):**
-```bash
-az bot authsetting show \
-  --name <botId> \
-  --resource-group <resourceGroup> \
-  --setting-name "sso" \
-  --subscription <subscription>
-```
-
-To update or remove OAuth connections, use `az bot authsetting` commands directly (`az bot authsetting delete` to remove; delete then recreate to update, since there is no `az bot authsetting update`).
-
----
 
 ## Resources
 

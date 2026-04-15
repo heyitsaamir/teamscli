@@ -1,6 +1,6 @@
 # Integrating Teams into an Existing Server
 
-This guide helps you add Microsoft Teams bot functionality to an existing HTTP server (Express, Flask, FastAPI, etc.) using the Teams SDK's `HttpServerAdapter`.
+This guide helps you add Microsoft Teams bot functionality to an existing HTTP server (Express, Flask, FastAPI, etc.) using the Teams SDK's HTTP server adapters (ExpressAdapter, FlaskAdapter, etc.).
 
 ## Overview
 
@@ -106,13 +106,15 @@ if __name__ == '__main__':
 
 ### 5. Set Up Bot Infrastructure, Tunnel, and Endpoint
 
-Follow the **[Bot Infrastructure Setup guide](guide-bot-infra-creation.md)** to complete the remaining setup:
+Follow the **[Bot Infrastructure Setup guide](guide-create-bot-infra.md)** to complete the remaining setup:
 - Create Teams-managed bot registration
 - Get bot credentials (CLIENT_ID, CLIENT_SECRET, TENANT_ID)
 - Configure environment variables
 - Set up development tunnel (devtunnels)
 - Configure bot messaging endpoint
 - Test your bot in Teams
+
+**Important:** When setting up the devtunnel, use the port your existing server runs on (e.g., `3000`, `5000`, `8080`) instead of the default `3978`. The tunnel must expose the same port your server is already configured to use.
 
 ## Key Points
 
@@ -127,6 +129,6 @@ Follow the **[Bot Infrastructure Setup guide](guide-bot-infra-creation.md)** to 
 
 ## Related Guides
 
-- **[Bot Infrastructure Setup](guide-bot-infra-creation.md)** - Create bot registration and credentials
+- **[Bot Infrastructure Setup](guide-create-bot-infra.md)** - Create bot registration and credentials
 - **[Bot Application Development](guide-create-bot-app.md)** - Scaffold a new Teams bot project
 - **[Troubleshooting](troubleshooting.md)** - Common issues and solutions

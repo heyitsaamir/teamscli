@@ -47,19 +47,60 @@ teams status
 
 **Checkpoint:** Authentication verified before proceeding.
 
-### Step 3: Verify Bot Endpoint Availability
+### Step 3: Set Up Bot Endpoint
 
-Ask the user: **"Do you have a bot messaging endpoint URL?"**
+Your bot needs a publicly accessible HTTPS endpoint for Teams to send messages to it.
 
 **Expected format:** `https://your-domain/api/messages`
 
-**If NO endpoint yet:**
-- Suggest using **Microsoft devtunnels** to create a development tunnel
-- Devtunnels provides a public HTTPS URL that routes to your local bot
-- Once the tunnel is running, use the URL format: `https://your-tunnel.devtunnels.ms/api/messages`
-- Default port for Teams SDK samples: `3978`
+#### Option A: Use Existing Endpoint
 
-**Checkpoint:** Endpoint URL is ready.
+If you already have a deployed bot or public URL, use that endpoint and proceed to the next section.
+
+#### Option B: Set Up Development Tunnel (Persistent)
+
+For local development, create a **persistent tunnel** that keeps the same URL across sessions.
+
+**Install devtunnels (if not already installed):**
+
+See the official guide: https://learn.microsoft.com/en-us/azure/developer/dev-tunnels/get-started?tabs=windows
+
+**Create a persistent tunnel (one-time setup):**
+
+```bash
+devtunnel create my-teams-bot --allow-anonymous
+devtunnel port create my-teams-bot -p 3978 --protocol auto
+```
+
+Replace `my-teams-bot` with your preferred tunnel name.
+
+**Important:** Port `3978` is the default Teams SDK port. Protocol `auto` allows both HTTP and HTTPS. The `--allow-anonymous` flag allows Teams to connect without authentication.
+
+**Expected output:**
+```
+Created tunnel: my-teams-bot (<tunnel-id>)
+Hosting port: 3978
+Tunnel URL: https://<tunnel-id>.devtunnels.ms
+```
+
+**Start the tunnel (each development session):**
+
+```bash
+devtunnel host my-teams-bot
+```
+
+Your persistent tunnel URL remains: `https://<tunnel-id>.devtunnels.ms`
+
+**Format your endpoint URL:**
+```
+https://<tunnel-id>.devtunnels.ms/api/messages
+```
+
+**Alternative:** Use ngrok (`ngrok http 3978`) if you prefer.
+
+**Note:** With a persistent tunnel, your URL stays the same across sessions - you only need to run `devtunnel host my-teams-bot` to start it each time.
+
+**Checkpoint:** Endpoint URL is ready (either existing or persistent tunnel-based).
 
 ---
 
@@ -177,6 +218,6 @@ teams app get <teamsAppId> --json
 
 ## Next Steps
 
-- To set up SSO authentication for your bot, see the [SSO Setup guide](guide-sso-setup.md)
+- To set up SSO authentication for your bot, see the [SSO Setup guide](guide-setup-sso.md)
 - To update the bot endpoint or perform other operations, see Common Operations in the main skill
 - For troubleshooting, see the [Troubleshooting guide](troubleshooting.md)
