@@ -118,30 +118,6 @@ teams app list
 
 **Use case:** See all Teams apps you've created
 
-### List and Manage OAuth Connections
-
-**Note:** OAuth connections require an Azure-managed bot. Teams-managed bots must be migrated to Azure first using `teams app bot migrate <teamsAppId> --resource-group <your-resource-group>`.
-
-**List all connections on an Azure bot:**
-```bash
-az bot authsetting list \
-  --name <botId> \
-  --resource-group <resourceGroup> \
-  --subscription <subscription>
-```
-
-**View a specific connection (shows `tokenExchangeUrl` and other parameters):**
-```bash
-az bot authsetting show \
-  --name <botId> \
-  --resource-group <resourceGroup> \
-  --setting-name "sso" \
-  --subscription <subscription>
-```
-
-To update or remove OAuth connections, use `az bot authsetting` commands directly (`az bot authsetting delete` to remove; delete then recreate to update, since there is no `az bot authsetting update`).
-
----
 
 ## Resources
 
