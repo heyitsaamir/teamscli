@@ -183,8 +183,30 @@ export const appCreateCommand = new Command("create")
 		const outlineIcon = outlineIconPath ? readAndValidateIcon(outlineIconPath, 32) : undefined;
 
 		// ===== All inputs gathered — confirm before proceeding =====
-		const locationLabel = location === "azure" ? "Azure" : "Teams-managed";
-		if (!await confirmAction(`Create Teams app "${name}" with ${locationLabel} bot?`, silent)) {
+		const summaryLines: [string, string][] = [
+			["App name", name],
+		];
+		if (azureContext) {
+			summaryLines.push(["Subscription", azureContext.subscription]);
+			summaryLines.push(["Resource group", azureContext.resourceGroup]);
+		}
+		if (endpoint) summaryLines.push(["Endpoint", endpoint]);
+		if (descriptionOpts) summaryLines.push(["Description", descriptionOpts.short]);
+		if (scopeChoices) summaryLines.push(["Scopes", scopeChoices.join(", ")]);
+		if (developerOpts) summaryLines.push(["Developer", developerOpts.name]);
+		if (colorIconPath) summaryLines.push(["Color icon", colorIconPath]);
+		if (outlineIconPath) summaryLines.push(["Outline icon", outlineIconPath]);
+		if (envPath) summaryLines.push([".env file", envPath]);
+
+		if (!silent) {
+			logger.info("");
+			for (const [label, value] of summaryLines) {
+				logger.info(`  ${pc.dim(`${label}:`)}  ${value}`);
+			}
+			logger.info("");
+		}
+
+		if (!await confirmAction("Confirm creation?", silent)) {
 			return;
 		}
 
