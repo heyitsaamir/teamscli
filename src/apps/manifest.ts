@@ -1,4 +1,7 @@
+import fs from "node:fs";
+import path from "node:path";
 import AdmZip from "adm-zip";
+import { staticsDir } from "../project/paths.js";
 
 export interface ManifestOptions {
   botId: string;
@@ -87,16 +90,8 @@ export function createManifest(options: ManifestOptions): object {
   };
 }
 
-function createPlaceholderPng(): Buffer {
-  // Minimal valid PNG (1x1 transparent pixel)
-  return Buffer.from([
-    0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d,
-    0x49, 0x48, 0x44, 0x52, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01,
-    0x08, 0x06, 0x00, 0x00, 0x00, 0x1f, 0x15, 0xc4, 0x89, 0x00, 0x00, 0x00,
-    0x0a, 0x49, 0x44, 0x41, 0x54, 0x78, 0x9c, 0x63, 0x00, 0x01, 0x00, 0x00,
-    0x05, 0x00, 0x01, 0x0d, 0x0a, 0x2d, 0xb4, 0x00, 0x00, 0x00, 0x00, 0x49,
-    0x45, 0x4e, 0x44, 0xae, 0x42, 0x60, 0x82,
-  ]);
+function defaultIcon(name: string): Buffer {
+  return fs.readFileSync(path.join(staticsDir, name));
 }
 
 export function createManifestZip(options: ManifestOptions): Buffer {
@@ -104,8 +99,8 @@ export function createManifestZip(options: ManifestOptions): Buffer {
   const zip = new AdmZip();
 
   zip.addFile("manifest.json", Buffer.from(JSON.stringify(manifest, null, 2)));
-  zip.addFile("color.png", options.colorIconBuffer ?? createPlaceholderPng());
-  zip.addFile("outline.png", options.outlineIconBuffer ?? createPlaceholderPng());
+  zip.addFile("color.png", options.colorIconBuffer ?? defaultIcon("color.png"));
+  zip.addFile("outline.png", options.outlineIconBuffer ?? defaultIcon("outline.png"));
 
   return zip.toBuffer();
 }
