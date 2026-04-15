@@ -55,7 +55,7 @@ Your bot needs a publicly accessible HTTPS endpoint for Teams to send messages t
 
 #### Option A: Use Existing Endpoint
 
-If you already have a deployed bot or public URL, use that endpoint and skip to Step 4.
+If you already have a deployed bot or public URL, use that endpoint and proceed to the next section.
 
 #### Option B: Set Up Development Tunnel (Persistent)
 

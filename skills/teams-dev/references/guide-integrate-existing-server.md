@@ -1,6 +1,6 @@
 # Integrating Teams into an Existing Server
 
-This guide helps you add Microsoft Teams bot functionality to an existing HTTP server (Express, Flask, FastAPI, etc.) using the Teams SDK's `HttpServerAdapter`.
+This guide helps you add Microsoft Teams bot functionality to an existing HTTP server (Express, Flask, FastAPI, etc.) using the Teams SDK's HTTP server adapters (ExpressAdapter, FlaskAdapter, etc.).
 
 ## Overview
 

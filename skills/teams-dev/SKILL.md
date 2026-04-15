@@ -22,7 +22,7 @@ Based on the user's request, route to the appropriate guide or handle directly:
 
 **Integrating Teams into an existing server:**
 - Read and follow the **[Integrate Existing Server guide](references/guide-integrate-existing-server.md)**
-- This covers: Adding Teams bot functionality to existing Express/Flask/FastAPI servers using HttpServerAdapter
+- This covers: Adding Teams bot functionality to existing Express/Flask/FastAPI servers using server adapters (ExpressAdapter, FlaskAdapter)
 - Supports: TypeScript (Express), Python (Flask, FastAPI)
 
 **Setting up bot infrastructure (Teams-managed bot & credentials):**
