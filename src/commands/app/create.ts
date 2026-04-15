@@ -191,9 +191,9 @@ export const appCreateCommand = new Command("create")
 			summaryLines.push(["Resource group", azureContext.resourceGroup]);
 		}
 		if (endpoint) summaryLines.push(["Endpoint", endpoint]);
-		if (descriptionOpts) summaryLines.push(["Description", descriptionOpts.short]);
-		if (scopeChoices) summaryLines.push(["Scopes", scopeChoices.join(", ")]);
-		if (developerOpts) summaryLines.push(["Developer", developerOpts.name]);
+		if (descriptionOpts?.short.trim()) summaryLines.push(["Description", descriptionOpts.short]);
+		if (scopeChoices && scopeChoices.length > 0) summaryLines.push(["Scopes", scopeChoices.join(", ")]);
+		if (developerOpts?.name.trim()) summaryLines.push(["Developer", developerOpts.name]);
 		if (colorIconPath) summaryLines.push(["Color icon", colorIconPath]);
 		if (outlineIconPath) summaryLines.push(["Outline icon", outlineIconPath]);
 		if (envPath) summaryLines.push([".env file", envPath]);
