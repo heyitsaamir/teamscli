@@ -43,6 +43,45 @@ const TDP_BASE_URL = "https://dev.teams.microsoft.com/api";
 
 const TDP_PAGE_SIZE = 15;
 
+// ── Tenant / user settings ──────────────────────────────────────────────
+
+export interface TenantSettings {
+  isSideLoadingInteractionEnabled?: boolean;
+}
+
+export interface UserAppPolicy {
+  value?: {
+    isSideloadingAllowed?: boolean;
+    isUserPinningAllowed?: boolean;
+  };
+}
+
+export async function fetchTenantSettings(token: string): Promise<TenantSettings> {
+  const response = await apiFetch(`${TDP_BASE_URL}/usersettings/v2/tenantSettings`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new CliError("API_ERROR", `Failed to fetch tenant settings: ${response.status} ${errorText}`);
+  }
+
+  return response.json();
+}
+
+export async function fetchUserAppPolicy(token: string): Promise<UserAppPolicy> {
+  const response = await apiFetch(`${TDP_BASE_URL}/usersettings/appPolicyForUser`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new CliError("API_ERROR", `Failed to fetch user app policy: ${response.status} ${errorText}`);
+  }
+
+  return response.json();
+}
+
 export async function fetchApps(token: string): Promise<AppSummary[]> {
   const allApps: AppSummary[] = [];
   let pageNumber = 1;
