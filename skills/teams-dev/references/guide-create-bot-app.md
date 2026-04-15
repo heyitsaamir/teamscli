@@ -243,9 +243,11 @@ Your bot needs to be accessible from the internet for Teams to send messages to 
 **Recommended: Microsoft devtunnels**
 ```bash
 devtunnel create
-devtunnel port create 3978
+devtunnel port create 3978 --protocol auto
 devtunnel host
 ```
+
+**Important:** Use port `3978` (default Teams SDK port) and protocol `auto` for proper bot communication.
 
 This gives you a public URL like: `https://your-tunnel.devtunnels.ms`
 
