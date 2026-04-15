@@ -47,32 +47,19 @@ teams status
 
 **Checkpoint:** Authentication verified before proceeding.
 
-### Step 3: Verify Bot Endpoint Availability (Optional)
+### Step 3: Verify Bot Endpoint Availability
 
-Ask the user: **"Do you have a bot messaging endpoint URL, or will this bot only send proactive messages?"**
+Ask the user: **"Do you have a bot messaging endpoint URL?"**
 
-**If using proactive flows only (no endpoint needed):**
-- Proactive flows = bot sends messages to Teams without first receiving a message from users
-- Examples: Notifications, scheduled updates, alerts from external systems
-- ⚠️ **Warning:** Without an endpoint, your bot **cannot receive messages from Teams users**. It can only send proactive messages programmatically.
-- 💡 **Note:** You can always add an endpoint later using `teams app update <teamsAppId> --endpoint <url>` (see Common Operations in main skill)
-- **Skip to Section 2** — no endpoint required for creation
-
-**If the bot needs to receive messages (endpoint required):**
-- Confirm the endpoint format: `https://your-domain/api/messages`
-- Common formats:
-  - Devtunnels: `https://your-tunnel.devtunnels.ms/api/messages`
-  - ngrok: `https://your-ngrok-id.ngrok.io/api/messages`
-- Default port for Teams SDK samples: `3978`
+**Expected format:** `https://your-domain/api/messages`
 
 **If NO endpoint yet:**
-- Recommend **Microsoft devtunnels** (recommended, Microsoft product)
-- Link: https://learn.microsoft.com/en-us/azure/developer/dev-tunnels/get-started?tabs=windows
-- Alternative: ngrok
-- **Out of scope:** Setting up the tunnel itself (point user to docs)
-- User should set up tunnel first, then return to this workflow
+- Suggest using **Microsoft devtunnels** to create a development tunnel
+- Devtunnels provides a public HTTPS URL that routes to your local bot
+- Once the tunnel is running, use the URL format: `https://your-tunnel.devtunnels.ms/api/messages`
+- Default port for Teams SDK samples: `3978`
 
-**Checkpoint:** Either endpoint URL is ready OR confirmed proactive-only use case.
+**Checkpoint:** Endpoint URL is ready.
 
 ---
 
@@ -84,19 +71,13 @@ Now create the Teams-managed bot with infrastructure.
 
 Execute the following command (replace placeholders):
 
-**With endpoint (bot receives messages):**
 ```bash
 teams app create --name "YourBotName" --endpoint "https://your-endpoint/api/messages" --json
 ```
 
-**Without endpoint (proactive flows only):**
-```bash
-teams app create --name "YourBotName" --json
-```
-
 **Parameters:**
 - `--name`: Your bot's display name (e.g., "Notification Bot", "MyBot")
-- `--endpoint`: **[OPTIONAL]** The bot messaging endpoint URL. Omit this for proactive-only bots.
+- `--endpoint`: The bot messaging endpoint URL
 - `--json`: Output structured JSON (required for parsing)
 
 **Expected:** Command completes successfully and returns JSON output.
@@ -120,8 +101,6 @@ The command returns JSON with these fields:
   }
 }
 ```
-
-**Note:** If no endpoint was provided, `endpoint` will be `null`. This is normal for proactive-only bots.
 
 ### Step 3: Save Credentials to .env File
 
