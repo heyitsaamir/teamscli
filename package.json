@@ -51,7 +51,7 @@
     "@azure/msal-node": "^5.0.4",
     "@azure/msal-node-extensions": "^5.0.4",
     "@inquirer/prompts": "^7.2.1",
-    "adm-zip": "^0.5.16",
+    "adm-zip": "^0.6.0",
     "change-case": "^5.4.4",
     "commander": "^12.1.0",
     "env-paths": "^4.0.0",
